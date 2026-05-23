@@ -298,6 +298,48 @@ body{font-family:'DM Mono',monospace;color:var(--txt);display:flex;flex-directio
 .fb-skip{background:none;border:1px solid var(--b);color:var(--dim);padding:8px 16px;font-family:'DM Mono',monospace;font-size:9px;letter-spacing:1.5px;cursor:pointer;border-radius:var(--r);margin-top:8px;width:100%}
 .fb-skip:hover{color:var(--mid);border-color:var(--mid)}
 
+/* ── FOLLOW UP TAB ── */
+.fu-horizon-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:8px}
+.fu-horizon-card{background:var(--s2);border:1px solid var(--b);border-radius:var(--r);padding:12px 10px;text-align:center;cursor:pointer;transition:border-color .2s}
+.fu-horizon-card:hover{border-color:var(--gold-d)}
+.fu-horizon-num{font-family:'Cormorant Garamond',serif;font-size:28px;font-weight:300;line-height:1}
+.fu-horizon-num.overdue{color:var(--cx)}
+.fu-horizon-num.urgent{color:var(--ip)}
+.fu-horizon-num.ok{color:var(--gold)}
+.fu-horizon-lbl{font-size:7px;letter-spacing:2px;text-transform:uppercase;color:var(--dim);margin-top:4px}
+.perf-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px}
+.perf-card{background:var(--s2);border:1px solid var(--b);border-radius:var(--r);padding:14px}
+.perf-title{font-size:8px;letter-spacing:2px;text-transform:uppercase;color:var(--dim);margin-bottom:10px}
+.perf-big{font-family:'Cormorant Garamond',serif;font-size:32px;font-weight:300;line-height:1}
+.perf-big.good{color:#5aac8a}
+.perf-big.warn{color:var(--ip)}
+.perf-big.bad{color:var(--cx)}
+.perf-sub{font-size:8px;color:var(--dim);margin-top:4px}
+.perf-bar-wrap{height:4px;background:var(--b);border-radius:2px;margin-top:10px}
+.perf-bar{height:100%;border-radius:2px}
+.perf-bar.good{background:#5aac8a}
+.perf-bar.warn{background:var(--ip)}
+.perf-bar.bad{background:var(--cx)}
+.vendor-perf-row{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--b)}
+.vendor-perf-row:last-child{border-bottom:none}
+.vendor-perf-name{font-size:12px;color:var(--txt);flex:1}
+.vendor-perf-pct{font-size:13px;font-family:'Cormorant Garamond',serif;font-weight:300}
+.vendor-perf-count{font-size:8px;color:var(--dim);letter-spacing:1px}
+.mini-bar-wrap{width:60px;height:4px;background:var(--b);border-radius:2px}
+.mini-bar{height:100%;border-radius:2px}
+.due-bucket-hdr{font-size:8px;letter-spacing:2.5px;text-transform:uppercase;color:var(--dim);padding:8px 0 6px;border-bottom:1px solid var(--b);margin-bottom:8px;display:flex;justify-content:space-between}
+.due-bucket-hdr span{color:var(--mid)}
+.due-row{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px dashed var(--b);cursor:pointer;gap:8px}
+.due-row:last-child{border-bottom:none}
+.due-row-id{font-size:8px;color:var(--dim);letter-spacing:1px;margin-bottom:2px}
+.due-row-name{font-size:13px;color:var(--txt);font-family:'Cormorant Garamond',serif}
+.due-row-status{font-size:8px;color:var(--dim);margin-top:2px}
+.due-badge{font-size:8px;font-weight:700;letter-spacing:1px;padding:3px 8px;border-radius:2px;white-space:nowrap;flex-shrink:0}
+.due-badge.overdue{background:#c4545420;color:var(--cx);border:1px solid #c4545440}
+.due-badge.today{background:#e8a83820;color:var(--ip);border:1px solid #e8a83840}
+.due-badge.soon{background:#e8a83812;color:var(--ip)}
+.due-badge.ok{background:var(--s3);color:var(--dim)}
+
 /* ── ORDER TYPE TOGGLE ── */
 .otype-wrap{display:flex;gap:8px;margin-bottom:14px}
 .otype-btn{flex:1;padding:10px 8px;border:1px solid var(--b);background:var(--s2);color:var(--mid);font-family:'DM Mono',monospace;font-size:9px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;border-radius:var(--r);transition:all .2s;text-align:center}
@@ -499,22 +541,36 @@ body{font-family:'DM Mono',monospace;color:var(--txt);display:flex;flex-directio
     <div id="vendorOrdersList"></div>
   </div>
 
-  <!-- ── KARIGAR ── -->
+  <!-- ── FOLLOW UP ── -->
   <div class="view" id="view-karigar">
-    <div class="sec-title gold">Karigar Performance Analytics</div>
+    <div class="sec-title gold">Follow Up</div>
 
-    <div class="karigar-summary" id="karigarSummary"></div>
+    <!-- HORIZON SUMMARY CARDS -->
+    <div id="fuHorizonGrid" class="fu-horizon-grid"></div>
 
-    <div class="sec-title" style="margin-top:16px">Reminders & Due Soon</div>
-    <div class="reminder-list" id="reminderList"></div>
-    <div style="margin-top:16px">
-      <div class="sec-title">Reminder Settings</div>
-      <div class="fg">
-        <label class="flbl">Alert me when delivery is due within (days)</label>
-        <input class="inp" type="number" id="reminderDays" value="3" min="1" max="30" onchange="saveReminderPref();renderKarigar()">
-      </div>
-      <div style="font-size:9px;color:var(--dim);line-height:1.7;margin-top:6px">
-        💡 <strong style="color:var(--mid)">Tip:</strong> To get real phone reminders, use the Export button and set calendar alerts, or bookmark this page and check the Karigar tab regularly. Orders due within your threshold appear here automatically.
+    <!-- DUE ORDERS LIST -->
+    <div id="fuDueList"></div>
+
+    <!-- PERFORMANCE DIVIDER -->
+    <div class="sec-title" style="margin-top:20px">Fulfilment Performance</div>
+
+    <!-- TOP SUMMARY CARDS -->
+    <div class="perf-grid" id="fuPerfSummary"></div>
+
+    <!-- VENDOR BREAKDOWN -->
+    <div class="sec-title" style="margin-top:4px" id="fuVendorTitle">Vendor Timely Dispatch</div>
+    <div id="fuVendorPerf"></div>
+
+    <!-- CUSTOMER DELIVERY BREAKDOWN (by category) -->
+    <div class="sec-title" style="margin-top:16px">Our Timely Delivery (by Category)</div>
+    <div id="fuCategoryPerf"></div>
+
+    <!-- REMINDER SETTINGS -->
+    <div style="margin-top:20px;padding-top:14px;border-top:1px solid var(--b)">
+      <div class="sec-title" style="font-size:7px">Reminder Threshold</div>
+      <div class="fg" style="max-width:200px">
+        <label class="flbl">Show orders due within (days)</label>
+        <input class="inp" type="number" id="reminderDays" value="7" min="1" max="30" onchange="saveReminderPref();renderKarigar()">
       </div>
     </div>
   </div>
@@ -536,7 +592,7 @@ body{font-family:'DM Mono',monospace;color:var(--txt);display:flex;flex-directio
     <span class="ico">🏭</span><span class="lbl">Vendors</span>
   </button>
   <button class="bnav-item" onclick="switchView('karigar',this)" id="navKarigar">
-    <span class="ico">⚒</span><span class="lbl">Karigar</span>
+    <span class="ico">📅</span><span class="lbl">Follow Up</span>
   </button>
 </div>
 
@@ -1779,82 +1835,214 @@ function renderVendors() {
 function selectVendor(name){selVendor=selVendor===name?null:name;renderVendors();}
 
 // ══════════════════════════════════════════════
-// KARIGAR ANALYTICS
+// FOLLOW UP TAB
 // ══════════════════════════════════════════════
 function renderKarigar() {
-  document.getElementById('reminderDays').value=reminderDays;
+  document.getElementById('reminderDays').value = reminderDays;
+  const now    = new Date(); now.setHours(0,0,0,0);
+  const toDate = d => { const x=new Date(d); x.setHours(0,0,0,0); return x; };
+  const daysDiff = (a,b) => Math.round((toDate(a)-toDate(b))/86400000);
 
-  // Only delivered orders with both dates
-  const delivered = orders.filter(o=>o.status==='Order Delivered'&&o.odate&&o.ddate);
-  
-  // Overall avg
-  const allDays = delivered.map(o=>Math.max(0,Math.round((new Date(o.ddate)-new Date(o.odate))/86400000)));
-  const avgAll = allDays.length ? (allDays.reduce((a,b)=>a+b,0)/allDays.length).toFixed(1) : '—';
-  const maxD = allDays.length ? Math.max(...allDays) : 1;
+  // Filter visible orders for vendor role
+  const visible = (currentRole==='vendor'&&currentVendorName)
+    ? orders.filter(o=>o.vendor===currentVendorName)
+    : orders;
 
-  // Category breakdown
+  // ── HORIZON BUCKETS ──
+  const active = visible.filter(o=>!['Order Delivered','Cancelled'].includes(o.status)&&o.ddate);
+  const buckets = { overdue:[], today:[], d1:[], d2:[], d4:[], d7:[], beyond:[] };
+  active.forEach(o=>{
+    const d = daysDiff(o.ddate, now);
+    if(d<0)       buckets.overdue.push({o,d});
+    else if(d===0) buckets.today.push({o,d});
+    else if(d===1) buckets.d1.push({o,d});
+    else if(d===2) buckets.d2.push({o,d});
+    else if(d<=4)  buckets.d4.push({o,d});
+    else if(d<=7)  buckets.d7.push({o,d});
+    else           buckets.beyond.push({o,d});
+  });
+
+  // Horizon summary cards
+  document.getElementById('fuHorizonGrid').innerHTML = [
+    {key:'overdue', lbl:'Overdue',      cls:'overdue', items:buckets.overdue},
+    {key:'today',   lbl:'Due Today',    cls:'urgent',  items:buckets.today},
+    {key:'d1',      lbl:'Due Tomorrow', cls:'urgent',  items:buckets.d1},
+    {key:'d2',      lbl:'In 2 Days',    cls:'urgent',  items:buckets.d2},
+    {key:'d4',      lbl:'In 4 Days',    cls:'ok',      items:buckets.d4},
+    {key:'d7',      lbl:'In 7 Days',    cls:'ok',      items:buckets.d7},
+  ].map(b=>`
+    <div class="fu-horizon-card${b.cls==='overdue'?' overdue':''}" onclick="scrollToBucket('${b.key}')">
+      <div class="fu-horizon-num ${b.cls}">${b.items.length}</div>
+      <div class="fu-horizon-lbl">${b.lbl}</div>
+    </div>`).join('');
+
+  // Due orders list by bucket
+  const bucketDefs = [
+    {key:'overdue', lbl:'Overdue', badgeCls:'overdue', entries:buckets.overdue},
+    {key:'today',   lbl:'Due Today', badgeCls:'today', entries:buckets.today},
+    {key:'d1',      lbl:'Due Tomorrow', badgeCls:'soon', entries:buckets.d1},
+    {key:'d2',      lbl:'In 2 Days', badgeCls:'soon', entries:buckets.d2},
+    {key:'d4',      lbl:'In 4 Days', badgeCls:'ok', entries:buckets.d4},
+    {key:'d7',      lbl:'In 7 Days', badgeCls:'ok', entries:buckets.d7},
+  ];
+  document.getElementById('fuDueList').innerHTML = bucketDefs.map(b=>{
+    if(!b.entries.length) return '';
+    const rows = b.entries.map(({o,d})=>`
+      <div class="due-row" onclick="viewOrder('${o.id}')">
+        <div style="flex:1;min-width:0">
+          <div class="due-row-id">${o.id} · ${o.category||''}</div>
+          <div class="due-row-name">${guardCustomer(o.name)}</div>
+          <div class="due-row-status">${o.status}${currentRole!=='salesman'&&currentRole!=='vendor'?' · '+guardVendor(o.vendor):''}</div>
+        </div>
+        <div class="due-badge ${b.badgeCls}">${d<0?Math.abs(d)+'d overdue':d===0?'Today':'In '+d+'d'}</div>
+      </div>`).join('');
+    return `<div id="bucket-${b.key}" style="margin-bottom:16px">
+      <div class="due-bucket-hdr">${b.lbl} <span>${b.entries.length} order${b.entries.length!==1?'s':''}</span></div>
+      ${rows}
+    </div>`;
+  }).join('') || `<div class="empty" style="padding:20px 0"><div class="empty-ico">🎉</div><p>No orders due in the next 7 days</p></div>`;
+
+  // ── FULFILMENT PERFORMANCE ──
+  // Vendor performance: compare origShipdate vs actual Order Received date
+  // Customer performance: compare origDdate vs actual Order Delivered date
+  const delivered = visible.filter(o=>o.status==='Order Delivered'&&o.origDdate&&o.odate);
+  const received  = visible.filter(o=>['Order Received','Order Delivered'].includes(o.status)&&o.origShipdate&&o.shipdate);
+
+  // Our delivery performance (origDdate vs actual delivered — use activityLog to find delivery timestamp)
+  function getStatusDate(o, status) {
+    if(!o.activityLog) return null;
+    const entry = o.activityLog.slice().reverse().find(e=>e.status===status);
+    if(!entry) return null;
+    // ts is like "24 May 2026 12:36 AM" — parse to date string
+    try {
+      const d = new Date(entry.ts);
+      if(isNaN(d)) return null;
+      return d.toISOString().split('T')[0];
+    } catch(e){ return null; }
+  }
+
+  // Customer delivery: origDdate vs date status became "Order Delivered"
+  let custOnTime=0, custLate=0, custEarly=0, custTotalDays=0;
+  delivered.forEach(o=>{
+    const delivDate = getStatusDate(o,'Order Delivered') || o.ddate;
+    const diff = daysDiff(delivDate, o.origDdate);
+    if(diff<=0) custOnTime++; else custLate++;
+    if(diff<0)  custEarly++;
+    custTotalDays += diff;
+  });
+  const custTotal   = custOnTime + custLate;
+  const custPct     = custTotal ? Math.round((custOnTime/custTotal)*100) : null;
+  const custAvgDiff = custTotal ? (custTotalDays/custTotal).toFixed(1) : null;
+
+  // Vendor dispatch: origShipdate vs date status became "Order Received"
+  let vendOnTime=0, vendLate=0, vendTotalDays=0;
+  received.forEach(o=>{
+    const recvDate = getStatusDate(o,'Order Received') || o.shipdate;
+    const diff = daysDiff(recvDate, o.origShipdate);
+    if(diff<=0) vendOnTime++; else vendLate++;
+    vendTotalDays += diff;
+  });
+  const vendTotal   = vendOnTime + vendLate;
+  const vendPct     = vendTotal ? Math.round((vendOnTime/vendTotal)*100) : null;
+  const vendAvgDiff = vendTotal ? (vendTotalDays/vendTotal).toFixed(1) : null;
+
+  function perfClass(pct){ return pct===null?'ok':pct>=85?'good':pct>=65?'warn':'bad'; }
+  function perfBar(pct,cls){ return `<div class="perf-bar-wrap"><div class="perf-bar ${cls}" style="width:${pct||0}%"></div></div>`; }
+
+  document.getElementById('fuPerfSummary').innerHTML = `
+    <div class="perf-card">
+      <div class="perf-title">Our Delivery Fulfilment</div>
+      <div class="perf-big ${perfClass(custPct)}">${custPct!==null?custPct+'%':'—'}</div>
+      <div class="perf-sub">orders delivered on or before promise date</div>
+      ${perfBar(custPct,perfClass(custPct))}
+      <div class="perf-sub" style="margin-top:8px">${custTotal} delivered · avg ${custAvgDiff!==null?(parseFloat(custAvgDiff)>0?'+'+custAvgDiff:custAvgDiff)+' days vs promise':'—'}</div>
+    </div>
+    <div class="perf-card">
+      <div class="perf-title">Vendor Dispatch Fulfilment</div>
+      <div class="perf-big ${perfClass(vendPct)}">${vendPct!==null?vendPct+'%':'—'}</div>
+      <div class="perf-sub">dispatched on or before committed date</div>
+      ${perfBar(vendPct,perfClass(vendPct))}
+      <div class="perf-sub" style="margin-top:8px">${vendTotal} orders · avg ${vendAvgDiff!==null?(parseFloat(vendAvgDiff)>0?'+'+vendAvgDiff:vendAvgDiff)+' days vs commit':'—'}</div>
+    </div>`;
+
+  // Vendor-wise breakdown (hide for salesman/vendor roles)
+  const vendorSection = document.getElementById('fuVendorTitle');
+  const vendorPerf    = document.getElementById('fuVendorPerf');
+  if(currentRole==='salesman'||currentRole==='vendor'){
+    vendorSection.style.display='none';
+    vendorPerf.style.display='none';
+  } else {
+    vendorSection.style.display='';
+    vendorPerf.style.display='';
+    const vMap={};
+    received.forEach(o=>{
+      const v=o.vendor||'Unassigned';
+      if(!vMap[v]) vMap[v]={on:0,late:0,totalDiff:0};
+      const recvDate=getStatusDate(o,'Order Received')||o.shipdate;
+      const diff=daysDiff(recvDate,o.origShipdate);
+      if(diff<=0) vMap[v].on++; else vMap[v].late++;
+      vMap[v].totalDiff+=diff;
+    });
+    const vendors=Object.entries(vMap).map(([name,d])=>{
+      const tot=d.on+d.late;
+      const pct=Math.round((d.on/tot)*100);
+      const avg=(d.totalDiff/tot).toFixed(1);
+      return {name,tot,pct,avg};
+    }).sort((a,b)=>b.pct-a.pct);
+    if(!vendors.length){
+      vendorPerf.innerHTML=`<div style="font-size:9px;color:var(--dim);padding:8px 0">No received orders yet — data builds as orders are marked Order Received.</div>`;
+    } else {
+      vendorPerf.innerHTML=vendors.map(v=>{
+        const cls=perfClass(v.pct);
+        return `<div class="vendor-perf-row">
+          <div class="vendor-perf-name">${v.name}</div>
+          <div class="vendor-perf-stats">
+            <div class="mini-bar-wrap"><div class="mini-bar" style="width:${v.pct}%;background:${cls==='good'?'#5aac8a':cls==='warn'?'var(--ip)':'var(--cx)'}"></div></div>
+            <div class="vendor-perf-pct" style="color:${cls==='good'?'#5aac8a':cls==='warn'?'var(--ip)':'var(--cx)'}">${v.pct}%</div>
+            <div class="vendor-perf-count">${v.tot} orders · avg ${parseFloat(v.avg)>0?'+'+v.avg:v.avg}d</div>
+          </div>
+        </div>`;
+      }).join('');
+    }
+  }
+
+  // Category-wise delivery breakdown
   const catMap={};
   delivered.forEach(o=>{
     const cat=o.category||'Uncategorised';
-    if(!catMap[cat]) catMap[cat]={days:[],count:0};
-    const d=Math.max(0,Math.round((new Date(o.ddate)-new Date(o.odate))/86400000));
-    catMap[cat].days.push(d);
-    catMap[cat].count++;
+    if(!catMap[cat]) catMap[cat]={on:0,late:0,totalDiff:0};
+    const delivDate=getStatusDate(o,'Order Delivered')||o.ddate;
+    const diff=daysDiff(delivDate,o.origDdate);
+    if(diff<=0) catMap[cat].on++; else catMap[cat].late++;
+    catMap[cat].totalDiff+=diff;
   });
-  const cats=Object.entries(catMap).map(([cat,d])=>({cat,avg:(d.days.reduce((a,b)=>a+b,0)/d.days.length).toFixed(1),count:d.count})).sort((a,b)=>b.avg-a.avg);
-  const maxCat = cats.length ? Math.max(...cats.map(c=>parseFloat(c.avg))) : 1;
+  const cats=Object.entries(catMap).map(([cat,d])=>{
+    const tot=d.on+d.late;
+    const pct=Math.round((d.on/tot)*100);
+    const avg=(d.totalDiff/tot).toFixed(1);
+    return {cat,tot,pct,avg};
+  }).sort((a,b)=>b.pct-a.pct);
+  const catEl=document.getElementById('fuCategoryPerf');
+  if(!cats.length){
+    catEl.innerHTML=`<div style="font-size:9px;color:var(--dim);padding:8px 0">No delivered orders yet — data builds as orders are delivered.</div>`;
+  } else {
+    catEl.innerHTML=cats.map(c=>{
+      const cls=perfClass(c.pct);
+      return `<div class="vendor-perf-row">
+        <div class="vendor-perf-name">${c.cat}</div>
+        <div class="vendor-perf-stats">
+          <div class="mini-bar-wrap"><div class="mini-bar" style="width:${c.pct}%;background:${cls==='good'?'#5aac8a':cls==='warn'?'var(--ip)':'var(--cx)'}"></div></div>
+          <div class="vendor-perf-pct" style="color:${cls==='good'?'#5aac8a':cls==='warn'?'var(--ip)':'var(--cx)'}">${c.pct}%</div>
+          <div class="vendor-perf-count">${c.tot} orders · avg ${parseFloat(c.avg)>0?'+'+c.avg:c.avg}d</div>
+        </div>
+      </div>`;
+    }).join('');
+  }
+}
 
-  // Active orders avg age
-  const active=orders.filter(o=>!['Order Delivered','Cancelled'].includes(o.status)&&o.odate);
-  const avgAge=active.length?(active.map(o=>Math.round((new Date()-new Date(o.odate))/86400000)).reduce((a,b)=>a+b,0)/active.length).toFixed(1):'—';
-
-  document.getElementById('karigarSummary').innerHTML=`
-    <div class="k-total">
-      <div>
-        <div class="k-total-lbl">Avg. Completion Time</div>
-        <div class="k-total-sub">(delivered orders, order→delivery)</div>
-      </div>
-      <div>
-        <div class="k-total-val">${avgAll} days</div>
-        <div class="k-total-sub" style="text-align:right">${delivered.length} orders</div>
-      </div>
-    </div>
-    <div style="font-size:9px;color:var(--dim);margin-bottom:10px;letter-spacing:1.5px;text-transform:uppercase">Active orders avg age: <span style="color:var(--mid)">${avgAge} days</span></div>
-    ${cats.length===0?`<div style="font-size:10px;color:var(--dim);text-align:center;padding:16px">No delivered orders yet — data builds over time.</div>`:''}
-    <div class="k-cats">
-      ${cats.map(c=>`
-        <div class="k-cat-row">
-          <div class="k-cat-name">${c.cat}</div>
-          <div class="k-bar-wrap"><div class="k-bar" style="width:${Math.round((parseFloat(c.avg)/maxCat)*100)}%"></div></div>
-          <div class="k-days">${c.avg}d</div>
-          <div class="k-count">(${c.count})</div>
-        </div>`).join('')}
-    </div>`;
-
-  // Reminders
-  const now=new Date();
-  const remOrders=orders.filter(o=>{
-    if(['Order Delivered','Cancelled'].includes(o.status)||!o.ddate) return false;
-    const du=daysUntil(o.ddate);
-    return du!==null&&du<=reminderDays;
-  }).sort((a,b)=>new Date(a.ddate)-new Date(b.ddate));
-
-  const remEl=document.getElementById('reminderList');
-  if(!remOrders.length){remEl.innerHTML=`<div class="empty"><div class="empty-ico">🔔</div><p>No orders due within ${reminderDays} days</p></div>`;return;}
-  remEl.innerHTML=remOrders.map(o=>{
-    const du=daysUntil(o.ddate);
-    let cls='',dayCls='',dayTxt='';
-    if(du<0){cls='urgent';dayCls='urgent';dayTxt=Math.abs(du)+'d overdue';}
-    else if(du===0){cls='urgent';dayCls='urgent';dayTxt='Due TODAY';}
-    else if(du<=2){cls='soon';dayCls='soon';dayTxt='Due in '+du+'d';}
-    else{dayCls='ok';dayTxt='Due in '+du+'d';}
-    return `<div class="rem-item ${cls}" onclick="viewOrder('${o.id}')">
-      <div class="rem-meta">${o.id} · ${o.status}</div>
-      <div class="rem-name">${guardCustomer(o.name)}</div>
-      <div class="rem-meta">📍 ${guardCustomer(o.loc)} · ${guardVendor(o.vendor)}</div>
-      <div class="rem-days ${dayCls}">${dayTxt}</div>
-    </div>`;
-  }).join('');
+function scrollToBucket(key){
+  const el=document.getElementById('bucket-'+key);
+  if(el) el.scrollIntoView({behavior:'smooth',block:'start'});
 }
 
 // ══════════════════════════════════════════════
@@ -2122,6 +2310,12 @@ function openAdd(){
   document.getElementById('f_odate').value=t;
   document.getElementById('f_shipdate').value=addDays(t,17);
   document.getElementById('f_ddate').value=addDays(t,19);
+  // Ensure dates are editable on new order
+  ['f_ddate','f_shipdate'].forEach(id=>{
+    const el=document.getElementById(id);
+    el.removeAttribute('readonly');
+    el.title='';
+  });
   document.getElementById('orderTypeSection').style.display='block';
   document.getElementById('newDesignSection').style.display='block';
   document.getElementById('otype_normal').classList.add('selected');
@@ -2158,8 +2352,15 @@ function openEdit(id){
   document.getElementById('f_category').value=o.category||'';
   document.getElementById('f_po').value=o.po||'';
   document.getElementById('f_odate').value=o.odate||'';
-  document.getElementById('f_ddate').value=o.ddate||'';
-  document.getElementById('f_shipdate').value=o.shipdate||'';
+  // Lock delivery & dispatch dates after creation — show as readonly with lock icon
+  const ddateEl    = document.getElementById('f_ddate');
+  const shipdateEl = document.getElementById('f_shipdate');
+  ddateEl.value    = o.ddate||'';
+  shipdateEl.value = o.shipdate||'';
+  ddateEl.setAttribute('readonly','');
+  ddateEl.title    = 'Delivery date locked at order creation';
+  shipdateEl.setAttribute('readonly','');
+  shipdateEl.title = 'Dispatch date locked at order creation';
   document.getElementById('f_notes').value=o.notes||'';
   const isDelivered = o.status==='Order Delivered';
   const isCancelled = o.status==='Cancelled';
@@ -2354,6 +2555,14 @@ function saveOrder(){
   const newLog = [...existingLog];
   if(!newLog.length || newLog[newLog.length-1].status !== status)
     newLog.push({status, ts:tsNow()});
+  const odateVal    = document.getElementById('f_odate').value;
+  const ddateVal    = document.getElementById('f_ddate').value;
+  const shipdateVal = document.getElementById('f_shipdate').value;
+
+  // Lock original delivery/dispatch dates — never overwrite once set
+  const origDdate    = existingOrder?.origDdate    || ddateVal;
+  const origShipdate = existingOrder?.origShipdate || shipdateVal;
+
   const data={
     id:editId||gid(),
     name, contact, loc, vendor,
@@ -2362,9 +2571,11 @@ function saveOrder(){
     invoice: invoice||(existingOrder?.invoice||''),
     cancelRemarks: cancelRemarks||(existingOrder?.cancelRemarks||''),
     orderType, newDesign,
-    odate:document.getElementById('f_odate').value,
-    ddate:document.getElementById('f_ddate').value,
-    shipdate:document.getElementById('f_shipdate').value,
+    odate:odateVal,
+    ddate:ddateVal,
+    shipdate:shipdateVal,
+    origDdate,
+    origShipdate,
     status,
     notes:document.getElementById('f_notes').value.trim(),
     images:[...curImgs],
