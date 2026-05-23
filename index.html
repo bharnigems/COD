@@ -471,8 +471,9 @@ body{font-family:'DM Mono',monospace;color:var(--txt);display:flex;flex-directio
     <input class="login-inp" id="login_pwd" type="password" placeholder="••••••••" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()">
     <button class="login-btn" onclick="doLogin()">Sign In</button>
     <div class="login-err" id="loginErr"></div>
-    <div id="loginConnStatus" style="font-size:8px;color:var(--dim);text-align:center;margin-top:10px;letter-spacing:1.5px">Connecting to Firebase…</div>
-    <div class="login-ver">Bharni Gems · Secured</div>
+    <div id="loginConnStatus" style="font-size:8px;color:var(--dim);text-align:center;margin-top:10px;letter-spacing:1px">⏳ Connecting to Firebase…</div>
+    <button onclick="location.reload()" style="background:none;border:1px solid var(--b);color:var(--dim);padding:8px 20px;font-family:'DM Mono',monospace;font-size:8px;letter-spacing:2px;cursor:pointer;border-radius:var(--r);margin-top:10px;width:100%">↺ Reload Page</button>
+    <div class="login-ver">Bharni Gems · v19</div>
   </div>
 </div>
 
@@ -1016,10 +1017,11 @@ body{font-family:'DM Mono',monospace;color:var(--txt);display:flex;flex-directio
 <!-- TOAST -->
 <div class="toast" id="toast"></div>
 
-<!-- Firebase SDKs loaded here (body end) to guarantee they execute before inline app script -->
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<!-- Firebase SDKs — using v9 compat (stable, widely cached) -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"
+  onerror="document.getElementById('loginConnStatus').textContent='✗ Firebase SDK failed to load — check internet'"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 
 <script>
 // ══════════════════════════════════════════════
@@ -1570,25 +1572,33 @@ function showFbConfig() {
 
 // ── STARTUP ──
 function appStart() {
-  // Load from localStorage as instant offline cache ONLY
   orders              = JSON.parse(localStorage.getItem('bg_orders_v2') || '[]');
   standaloneVendors   = JSON.parse(localStorage.getItem('bg_vendors') || '[]');
   standaloneCustomers = JSON.parse(localStorage.getItem('bg_customers') || '[]');
   orders.forEach(restoreImages);
-
-  // Only seed demo data if there is NO Firebase config at all (pure local mode first run)
   const hasFbConfig = !!localStorage.getItem('bg_fb_config');
   if (!orders.length && !hasFbConfig) seedDemoData();
-
-  // Always show login screen — onAuthStateChanged will hide it after auth
   document.getElementById('loginScreen').style.display = 'flex';
 
-  // Use hardcoded config (or saved override)
+  // Check SDK loaded
+  if (typeof firebase === 'undefined') {
+    document.getElementById('loginConnStatus').textContent = '✗ Firebase SDK not loaded — check internet and reload';
+    return;
+  }
+
   const savedCfg = JSON.parse(localStorage.getItem('bg_fb_config') || 'null');
   const cfg = savedCfg || DEFAULT_FB_CONFIG;
   if (!savedCfg) localStorage.setItem('bg_fb_config', JSON.stringify(cfg));
 
   connectFirebase(cfg);
+
+  // If still stuck after 10s show hint
+  setTimeout(() => {
+    const cs = document.getElementById('loginConnStatus');
+    if (cs && (cs.textContent.includes('connecting') || cs.textContent.includes('Connecting'))) {
+      cs.innerHTML = '⚠ Still connecting — <a href="javascript:location.reload()" style="color:var(--gold)">tap to reload</a>';
+    }
+  }, 10000);
 }
 
 function gid() { return 'BG' + Date.now().toString(36).toUpperCase().slice(-5); }
