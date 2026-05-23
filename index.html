@@ -1137,11 +1137,16 @@ async function doLogin() {
   const errEl = document.getElementById('loginErr');
   errEl.textContent = '';
   if (!email || !pwd) { errEl.textContent = 'Email and password required'; return; }
-  if (!auth) { errEl.textContent = 'Firebase not configured — set up Firebase first'; showFbConfig(); return; }
+  if (!auth || !fbReady) {
+    errEl.textContent = 'Connecting to Firebase… please wait a moment and try again.';
+    // Retry connecting
+    const cfg = JSON.parse(localStorage.getItem('bg_fb_config')||'null') || DEFAULT_FB_CONFIG;
+    await connectFirebase(cfg);
+    return;
+  }
   try {
     document.querySelector('.login-btn').textContent = 'Signing in…';
     await auth.signInWithEmailAndPassword(email, pwd);
-    // onAuthStateChanged handles the rest
   } catch(e) {
     document.querySelector('.login-btn').textContent = 'Sign In';
     errEl.textContent = friendlyAuthError(e.code);
@@ -1391,63 +1396,59 @@ function initFirebase() {
   connectFirebase(cfg);
 }
 
-function connectFirebase(cfg) {
+async function connectFirebase(cfg) {
   if (typeof firebase === 'undefined') {
     setSyncStatus('error', 'load error');
     showToast('Firebase SDK failed to load — check your internet and reload.');
     return;
   }
   try {
-    // Clean re-init: delete existing app synchronously if present
+    // Delete all existing apps first, awaiting each
     if (firebase.apps.length) {
-      firebase.apps.forEach(app => {
-        try { app.delete(); } catch(e) {}
-      });
+      for (const app of [...firebase.apps]) {
+        try { await app.delete(); } catch(e) {}
+      }
     }
     firebase.initializeApp(cfg);
     db   = firebase.firestore();
     auth = firebase.auth();
 
-    // Enable offline persistence — ignore all errors (tab conflict, unsupported browser, etc.)
     db.enablePersistence().catch(() => {});
 
     fbReady = true;
     setSyncStatus('syncing', 'connecting…');
 
-    // Auth state listener — gatekeeper for the entire app
     auth.onAuthStateChanged(async user => {
       if (user) {
         currentUser = user;
+        let usersList = [];
         try {
           const snap = await db.collection('meta').doc('users').get();
-          const users = snap.exists ? (snap.data().list || []) : [];
-          const record = users.find(u => u.uid === user.uid || u.email === user.email);
-          if (!snap.exists || users.length === 0) {
-            // Bootstrap: first ever login becomes admin
+          usersList = snap.exists ? (snap.data().list || []) : [];
+          const record = usersList.find(u => u.uid === user.uid || u.email === user.email);
+          if (!snap.exists || usersList.length === 0) {
             currentRole = 'admin';
             currentVendorName = null;
-            await db.collection('meta').doc('users').set({
-              list: [{ uid: user.uid, email: user.email, name: user.displayName || 'Admin', role: 'admin' }]
-            });
+            usersList = [{ uid: user.uid, email: user.email, name: user.displayName || 'Admin', role: 'admin' }];
+            await db.collection('meta').doc('users').set({ list: usersList });
           } else {
             currentRole = record?.role || 'salesman';
             currentVendorName = record?.vendorName || null;
           }
         } catch(e) {
-          console.warn('Role lookup failed, defaulting to salesman:', e);
+          console.warn('Role lookup failed:', e);
           currentRole = 'salesman';
         }
+        // Cache users list for vendorHasLogin checks
+        window._cachedUsers = usersList;
+
         document.getElementById('loginScreen').style.display = 'none';
         document.getElementById('appShell').style.display = 'block';
         document.querySelector('.login-btn').textContent = 'Sign In';
         document.getElementById('loginErr').textContent = '';
-        // Wipe stale localStorage orders — Firestore snapshot will repopulate
         localStorage.removeItem('bg_orders_v2');
-        // Also clean up old per-order image caches (no longer needed)
         Object.keys(localStorage).filter(k=>k.startsWith('bg_imgs_')).forEach(k=>localStorage.removeItem(k));
         orders = [];
-        // Cache users list for vendorHasLogin checks
-        window._cachedUsers = users;
         applyRoleUI();
         startListeners();
         renderDash();
@@ -1455,9 +1456,10 @@ function connectFirebase(cfg) {
         currentUser = null;
         currentRole = null;
         currentVendorName = null;
-        if (unsubOrders)   { try { unsubOrders();   } catch(e){} unsubOrders   = null; }
-        if (unsubVendors)  { try { unsubVendors();  } catch(e){} unsubVendors  = null; }
-        if (unsubCustomers){ try { unsubCustomers();} catch(e){} unsubCustomers = null; }
+        window._cachedUsers = [];
+        if (unsubOrders)    { try { unsubOrders();    } catch(e){} unsubOrders    = null; }
+        if (unsubVendors)   { try { unsubVendors();   } catch(e){} unsubVendors   = null; }
+        if (unsubCustomers) { try { unsubCustomers(); } catch(e){} unsubCustomers = null; }
         document.getElementById('loginScreen').style.display = 'flex';
         document.getElementById('appShell').style.display = 'none';
         document.querySelector('.login-btn').textContent = 'Sign In';
