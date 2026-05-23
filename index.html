@@ -340,7 +340,32 @@ body{font-family:'DM Mono',monospace;color:var(--txt);display:flex;flex-directio
 .due-badge.soon{background:#e8a83812;color:var(--ip)}
 .due-badge.ok{background:var(--s3);color:var(--dim)}
 
-/* ── ORDER TYPE TOGGLE ── */
+/* ── PERF DRILL-DOWN MODAL ── */
+.drill-row{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px dashed var(--b);cursor:pointer;gap:10px}
+.drill-row:last-child{border-bottom:none}
+.drill-row:active{opacity:.7}
+.drill-row-left{flex:1;min-width:0}
+.drill-row-id{font-size:8px;color:var(--dim);letter-spacing:1px;margin-bottom:2px}
+.drill-row-name{font-size:13px;font-family:'Cormorant Garamond',serif;color:var(--txt)}
+.drill-row-meta{font-size:8px;color:var(--dim);margin-top:2px}
+.drill-delta{font-size:11px;font-weight:700;padding:3px 8px;border-radius:2px;white-space:nowrap;flex-shrink:0}
+.drill-delta.ontime{background:#5aac8a18;color:#5aac8a;border:1px solid #5aac8a30}
+.drill-delta.late{background:#c4545418;color:var(--cx);border:1px solid #c4545430}
+.drill-delta.neutral{background:var(--s3);color:var(--dim)}
+.drill-summary{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap}
+.drill-chip{background:var(--s2);border:1px solid var(--b);padding:8px 12px;border-radius:var(--r);text-align:center;flex:1}
+.drill-chip-num{font-size:20px;font-family:'Cormorant Garamond',serif;font-weight:300;line-height:1}
+.drill-chip-lbl{font-size:7px;letter-spacing:1.5px;text-transform:uppercase;color:var(--dim);margin-top:3px}
+.vendor-perf-row{cursor:pointer;transition:background .15s;margin:0 -6px;padding:10px 6px;border-radius:3px}
+.vendor-perf-row:hover{background:var(--s2)}
+.perf-card{cursor:pointer;transition:border-color .2s}
+.perf-card:hover{border-color:var(--gold-d)}
+.tap-hint{font-size:7px;color:var(--dim);letter-spacing:1.5px;text-transform:uppercase;margin-top:8px;opacity:.6}
+
+.vcard-login{font-size:7px;letter-spacing:1.5px;text-transform:uppercase;padding:2px 7px;border-radius:2px;margin-top:6px;display:inline-flex;align-items:center;gap:4px}
+.vcard-login.active{color:#5aac8a;background:#5aac8a18;border:1px solid #5aac8a30}
+.vcard-login.none{color:var(--dim);background:var(--s3);border:1px solid var(--b);cursor:pointer}
+.vcard-login.none:hover{border-color:var(--gold-d);color:var(--mid)}
 .otype-wrap{display:flex;gap:8px;margin-bottom:14px}
 .otype-btn{flex:1;padding:10px 8px;border:1px solid var(--b);background:var(--s2);color:var(--mid);font-family:'DM Mono',monospace;font-size:9px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;border-radius:var(--r);transition:all .2s;text-align:center}
 .otype-btn.selected.normal{border-color:var(--or);color:var(--or);background:#5aac8a12}
@@ -812,6 +837,56 @@ body{font-family:'DM Mono',monospace;color:var(--txt);display:flex;flex-directio
 </div>
 
 <!-- ═══════════════════════════════════════════════════
+     VENDOR LOGIN ACCESS MODAL
+═══════════════════════════════════════════════════ -->
+<div class="overlay" id="vendorLoginModal">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-hdr">
+      <div class="sheet-title" id="vendorLoginTitle">Vendor Login Access</div>
+      <button class="sheet-close" onclick="closeModal('vendorLoginModal')">✕</button>
+    </div>
+    <div class="sheet-body">
+      <div id="vendorLoginStatus" style="margin-bottom:14px"></div>
+      <div class="msec">
+        <div class="msec-title" id="vendorLoginFormTitle">Create Login</div>
+        <div style="font-size:8px;color:var(--dim);line-height:1.6;margin-bottom:12px">
+          This vendor will be able to log in and see <strong style="color:var(--mid)">only their own orders</strong>. No customer details, no other vendors, no financials.
+        </div>
+        <div class="fg"><label class="flbl">Email *</label><input class="inp" id="vl_email" type="email" placeholder="vendor@example.com"></div>
+        <div class="fg"><label class="flbl">Password *</label><input class="inp" id="vl_pwd" type="password" placeholder="Min 6 characters"></div>
+        <div class="fg"><label class="flbl">Display Name</label><input class="inp" id="vl_name" placeholder="e.g. Surat Diamonds Login"></div>
+        <button class="btn-gold" style="width:100%;margin-top:6px" id="vendorLoginSaveBtn" onclick="saveVendorLogin()">Create Vendor Login</button>
+      </div>
+      <div class="msec" id="vendorLoginDangerZone" style="display:none">
+        <div class="msec-title" style="color:var(--cx)">Danger Zone</div>
+        <button class="btn-xs danger" onclick="removeVendorLogin()" style="width:100%">Remove Login Access</button>
+      </div>
+    </div>
+    <div class="sheet-footer">
+      <button class="btn-xs" onclick="closeModal('vendorLoginModal')">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════
+     PERF DRILL-DOWN MODAL
+═══════════════════════════════════════════════════ -->
+<div class="overlay" id="drillModal">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-hdr">
+      <div class="sheet-title" id="drillTitle">Orders</div>
+      <button class="sheet-close" onclick="closeModal('drillModal')">✕</button>
+    </div>
+    <div class="sheet-body">
+      <div class="drill-summary" id="drillSummary"></div>
+      <div id="drillList"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════
      FOLLOW-UP LOG MODAL
 ═══════════════════════════════════════════════════ -->
 <div class="overlay" id="fuModal">
@@ -862,7 +937,6 @@ body{font-family:'DM Mono',monospace;color:var(--txt);display:flex;flex-directio
         <div class="fg"><label class="flbl">Role</label>
           <select class="sel inp" id="nu_role" onchange="document.getElementById('nu_vendor_wrap').style.display=this.value==='vendor'?'block':'none'">
             <option value="salesman">Salesman</option>
-            <option value="vendor">Vendor</option>
             <option value="accounts">Accounts</option>
             <option value="admin">Admin</option>
           </select>
@@ -873,9 +947,9 @@ body{font-family:'DM Mono',monospace;color:var(--txt);display:flex;flex-directio
         </div>
         <div style="font-size:8px;color:var(--dim);line-height:1.6;margin-bottom:10px">
           <strong style="color:var(--mid)">Salesman:</strong> Full access, no vendor details.<br>
-          <strong style="color:var(--mid)">Vendor:</strong> Sees only their orders, no customer details.<br>
           <strong style="color:var(--mid)">Accounts:</strong> Full view, cannot add/edit orders or manage users.<br>
-          <strong style="color:var(--mid)">Admin:</strong> Full access including user management.
+          <strong style="color:var(--mid)">Admin:</strong> Full access including user management.<br>
+          <strong style="color:var(--or)">Vendor logins</strong> are created from the Vendors tab → 🔑 Set Login.
         </div>
         <button class="btn-gold" style="width:100%" onclick="createUser()">Create User</button>
       </div>
@@ -1106,23 +1180,29 @@ async function loadUserList() {
     const users = snap.exists ? (snap.data().list || []) : [];
     if (!users.length) { el.innerHTML = '<div style="font-size:9px;color:var(--dim);padding:8px">No users yet — add one above.</div>'; return; }
     const roleColour = {admin:'var(--gold)',salesman:'var(--cap)',vendor:'var(--or)',accounts:'var(--mid)'};
-    el.innerHTML = users.map((u,i) => `
+    el.innerHTML = users.map((u,i) => {
+      const roleColour = {admin:'var(--gold)',salesman:'var(--cap)',vendor:'var(--or)',accounts:'var(--mid)'};
+      const isVendorUser = u.role === 'vendor';
+      return `
       <div class="user-card">
         <div>
           <div class="user-card-name">${u.name||'Unnamed'}</div>
           <div class="user-card-email">${u.email}${u.vendorName?' · '+u.vendorName:''}</div>
-          <div style="font-size:8px;color:${roleColour[u.role]||'var(--mid)'};margin-top:2px;letter-spacing:1px;text-transform:uppercase">${u.role}</div>
+          <div style="font-size:8px;color:${roleColour[u.role]||'var(--mid)'};margin-top:2px;letter-spacing:1px;text-transform:uppercase">${u.role}${isVendorUser?' 🔒':''}</div>
         </div>
         <div style="display:flex;gap:6px;align-items:center">
-          <select class="sel inp" style="font-size:8px;padding:4px 6px;height:auto" onchange="changeUserRole(${i},this.value)">
-            <option ${u.role==='salesman'?'selected':''} value="salesman">Salesman</option>
-            <option ${u.role==='vendor'?'selected':''} value="vendor">Vendor</option>
-            <option ${u.role==='accounts'?'selected':''} value="accounts">Accounts</option>
-            <option ${u.role==='admin'?'selected':''} value="admin">Admin</option>
-          </select>
+          ${isVendorUser
+            ? `<span style="font-size:8px;color:var(--dim);letter-spacing:1px">Managed via Vendors tab</span>`
+            : `<select class="sel inp" style="font-size:8px;padding:4px 6px;height:auto" onchange="changeUserRole(${i},this.value)">
+                <option ${u.role==='salesman'?'selected':''} value="salesman">Salesman</option>
+                <option ${u.role==='accounts'?'selected':''} value="accounts">Accounts</option>
+                <option ${u.role==='admin'?'selected':''} value="admin">Admin</option>
+               </select>`
+          }
           <button class="btn-xs danger" onclick="deleteUserEntry(${i})">✕</button>
         </div>
-      </div>`).join('');
+      </div>`;
+    }).join('');
   } catch(e) { el.innerHTML = '<div style="font-size:9px;color:var(--cx)">Error: '+e.message+'</div>'; }
 }
 
@@ -1366,6 +1446,8 @@ function connectFirebase(cfg) {
         // Also clean up old per-order image caches (no longer needed)
         Object.keys(localStorage).filter(k=>k.startsWith('bg_imgs_')).forEach(k=>localStorage.removeItem(k));
         orders = [];
+        // Cache users list for vendorHasLogin checks
+        window._cachedUsers = users;
         applyRoleUI();
         startListeners();
         renderDash();
@@ -1799,7 +1881,10 @@ function renderVendors() {
     if(!map[v.name]) map[v.name]={name:v.name,orders:[],pcs:0,gwt:0,dwt:0};
   });
   const vendors=Object.values(map);
-  document.getElementById('vcardGrid').innerHTML=vendors.map(v=>`
+  document.getElementById('vcardGrid').innerHTML=vendors.map(v=>{
+    // Check if this vendor has a login in the users list
+    const hasLogin = vendorHasLogin(v.name);
+    return `
     <div class="vcard ${selVendor===v.name?'active':''}" onclick="selectVendor('${v.name}')">
       <div class="vcard-name">${v.name}</div>
       <div class="vcard-sub">${v.orders.length} orders</div>
@@ -1808,7 +1893,12 @@ function renderVendors() {
         <div class="vs"><div class="vs-v">${v.gwt.toFixed(1)}g</div><div class="vs-l">Gross Wt</div></div>
         <div class="vs"><div class="vs-v">${v.orders.filter(o=>!['Order Delivered','Cancelled'].includes(o.status)).length}</div><div class="vs-l">Active</div></div>
       </div>
-    </div>`).join('');
+      ${isAdmin()?`
+      <div class="vcard-login ${hasLogin?'active':'none'}" onclick="event.stopPropagation();openVendorLogin('${v.name}')">
+        ${hasLogin?'🔑 Login Active':'🔑 Set Login'}
+      </div>`:''}
+    </div>`;
+  }).join('');
 
   const vEl=document.getElementById('vendorOrdersList');
   if(!selVendor){vEl.innerHTML='';return;}
@@ -1834,11 +1924,433 @@ function renderVendors() {
 
 function selectVendor(name){selVendor=selVendor===name?null:name;renderVendors();}
 
+// ── VENDOR LOGIN ACCESS ──
+let _vendorLoginTarget = null; // vendor name being managed
+
+// Check if a vendor already has a login in the users list
+function vendorHasLogin(vendorName){
+  // We cache the users list in memory after auth
+  const users = window._cachedUsers || [];
+  return users.some(u => u.role === 'vendor' && u.vendorName === vendorName);
+}
+
+function getVendorLoginUser(vendorName){
+  const users = window._cachedUsers || [];
+  return users.find(u => u.role === 'vendor' && u.vendorName === vendorName) || null;
+}
+
+// Keep users list cached so vendorHasLogin works without async calls
+async function refreshUsersCache(){
+  if(!fbReady) return;
+  try {
+    const snap = await db.collection('meta').doc('users').get();
+    window._cachedUsers = snap.exists ? (snap.data().list || []) : [];
+  } catch(e){ window._cachedUsers = []; }
+}
+
+async function openVendorLogin(vendorName){
+  if(!isAdmin()){ showToast('Admin only'); return; }
+  if(!fbReady){ showToast('Firebase not connected'); return; }
+  _vendorLoginTarget = vendorName;
+  document.getElementById('vendorLoginTitle').textContent = '🔑 ' + vendorName + ' — Login Access';
+
+  await refreshUsersCache();
+  const existing = getVendorLoginUser(vendorName);
+
+  // Clear form
+  ['vl_email','vl_pwd','vl_name'].forEach(id => document.getElementById(id).value = '');
+
+  const statusEl = document.getElementById('vendorLoginStatus');
+  const dangerEl = document.getElementById('vendorLoginDangerZone');
+  const formTitleEl = document.getElementById('vendorLoginFormTitle');
+  const saveBtn = document.getElementById('vendorLoginSaveBtn');
+
+  if(existing){
+    statusEl.innerHTML = `
+      <div style="background:var(--s2);border:1px solid #5aac8a30;border-left:3px solid #5aac8a;padding:12px;border-radius:var(--r)">
+        <div style="font-size:8px;letter-spacing:2px;text-transform:uppercase;color:#5aac8a;margin-bottom:4px">🔑 Login Active</div>
+        <div style="font-size:13px;color:var(--txt)">${existing.name||'Unnamed'}</div>
+        <div style="font-size:9px;color:var(--dim);margin-top:2px">${existing.email}</div>
+      </div>`;
+    formTitleEl.textContent = 'Update Password';
+    saveBtn.textContent = 'Update Password';
+    document.getElementById('vl_email').value = existing.email;
+    document.getElementById('vl_email').setAttribute('readonly','');
+    document.getElementById('vl_name').value = existing.name||'';
+    dangerEl.style.display = 'block';
+  } else {
+    statusEl.innerHTML = `<div style="font-size:9px;color:var(--dim);padding:4px 0">No login set for this vendor yet.</div>`;
+    formTitleEl.textContent = 'Create Login';
+    saveBtn.textContent = 'Create Vendor Login';
+    document.getElementById('vl_email').removeAttribute('readonly');
+    dangerEl.style.display = 'none';
+  }
+
+  document.getElementById('vendorLoginModal').classList.add('open');
+}
+
+async function saveVendorLogin(){
+  if(!_vendorLoginTarget){ showToast('No vendor selected'); return; }
+  if(!fbReady){ showToast('Firebase not connected'); return; }
+
+  const email   = document.getElementById('vl_email').value.trim();
+  const pwd     = document.getElementById('vl_pwd').value;
+  const name    = document.getElementById('vl_name').value.trim() || _vendorLoginTarget;
+
+  if(!email){ showToast('Email is required'); return; }
+  if(!pwd || pwd.length < 6){ showToast('Password must be at least 6 characters'); return; }
+
+  await refreshUsersCache();
+  const existing = getVendorLoginUser(_vendorLoginTarget);
+
+  try {
+    const snap = await db.collection('meta').doc('users').get();
+    const users = snap.exists ? (snap.data().list || []) : [];
+
+    if(existing){
+      // Update password via secondary auth
+      const secondaryApp = firebase.initializeApp(firebase.app().options, 'secondary_'+Date.now());
+      const secondaryAuth = secondaryApp.auth();
+      const cred = await secondaryAuth.signInWithEmailAndPassword(email, pwd).catch(async ()=>{
+        // If wrong pwd, just update the record name — can't change pw without current pw via client SDK
+        showToast('Login exists — to change password, use Firebase Console → Authentication');
+        await secondaryApp.delete();
+        return null;
+      });
+      if(cred){ await cred.user.updateProfile({displayName:name}); await secondaryAuth.signOut(); }
+      await secondaryApp.delete();
+      // Update name in users list
+      const idx = users.findIndex(u=>u.role==='vendor'&&u.vendorName===_vendorLoginTarget);
+      if(idx>=0) users[idx].name = name;
+    } else {
+      // Create new vendor user
+      const secondaryApp = firebase.initializeApp(firebase.app().options, 'secondary_'+Date.now());
+      const secondaryAuth = secondaryApp.auth();
+      const cred = await secondaryAuth.createUserWithEmailAndPassword(email, pwd);
+      await cred.user.updateProfile({displayName: name});
+      await secondaryAuth.signOut();
+      await secondaryApp.delete();
+      // Add to users list with forced vendor role
+      users.push({
+        uid: cred.user.uid,
+        email,
+        name,
+        role: 'vendor',          // LOCKED — always vendor
+        vendorName: _vendorLoginTarget  // LOCKED — always this vendor
+      });
+    }
+
+    await db.collection('meta').doc('users').set({list: users});
+    window._cachedUsers = users;
+    closeModal('vendorLoginModal');
+    renderVendors();
+    showToast('Vendor login ' + (existing?'updated':'created') + ' for ' + _vendorLoginTarget);
+
+  } catch(e){
+    showToast('Error: ' + (e.message||e.code));
+  }
+}
+
+async function removeVendorLogin(){
+  if(!_vendorLoginTarget) return;
+  if(!confirm('Remove login access for ' + _vendorLoginTarget + '? They will no longer be able to sign in.')) return;
+  try {
+    const snap = await db.collection('meta').doc('users').get();
+    const users = snap.exists ? (snap.data().list || []) : [];
+    const filtered = users.filter(u=>!(u.role==='vendor'&&u.vendorName===_vendorLoginTarget));
+    await db.collection('meta').doc('users').set({list: filtered});
+    window._cachedUsers = filtered;
+    closeModal('vendorLoginModal');
+    renderVendors();
+    showToast('Login access removed for ' + _vendorLoginTarget);
+  } catch(e){
+    showToast('Error: ' + e.message);
+  }
+}
+
 // ══════════════════════════════════════════════
 // FOLLOW UP TAB
 // ══════════════════════════════════════════════
 function renderKarigar() {
   document.getElementById('reminderDays').value = reminderDays;
+  const now    = new Date(); now.setHours(0,0,0,0);
+  const toDate = d => { const x=new Date(d); x.setHours(0,0,0,0); return x; };
+  const daysDiff = (a,b) => Math.round((toDate(a)-toDate(b))/86400000);
+
+  const visible = (currentRole==='vendor'&&currentVendorName)
+    ? orders.filter(o=>o.vendor===currentVendorName)
+    : orders;
+
+  // ── HORIZON BUCKETS ──
+  const active = visible.filter(o=>!['Order Delivered','Cancelled'].includes(o.status)&&o.ddate);
+  const buckets = { overdue:[], today:[], d1:[], d2:[], d4:[], d7:[] };
+  active.forEach(o=>{
+    const d = daysDiff(o.ddate, now);
+    if(d<0)       buckets.overdue.push({o,d});
+    else if(d===0) buckets.today.push({o,d});
+    else if(d===1) buckets.d1.push({o,d});
+    else if(d===2) buckets.d2.push({o,d});
+    else if(d<=4)  buckets.d4.push({o,d});
+    else if(d<=7)  buckets.d7.push({o,d});
+  });
+
+  document.getElementById('fuHorizonGrid').innerHTML = [
+    {key:'overdue', lbl:'Overdue',      cls:'overdue', items:buckets.overdue},
+    {key:'today',   lbl:'Due Today',    cls:'urgent',  items:buckets.today},
+    {key:'d1',      lbl:'Tomorrow',     cls:'urgent',  items:buckets.d1},
+    {key:'d2',      lbl:'In 2 Days',    cls:'urgent',  items:buckets.d2},
+    {key:'d4',      lbl:'In 4 Days',    cls:'ok',      items:buckets.d4},
+    {key:'d7',      lbl:'In 7 Days',    cls:'ok',      items:buckets.d7},
+  ].map(b=>`
+    <div class="fu-horizon-card${b.cls==='overdue'?' overdue':''}" onclick="scrollToBucket('${b.key}')">
+      <div class="fu-horizon-num ${b.cls}">${b.items.length}</div>
+      <div class="fu-horizon-lbl">${b.lbl}</div>
+    </div>`).join('');
+
+  const bucketDefs = [
+    {key:'overdue', lbl:'Overdue',     badgeCls:'overdue', entries:buckets.overdue},
+    {key:'today',   lbl:'Due Today',   badgeCls:'today',   entries:buckets.today},
+    {key:'d1',      lbl:'Tomorrow',    badgeCls:'soon',    entries:buckets.d1},
+    {key:'d2',      lbl:'In 2 Days',   badgeCls:'soon',    entries:buckets.d2},
+    {key:'d4',      lbl:'In 4 Days',   badgeCls:'ok',      entries:buckets.d4},
+    {key:'d7',      lbl:'In 7 Days',   badgeCls:'ok',      entries:buckets.d7},
+  ];
+  document.getElementById('fuDueList').innerHTML = bucketDefs.map(b=>{
+    if(!b.entries.length) return '';
+    const rows = b.entries.map(({o,d})=>`
+      <div class="due-row" onclick="viewOrder('${o.id}')">
+        <div style="flex:1;min-width:0">
+          <div class="due-row-id">${o.id} · ${o.category||''}</div>
+          <div class="due-row-name">${guardCustomer(o.name)}</div>
+          <div class="due-row-status">${o.status}${(currentRole!=='salesman'&&currentRole!=='vendor')?' · '+guardVendor(o.vendor):''}</div>
+        </div>
+        <div class="due-badge ${b.badgeCls}">${d<0?Math.abs(d)+'d overdue':d===0?'Today':'In '+d+'d'}</div>
+      </div>`).join('');
+    return `<div id="bucket-${b.key}" style="margin-bottom:16px">
+      <div class="due-bucket-hdr">${b.lbl}<span>${b.entries.length} order${b.entries.length!==1?'s':''}</span></div>
+      ${rows}
+    </div>`;
+  }).join('') || `<div class="empty" style="padding:20px 0"><div class="empty-ico">🎉</div><p>No orders due in the next 7 days</p></div>`;
+
+  // ── PERFORMANCE DATA ──
+  function getStatusDate(o, status) {
+    if(!o.activityLog) return null;
+    const entry = o.activityLog.slice().reverse().find(e=>e.status===status);
+    if(!entry) return null;
+    try { const d=new Date(entry.ts); return isNaN(d)?null:d.toISOString().split('T')[0]; } catch(e){ return null; }
+  }
+
+  const delivered = visible.filter(o=>o.status==='Order Delivered'&&o.origDdate);
+  const received  = visible.filter(o=>['Order Received','Order Delivered'].includes(o.status)&&o.origShipdate);
+
+  // Annotate each order with its delta
+  const custOrders = delivered.map(o=>{
+    const delivDate = getStatusDate(o,'Order Delivered')||o.ddate;
+    const diff = delivDate ? daysDiff(delivDate, o.origDdate) : null;
+    return {o, diff, delivDate};
+  });
+  const vendOrders = received.map(o=>{
+    const recvDate = getStatusDate(o,'Order Received')||o.shipdate;
+    const diff = recvDate ? daysDiff(recvDate, o.origShipdate) : null;
+    return {o, diff, recvDate};
+  });
+
+  const custOnTime = custOrders.filter(x=>x.diff!==null&&x.diff<=0).length;
+  const custTotal  = custOrders.length;
+  const custPct    = custTotal ? Math.round((custOnTime/custTotal)*100) : null;
+  const custAvgDiff= custTotal ? (custOrders.reduce((a,x)=>a+(x.diff||0),0)/custTotal).toFixed(1) : null;
+
+  const vendOnTime = vendOrders.filter(x=>x.diff!==null&&x.diff<=0).length;
+  const vendTotal  = vendOrders.length;
+  const vendPct    = vendTotal ? Math.round((vendOnTime/vendTotal)*100) : null;
+  const vendAvgDiff= vendTotal ? (vendOrders.reduce((a,x)=>a+(x.diff||0),0)/vendTotal).toFixed(1) : null;
+
+  function perfClass(pct){ return pct===null?'neutral':pct>=85?'good':pct>=65?'warn':'bad'; }
+  function perfBar(pct,cls){ return '<div class="perf-bar-wrap"><div class="perf-bar '+cls+'" style="width:'+(pct||0)+'%"></div></div>'; }
+  function fmtDelta(v){ if(v===null)return'—'; const n=parseFloat(v); return (n>0?'+':'')+n+'d'; }
+
+  // Encode drill data as JSON in onclick
+  document.getElementById('fuPerfSummary').innerHTML =
+    '<div class="perf-card" onclick="openDrillCust()">'
+    + '<div class="perf-title">Our Delivery Fulfilment</div>'
+    + '<div class="perf-big '+perfClass(custPct)+'">'+(custPct!==null?custPct+'%':'—')+'</div>'
+    + '<div class="perf-sub">on or before promise date</div>'
+    + perfBar(custPct,perfClass(custPct))
+    + '<div class="perf-sub" style="margin-top:8px">'+custTotal+' orders · avg '+fmtDelta(custAvgDiff)+' vs promise</div>'
+    + '<div class="tap-hint">↗ Tap to see all orders</div>'
+    + '</div>'
+    + '<div class="perf-card" onclick="openDrillVend()">'
+    + '<div class="perf-title">Vendor Dispatch Fulfilment</div>'
+    + '<div class="perf-big '+perfClass(vendPct)+'">'+(vendPct!==null?vendPct+'%':'—')+'</div>'
+    + '<div class="perf-sub">dispatched on or before commit</div>'
+    + perfBar(vendPct,perfClass(vendPct))
+    + '<div class="perf-sub" style="margin-top:8px">'+vendTotal+' orders · avg '+fmtDelta(vendAvgDiff)+' vs commit</div>'
+    + '<div class="tap-hint">↗ Tap to see all orders</div>'
+    + '</div>';
+
+  // Store annotated lists for drill-down access
+  window._drillCustOrders = custOrders;
+  window._drillVendOrders = vendOrders;
+
+  // ── VENDOR BREAKDOWN ──
+  const vendorSection = document.getElementById('fuVendorTitle');
+  const vendorPerf    = document.getElementById('fuVendorPerf');
+  if(currentRole==='salesman'||currentRole==='vendor'){
+    vendorSection.style.display='none'; vendorPerf.style.display='none';
+  } else {
+    vendorSection.style.display=''; vendorPerf.style.display='';
+    const vMap={};
+    vendOrders.forEach(({o,diff})=>{
+      const v=o.vendor||'Unassigned';
+      if(!vMap[v]) vMap[v]={on:0,total:0,totalDiff:0,orders:[]};
+      if(diff!==null){ if(diff<=0)vMap[v].on++; vMap[v].totalDiff+=diff; vMap[v].total++; }
+      vMap[v].orders.push({o,diff});
+    });
+    const vList = Object.entries(vMap).map(([name,d])=>{
+      const pct = d.total ? Math.round((d.on/d.total)*100) : null;
+      const avg = d.total ? (d.totalDiff/d.total).toFixed(1) : null;
+      return {name,pct,avg,total:d.total,orders:d.orders};
+    }).sort((a,b)=>(b.pct||0)-(a.pct||0));
+
+    window._drillVendorMap = vMap;
+
+    vendorPerf.innerHTML = !vList.length
+      ? '<div style="font-size:9px;color:var(--dim);padding:8px 0">No received orders yet.</div>'
+      : vList.map(v=>{
+          const cls=perfClass(v.pct);
+          const col=cls==='good'?'#5aac8a':cls==='warn'?'var(--ip)':'var(--cx)';
+          return '<div class="vendor-perf-row" onclick="openDrillVendor(\''+v.name+'\')">'
+            + '<div class="vendor-perf-name">'+v.name+'</div>'
+            + '<div class="vendor-perf-stats">'
+            + '<div class="mini-bar-wrap"><div class="mini-bar" style="width:'+(v.pct||0)+'%;background:'+col+'"></div></div>'
+            + '<div class="vendor-perf-pct" style="color:'+col+'">'+(v.pct!==null?v.pct+'%':'—')+'</div>'
+            + '<div class="vendor-perf-count">'+v.total+' orders · '+fmtDelta(v.avg)+'</div>'
+            + '</div></div>';
+        }).join('');
+  }
+
+  // ── CATEGORY BREAKDOWN ──
+  const catMap={};
+  custOrders.forEach(({o,diff})=>{
+    const cat=o.category||'Uncategorised';
+    if(!catMap[cat]) catMap[cat]={on:0,total:0,totalDiff:0,orders:[]};
+    if(diff!==null){ if(diff<=0)catMap[cat].on++; catMap[cat].totalDiff+=diff; catMap[cat].total++; }
+    catMap[cat].orders.push({o,diff});
+  });
+  const catList = Object.entries(catMap).map(([cat,d])=>{
+    const pct = d.total ? Math.round((d.on/d.total)*100) : null;
+    const avg = d.total ? (d.totalDiff/d.total).toFixed(1) : null;
+    return {cat,pct,avg,total:d.total,orders:d.orders};
+  }).sort((a,b)=>(b.pct||0)-(a.pct||0));
+
+  window._drillCatMap = catMap;
+
+  const catEl=document.getElementById('fuCategoryPerf');
+  catEl.innerHTML = !catList.length
+    ? '<div style="font-size:9px;color:var(--dim);padding:8px 0">No delivered orders yet.</div>'
+    : catList.map(c=>{
+        const cls=perfClass(c.pct);
+        const col=cls==='good'?'#5aac8a':cls==='warn'?'var(--ip)':'var(--cx)';
+        return '<div class="vendor-perf-row" onclick="openDrillCategory(\''+c.cat+'\')">'
+          + '<div class="vendor-perf-name">'+c.cat+'</div>'
+          + '<div class="vendor-perf-stats">'
+          + '<div class="mini-bar-wrap"><div class="mini-bar" style="width:'+(c.pct||0)+'%;background:'+col+'"></div></div>'
+          + '<div class="vendor-perf-pct" style="color:'+col+'">'+(c.pct!==null?c.pct+'%':'—')+'</div>'
+          + '<div class="vendor-perf-count">'+c.total+' orders · '+fmtDelta(c.avg)+'</div>'
+          + '</div></div>';
+      }).join('');
+}
+
+function scrollToBucket(key){
+  const el=document.getElementById('bucket-'+key);
+  if(el) el.scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+// ── DRILL-DOWN HELPERS ──
+function buildDrillRows(annotated, mode) {
+  // mode: 'cust' = delivery, 'vend' = dispatch
+  const daysDiff = (a,b) => { const x=new Date(a),y=new Date(b); x.setHours(0,0,0,0); y.setHours(0,0,0,0); return Math.round((x-y)/86400000); };
+  return annotated.map(({o,diff})=>{
+    const isOnTime = diff!==null && diff<=0;
+    const deltaStr = diff===null ? '—' : (diff<=0?(diff===0?'On time':Math.abs(diff)+'d early'):diff+'d late');
+    const deltaCls = diff===null?'neutral':diff<=0?'ontime':'late';
+    return '<div class="drill-row" onclick="closeModal(\'drillModal\');viewOrder(\''+o.id+'\')">'
+      + '<div class="drill-row-left">'
+      + '<div class="drill-row-id">'+o.id+' · '+(o.category||'')+'</div>'
+      + '<div class="drill-row-name">'+guardCustomer(o.name)+'</div>'
+      + '<div class="drill-row-meta">'
+        + (mode==='vend'?'Vendor: '+guardVendor(o.vendor)+' · ':'')
+        + 'Promise: '+(mode==='cust'?formatDate(o.origDdate):formatDate(o.origShipdate))
+      + '</div>'
+      + '</div>'
+      + '<div class="drill-delta '+deltaCls+'">'+deltaStr+'</div>'
+      + '</div>';
+  }).join('');
+}
+
+function buildDrillSummary(onTime, total, avgDiff) {
+  const pct = total ? Math.round((onTime/total)*100) : 0;
+  const late = total - onTime;
+  const fmtD = v => { const n=parseFloat(v); return v===null?'—':(n>0?'+':'')+n+'d'; };
+  return '<div class="drill-chip"><div class="drill-chip-num" style="color:#5aac8a">'+onTime+'</div><div class="drill-chip-lbl">On Time</div></div>'
+    + '<div class="drill-chip"><div class="drill-chip-num" style="color:var(--cx)">'+late+'</div><div class="drill-chip-lbl">Late</div></div>'
+    + '<div class="drill-chip"><div class="drill-chip-num">'+pct+'%</div><div class="drill-chip-lbl">Success</div></div>'
+    + '<div class="drill-chip"><div class="drill-chip-num">'+fmtD(avgDiff)+'</div><div class="drill-chip-lbl">Avg Delta</div></div>';
+}
+
+function openDrillCust(){
+  const list = window._drillCustOrders||[];
+  const onTime = list.filter(x=>x.diff!==null&&x.diff<=0).length;
+  const avg = list.length?(list.reduce((a,x)=>a+(x.diff||0),0)/list.length).toFixed(1):null;
+  document.getElementById('drillTitle').textContent = 'Our Delivery — All Orders';
+  document.getElementById('drillSummary').innerHTML = buildDrillSummary(onTime,list.length,avg);
+  document.getElementById('drillList').innerHTML = list.length
+    ? buildDrillRows(list,'cust')
+    : '<div style="font-size:9px;color:var(--dim);padding:12px 0">No delivered orders yet.</div>';
+  document.getElementById('drillModal').classList.add('open');
+}
+
+function openDrillVend(){
+  const list = window._drillVendOrders||[];
+  const onTime = list.filter(x=>x.diff!==null&&x.diff<=0).length;
+  const avg = list.length?(list.reduce((a,x)=>a+(x.diff||0),0)/list.length).toFixed(1):null;
+  document.getElementById('drillTitle').textContent = 'Vendor Dispatch — All Orders';
+  document.getElementById('drillSummary').innerHTML = buildDrillSummary(onTime,list.length,avg);
+  document.getElementById('drillList').innerHTML = list.length
+    ? buildDrillRows(list,'vend')
+    : '<div style="font-size:9px;color:var(--dim);padding:12px 0">No received orders yet.</div>';
+  document.getElementById('drillModal').classList.add('open');
+}
+
+function openDrillVendor(vendorName){
+  const vMap = window._drillVendorMap||{};
+  const data = vMap[vendorName];
+  if(!data) return;
+  const list = data.orders||[];
+  const onTime = list.filter(x=>x.diff!==null&&x.diff<=0).length;
+  const avg = data.total?(data.totalDiff/data.total).toFixed(1):null;
+  document.getElementById('drillTitle').textContent = vendorName+' — Dispatch';
+  document.getElementById('drillSummary').innerHTML = buildDrillSummary(onTime,data.total,avg);
+  document.getElementById('drillList').innerHTML = list.length
+    ? buildDrillRows(list,'vend')
+    : '<div style="font-size:9px;color:var(--dim);padding:12px 0">No data.</div>';
+  document.getElementById('drillModal').classList.add('open');
+}
+
+function openDrillCategory(cat){
+  const catMap = window._drillCatMap||{};
+  const data = catMap[cat];
+  if(!data) return;
+  const list = data.orders||[];
+  const onTime = list.filter(x=>x.diff!==null&&x.diff<=0).length;
+  const avg = data.total?(data.totalDiff/data.total).toFixed(1):null;
+  document.getElementById('drillTitle').textContent = cat+' — Delivery';
+  document.getElementById('drillSummary').innerHTML = buildDrillSummary(onTime,data.total,avg);
+  document.getElementById('drillList').innerHTML = list.length
+    ? buildDrillRows(list,'cust')
+    : '<div style="font-size:9px;color:var(--dim);padding:12px 0">No data.</div>';
+  document.getElementById('drillModal').classList.add('open');
+}
   const now    = new Date(); now.setHours(0,0,0,0);
   const toDate = d => { const x=new Date(d); x.setHours(0,0,0,0); return x; };
   const daysDiff = (a,b) => Math.round((toDate(a)-toDate(b))/86400000);
@@ -2040,10 +2552,6 @@ function renderKarigar() {
   }
 }
 
-function scrollToBucket(key){
-  const el=document.getElementById('bucket-'+key);
-  if(el) el.scrollIntoView({behavior:'smooth',block:'start'});
-}
 
 // ══════════════════════════════════════════════
 // VIEW ORDER DETAIL
@@ -3058,7 +3566,7 @@ document.getElementById('f_odate').addEventListener('change', function(){
 });
 
 // Close overlays on backdrop tap
-['addModal','detailModal','addVendorModal','addCustomerModal','fuModal','userManagerModal'].forEach(id=>{
+['addModal','detailModal','addVendorModal','addCustomerModal','fuModal','userManagerModal','drillModal','vendorLoginModal'].forEach(id=>{
   document.getElementById(id).addEventListener('click',function(e){if(e.target===this)closeModal(id);});
 });
 
