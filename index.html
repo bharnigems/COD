@@ -1,0 +1,2690 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Bharni Gems · Orders</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300&family=DM+Mono:wght@300;400&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style id="printStyles">
+@media print {
+  body > *:not(#printFrame) { display:none!important; }
+  #printFrame { display:block!important; position:fixed; inset:0; background:#fff; z-index:9999; padding:0; margin:0; }
+  #printFrame { font-family: 'Cormorant Garamond', Georgia, serif; color:#111; }
+}
+</style>
+<style>
+:root {
+  --gold:#C9A96E; --gold-l:#E8D5A3; --gold-d:#7a6440; --gold-faint:#C9A96E18;
+  --bg:#0c0c0c; --s1:#141414; --s2:#1a1a1a; --s3:#222;
+  --b:#2a2a2a; --bg:#:#C9A96E33;
+  --txt:#f0ece4; --mid:#999; --dim:#555; --dimmer:#333;
+  /* statuses */
+  --op:#C9A96E; --cap:#4a8fd4; --ca:#9b72cf; --ip:#e8a838;
+  --igi:#e0607e; --or:#5aac8a; --od:#3d8f6a; --cx:#c45454;
+  /* util */
+  --r:3px;
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;overflow:hidden;background:var(--bg)}
+body{font-family:'DM Mono',monospace;color:var(--txt);display:flex;flex-direction:column}
+
+/* ── HEADER ── */
+.hdr{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;background:var(--s1);border-bottom:1px solid var(--b);flex-shrink:0;gap:10px}
+.hdr-brand h1{font-family:'Cormorant Garamond',serif;font-size:18px;font-weight:300;letter-spacing:5px;color:var(--gold);text-transform:uppercase}
+.hdr-brand p{font-size:8px;letter-spacing:2px;color:var(--dim);margin-top:1px}
+.hdr-actions{display:flex;gap:8px;flex-shrink:0}
+.btn-ico{background:none;border:1px solid var(--b);color:var(--mid);width:34px;height:34px;display:flex;align-items:center;justify-content:center;font-size:16px;cursor:pointer;border-radius:var(--r);transition:all .2s}
+.btn-ico:hover,.btn-ico:active{border-color:var(--gold);color:var(--gold)}
+.btn-gold{background:var(--gold);color:#000;border:none;padding:8px 14px;font-family:'DM Mono',monospace;font-size:10px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;border-radius:var(--r);white-space:nowrap;transition:background .2s}
+.btn-gold:hover{background:var(--gold-l)}
+
+/* ── BOTTOM NAV ── */
+.bot-nav{display:flex;background:var(--s1);border-top:1px solid var(--b);flex-shrink:0;padding-bottom:var(--safe-bottom)}
+.bnav-item{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:10px 4px;cursor:pointer;transition:all .2s;background:none;border:none;font-family:'DM Mono',monospace;border-top:2px solid transparent}
+.bnav-item .ico{font-size:18px;transition:transform .2s}
+.bnav-item .lbl{font-size:7px;letter-spacing:1.5px;text-transform:uppercase;color:var(--dim);transition:color .2s}
+.bnav-item.active{border-top-color:var(--gold)}
+.bnav-item.active .ico{transform:scale(1.1)}
+.bnav-item.active .lbl{color:var(--gold)}
+
+/* ── SCROLL AREA ── */
+.scroll{flex:1;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch}
+::-webkit-scrollbar{width:3px}
+::-webkit-scrollbar-thumb{background:var(--b)}
+
+/* ── VIEWS ── */
+.view{display:none;padding:14px 14px 24px}
+.view.active{display:block}
+
+/* ── STATS GRID ── */
+.stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
+.stat-card{background:var(--s1);border:1px solid var(--b);padding:14px;cursor:pointer;transition:all .2s;border-radius:var(--r)}
+.stat-card:hover,.stat-card:active{border-color:var(--gold-d);background:var(--s2)}
+.stat-card.wide{grid-column:1/-1}
+.stat-lbl{font-size:8px;letter-spacing:2.5px;color:var(--dim);text-transform:uppercase;margin-bottom:6px}
+.stat-val{font-family:'Cormorant Garamond',serif;font-size:30px;font-weight:300;color:var(--gold);line-height:1}
+.stat-sub{font-size:9px;color:var(--dim);margin-top:4px}
+.stat-card .arrow{font-size:10px;color:var(--gold-d);float:right;margin-top:-20px}
+
+/* ── PIPELINE SCROLL ── */
+.pipeline-wrap{display:flex;gap:10px;overflow-x:auto;padding-bottom:10px;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+.pipeline-wrap::-webkit-scrollbar{display:none}
+.pipe-col{min-width:220px;background:var(--s1);border:1px solid var(--b);border-top:3px solid var(--b);border-radius:var(--r);flex-shrink:0}
+.pipe-col[data-s="Order Placed"]{border-top-color:var(--op)}
+.pipe-col[data-s="CAD Approval Pending"]{border-top-color:var(--cap)}
+.pipe-col[data-s="CAD Approved"]{border-top-color:var(--ca)}
+.pipe-col[data-s="In Production"]{border-top-color:var(--ip)}
+.pipe-col[data-s="IGI"]{border-top-color:var(--igi)}
+.pipe-col[data-s="Order Received"]{border-top-color:var(--or)}
+.pipe-col[data-s="Order Delivered"]{border-top-color:var(--od)}
+.pipe-col[data-s="Cancelled"]{border-top-color:var(--cx)}
+.pipe-hdr{padding:10px 12px;border-bottom:1px solid var(--b);display:flex;justify-content:space-between;align-items:center}
+.pipe-title{font-size:8px;letter-spacing:2px;text-transform:uppercase}
+.pipe-col[data-s="Order Placed"] .pipe-title{color:var(--op)}
+.pipe-col[data-s="CAD Approval Pending"] .pipe-title{color:var(--cap)}
+.pipe-col[data-s="CAD Approved"] .pipe-title{color:var(--ca)}
+.pipe-col[data-s="In Production"] .pipe-title{color:var(--ip)}
+.pipe-col[data-s="IGI"] .pipe-title{color:var(--igi)}
+.pipe-col[data-s="Order Received"] .pipe-title{color:var(--or)}
+.pipe-col[data-s="Order Delivered"] .pipe-title{color:var(--od)}
+.pipe-col[data-s="Cancelled"] .pipe-title{color:var(--cx)}
+.pipe-cnt{font-size:9px;color:var(--dim);background:var(--s2);padding:2px 7px;border-radius:20px}
+.pipe-cards{padding:8px;display:flex;flex-direction:column;gap:7px}
+
+/* ── ORDER CARD ── */
+.ocard{background:var(--s2);border:1px solid var(--b);padding:11px;cursor:pointer;transition:all .2s;position:relative;border-radius:var(--r)}
+.ocard:active{border-color:var(--gold-d);transform:scale(.98)}
+.ocard-id{font-size:8px;color:var(--dim);letter-spacing:1.5px;margin-bottom:5px}
+.ocard-name{font-family:'Cormorant Garamond',serif;font-size:15px;padding-right:36px;line-height:1.2;margin-bottom:3px}
+.ocard-loc{font-size:9px;color:var(--dim);margin-bottom:8px}
+.ocard-meta{display:flex;justify-content:space-between;align-items:center}
+.ocard-pcs{font-size:10px;color:var(--gold)}
+.ocard-val{font-size:10px;color:var(--mid)}
+.ocard-date{font-size:8px;color:var(--dim);margin-top:7px;padding-top:7px;border-top:1px solid var(--b)}
+.ocard-thumb{position:absolute;top:10px;right:10px;width:32px;height:32px;object-fit:cover;border:1px solid var(--b);border-radius:2px}
+.ocard-thumb-ph{position:absolute;top:10px;right:10px;width:32px;height:32px;background:var(--s3);border:1px solid var(--b);display:flex;align-items:center;justify-content:center;font-size:12px;color:var(--dim);border-radius:2px}
+.reminder-dot{position:absolute;bottom:8px;right:8px;width:6px;height:6px;border-radius:50%;background:var(--igi)}
+
+/* ── STATUS BADGE ── */
+.sbadge{display:inline-flex;align-items:center;gap:4px;font-size:8px;letter-spacing:1px;text-transform:uppercase;padding:3px 8px;border-radius:2px;white-space:nowrap}
+.sbadge.op{color:var(--op);background:#C9A96E15;border:1px solid #C9A96E30}
+.sbadge.cap{color:var(--cap);background:#4a8fd415;border:1px solid #4a8fd430}
+.sbadge.ca{color:var(--ca);background:#9b72cf15;border:1px solid #9b72cf30}
+.sbadge.ip{color:var(--ip);background:#e8a83815;border:1px solid #e8a83830}
+.sbadge.igi{color:var(--igi);background:#e0607e15;border:1px solid #e0607e30}
+.sbadge.or{color:var(--or);background:#5aac8a15;border:1px solid #5aac8a30}
+.sbadge.od{color:var(--od);background:#3d8f6a15;border:1px solid #3d8f6a30}
+.sbadge.cx{color:var(--cx);background:#c4545415;border:1px solid #c4545430}
+
+/* ── TABLE ── */
+.tbl-controls{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap}
+.inp{background:var(--s1);border:1px solid var(--b);color:var(--txt);padding:9px 11px;font-family:'DM Mono',monospace;font-size:11px;outline:none;border-radius:var(--r);transition:border-color .2s;width:100%}
+.inp:focus{border-color:var(--gold-d)}
+.inp::placeholder{color:var(--dim)}
+.sel{background:var(--s1);border:1px solid var(--b);color:var(--mid);padding:9px 11px;font-family:'DM Mono',monospace;font-size:10px;outline:none;border-radius:var(--r);cursor:pointer;-webkit-appearance:none}
+.sel option{background:var(--s2)}
+.card-list{display:flex;flex-direction:column;gap:8px}
+.row-card{background:var(--s1);border:1px solid var(--b);padding:13px;cursor:pointer;transition:all .2s;border-radius:var(--r)}
+.row-card:active{border-color:var(--gold-d)}
+.row-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px}
+.row-name{font-family:'Cormorant Garamond',serif;font-size:16px}
+.row-id{font-size:8px;color:var(--dim);letter-spacing:1.5px;margin-bottom:3px}
+.row-bottom{display:flex;gap:10px;flex-wrap:wrap;margin-top:8px;padding-top:8px;border-top:1px solid var(--b)}
+.row-meta{font-size:9px;color:var(--dim)}
+.row-meta span{color:var(--mid)}
+.row-val{font-size:12px;color:var(--gold)}
+.row-actions{display:flex;gap:6px;margin-top:8px}
+.btn-xs{background:transparent;border:1px solid var(--b);color:var(--mid);padding:5px 10px;font-size:9px;font-family:'DM Mono',monospace;letter-spacing:1px;cursor:pointer;border-radius:var(--r);transition:all .15s}
+.btn-xs:hover,.btn-xs:active{border-color:var(--gold);color:var(--gold)}
+.btn-xs.danger:hover,.btn-xs.danger:active{border-color:var(--cx);color:var(--cx)}
+
+/* ── SECTION TITLE ── */
+.sec-title{font-size:8px;letter-spacing:3px;text-transform:uppercase;color:var(--dim);margin-bottom:10px;padding-bottom:7px;border-bottom:1px solid var(--b)}
+.sec-title.gold{color:var(--gold-d)}
+
+/* ── VENDOR CARDS ── */
+.vcard-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px}
+.vcard{background:var(--s1);border:1px solid var(--b);padding:14px;cursor:pointer;transition:all .2s;border-radius:var(--r)}
+.vcard:active,.vcard.active{border-color:var(--gold)}
+.vcard-name{font-family:'Cormorant Garamond',serif;font-size:15px;margin-bottom:3px}
+.vcard-sub{font-size:8px;color:var(--dim);margin-bottom:10px}
+.vcard-stats{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px}
+.vs{display:flex;flex-direction:column;gap:2px}
+.vs-v{font-family:'Cormorant Garamond',serif;font-size:18px;color:var(--gold)}
+.vs-l{font-size:7px;color:var(--dim);letter-spacing:1.5px;text-transform:uppercase}
+
+/* ── KARIGAR ── */
+.karigar-summary{background:var(--s1);border:1px solid var(--b);padding:16px;margin-bottom:14px;border-radius:var(--r)}
+.k-total{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid var(--b)}
+.k-total-lbl{font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--dim)}
+.k-total-val{font-family:'Cormorant Garamond',serif;font-size:28px;color:var(--gold)}
+.k-total-sub{font-size:9px;color:var(--dim)}
+.k-cats{display:flex;flex-direction:column;gap:8px}
+.k-cat-row{display:flex;align-items:center;gap:10px}
+.k-cat-name{font-size:10px;color:var(--mid);flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.k-bar-wrap{flex:2;height:4px;background:var(--s3);border-radius:2px;overflow:hidden}
+.k-bar{height:100%;background:var(--gold);border-radius:2px;transition:width .6s ease}
+.k-days{font-size:10px;color:var(--gold);white-space:nowrap}
+.k-count{font-size:8px;color:var(--dim);white-space:nowrap}
+
+.reminder-list{display:flex;flex-direction:column;gap:8px}
+.rem-item{background:var(--s1);border:1px solid var(--b);border-left:3px solid var(--igi);padding:12px;border-radius:var(--r);cursor:pointer;transition:all .2s}
+.rem-item:active{border-color:var(--gold)}
+.rem-item.urgent{border-left-color:var(--cx)}
+.rem-item.soon{border-left-color:var(--ip)}
+.rem-name{font-family:'Cormorant Garamond',serif;font-size:15px;margin-bottom:3px}
+.rem-meta{font-size:9px;color:var(--dim)}
+.rem-days{font-size:10px;font-weight:bold;float:right;margin-top:-18px}
+.rem-days.urgent{color:var(--cx)}
+.rem-days.soon{color:var(--ip)}
+.rem-days.ok{color:var(--or)}
+
+/* ── MODAL ── */
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:200;backdrop-filter:blur(6px)}
+.overlay.open{display:flex;align-items:flex-end;justify-content:center}
+@media(min-width:600px){.overlay.open{align-items:center}}
+.sheet{background:var(--s1);width:100%;max-width:600px;max-height:92vh;overflow-y:auto;border-radius:16px 16px 0 0;position:relative}
+@media(min-width:600px){.sheet{border-radius:var(--r);max-height:90vh}}
+.sheet-handle{width:36px;height:3px;background:var(--b);border-radius:2px;margin:10px auto 0}
+.sheet-hdr{padding:16px 18px 14px;border-bottom:1px solid var(--b);display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;background:var(--s1);z-index:1}
+.sheet-title{font-family:'Cormorant Garamond',serif;font-size:18px;font-weight:300;color:var(--gold);letter-spacing:1px}
+.sheet-close{background:none;border:none;color:var(--dim);font-size:20px;cursor:pointer;padding:4px 8px;line-height:1}
+.sheet-body{padding:18px}
+.sheet-footer{padding:14px 18px;border-top:1px solid var(--b);display:flex;gap:8px;justify-content:flex-end;position:sticky;bottom:0;background:var(--s1)}
+
+/* ── FORM ── */
+.fg{display:flex;flex-direction:column;gap:5px;margin-bottom:12px}
+.fg.half{flex:1}
+.fl{display:flex;gap:10px}
+.flbl{font-size:8px;letter-spacing:2px;text-transform:uppercase;color:var(--dim)}
+.piece-row{display:grid;grid-template-columns:2fr 1fr 1fr;gap:7px;margin-bottom:7px;align-items:end}
+.piece-row-4{display:grid;grid-template-columns:2fr 1fr 1fr 1fr 20px;gap:7px;margin-bottom:7px;align-items:end}
+@media(max-width:400px){.piece-row-4{grid-template-columns:1fr 1fr;gap:6px}}
+.btn-rm{background:none;border:none;color:var(--dim);font-size:18px;cursor:pointer;padding:0 2px;margin-bottom:7px;line-height:1}
+.btn-rm:active{color:var(--cx)}
+.btn-add-row{background:transparent;border:1px dashed var(--b);color:var(--dim);padding:8px;font-size:9px;font-family:'DM Mono',monospace;cursor:pointer;width:100%;letter-spacing:1px;transition:all .2s;margin-top:4px;border-radius:var(--r)}
+.btn-add-row:active{border-color:var(--gold-d);color:var(--gold)}
+.img-upload-area{border:1px dashed var(--b);padding:18px;text-align:center;cursor:pointer;transition:border-color .2s;position:relative;border-radius:var(--r)}
+.img-upload-area input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;font-size:0}
+.img-previews{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.img-pw{position:relative}
+.img-pw img{width:64px;height:64px;object-fit:cover;border:1px solid var(--b);border-radius:2px}
+.img-rm{position:absolute;top:-5px;right:-5px;background:var(--cx);color:#fff;border:none;border-radius:50%;width:16px;height:16px;font-size:9px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.msec{margin-bottom:18px}
+.msec-title{font-size:8px;letter-spacing:2.5px;text-transform:uppercase;color:var(--gold-d);margin-bottom:10px;padding-bottom:7px;border-bottom:1px solid var(--b)}
+
+/* ── DETAIL ── */
+.dg{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
+.df{display:flex;flex-direction:column;gap:3px}
+.df .dl{font-size:8px;letter-spacing:2px;color:var(--dim);text-transform:uppercase}
+.df .dv{font-size:12px;color:var(--txt)}
+.df .dv.gold{color:var(--gold);font-family:'Cormorant Garamond',serif;font-size:16px}
+.ptable{width:100%;border-collapse:collapse}
+.ptable th{font-size:8px;letter-spacing:2px;text-transform:uppercase;color:var(--dim);text-align:left;padding:7px 8px;border-bottom:1px solid var(--b);font-weight:400}
+.ptable td{padding:9px 8px;font-size:11px;border-bottom:1px solid var(--b)}
+.det-imgs{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+.det-imgs img{width:80px;height:80px;object-fit:cover;border:1px solid var(--b);cursor:zoom-in;border-radius:2px}
+.status-update{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:14px;padding-top:14px;border-top:1px solid var(--b)}
+
+/* ── LIGHTBOX ── */
+.lbx{display:none;position:fixed;inset:0;background:rgba(0,0,0,.96);z-index:300;align-items:center;justify-content:center;cursor:zoom-out}
+.lbx.open{display:flex}
+.lbx img{max-width:96vw;max-height:96vh;object-fit:contain}
+
+/* ── EMPTY ── */
+.empty{text-align:center;padding:40px 20px;color:var(--dim)}
+.empty-ico{font-size:28px;margin-bottom:10px}
+.empty p{font-size:10px;letter-spacing:2px}
+
+/* ── TOAST ── */
+.toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:var(--s3);border:1px solid var(--gold-d);color:var(--gold);padding:10px 18px;font-size:10px;letter-spacing:1.5px;z-index:400;border-radius:var(--r);opacity:0;transition:opacity .3s;pointer-events:none;text-align:center;white-space:nowrap}
+.toast.show{opacity:1}
+
+/* ── FILTER ACTIVE INDICATOR ── */
+.filter-tag{display:inline-flex;align-items:center;gap:6px;background:var(--gold-faint);border:1px solid var(--gold-d);color:var(--gold);padding:4px 10px;font-size:9px;letter-spacing:1px;border-radius:20px;margin-bottom:10px}
+.filter-tag button{background:none;border:none;color:var(--gold-d);cursor:pointer;font-size:12px;line-height:1}
+
+/* ── LOGIN SCREEN ── */
+.login-screen{position:fixed;inset:0;background:var(--bg);z-index:600;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:28px}
+.login-card{width:100%;max-width:360px}
+.login-brand{font-family:'Cormorant Garamond',serif;font-size:28px;font-weight:300;letter-spacing:8px;color:var(--gold);text-transform:uppercase;text-align:center;margin-bottom:4px}
+.login-brand-sub{font-size:8px;letter-spacing:3px;color:var(--dim);text-align:center;margin-bottom:40px}
+.login-label{font-size:8px;letter-spacing:2px;text-transform:uppercase;color:var(--dim);margin-bottom:5px;display:block}
+.login-inp{background:var(--s1);border:1px solid var(--b);color:var(--txt);padding:13px 14px;font-family:'DM Mono',monospace;font-size:13px;outline:none;border-radius:var(--r);width:100%;margin-bottom:14px;transition:border-color .2s}
+.login-inp:focus{border-color:var(--gold-d)}
+.login-inp::placeholder{color:var(--dim);font-size:11px}
+.login-btn{background:var(--gold);color:#000;border:none;padding:13px;font-family:'DM Mono',monospace;font-size:11px;letter-spacing:3px;text-transform:uppercase;cursor:pointer;border-radius:var(--r);width:100%;margin-top:4px;transition:background .2s}
+.login-btn:hover{background:var(--gold-l)}
+.login-err{font-size:9px;color:var(--cx);letter-spacing:1px;text-align:center;margin-top:12px;min-height:14px}
+.login-ver{font-size:7px;color:var(--dimmer);text-align:center;margin-top:28px;letter-spacing:1.5px}
+
+/* ── ROLE BADGE in header ── */
+.role-badge{font-size:7px;letter-spacing:2px;text-transform:uppercase;padding:2px 7px;border-radius:2px;white-space:nowrap}
+.role-badge.admin{color:var(--gold);background:#C9A96E18;border:1px solid #C9A96E35}
+.role-badge.salesman{color:var(--cap);background:#4a8fd418;border:1px solid #4a8fd435}
+
+/* ── USER MENU ── */
+.user-menu-wrap{position:relative}
+.user-menu{position:absolute;top:100%;right:0;background:var(--s1);border:1px solid var(--b);border-radius:var(--r);z-index:100;min-width:170px;margin-top:4px;box-shadow:0 8px 24px rgba(0,0,0,.5)}
+.user-menu-item{display:flex;align-items:center;gap:8px;padding:10px 14px;font-size:10px;letter-spacing:1px;cursor:pointer;transition:background .15s;color:var(--mid);white-space:nowrap}
+.user-menu-item:hover{background:var(--s2);color:var(--gold)}
+.user-menu-item.danger:hover{color:var(--cx)}
+.user-menu-hdr{padding:10px 14px 6px;font-size:8px;color:var(--dim);letter-spacing:1.5px;border-bottom:1px solid var(--b)}
+
+/* ── USER MANAGEMENT MODAL ── */
+.user-card{background:var(--s2);border:1px solid var(--b);padding:12px 14px;border-radius:var(--r);display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.user-card-name{font-size:13px;font-family:'Cormorant Garamond',serif;margin-bottom:2px}
+.user-card-email{font-size:8px;color:var(--dim);letter-spacing:1px}
+.sync-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;transition:background .4s}
+.sync-dot.synced{background:#5aac8a}
+.sync-dot.syncing{background:#e8a838;animation:pulse .8s infinite}
+.sync-dot.error{background:#c45454}
+.sync-dot.offline{background:#555}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+.sync-label{font-size:7px;letter-spacing:1.5px;text-transform:uppercase;color:var(--dim);white-space:nowrap}
+
+/* ── FIREBASE CONFIG OVERLAY ── */
+.fb-overlay{position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:500;display:flex;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(8px)}
+.fb-card{background:var(--s1);border:1px solid var(--gold-d);border-radius:6px;padding:28px;width:100%;max-width:480px;max-height:90vh;overflow-y:auto}
+.fb-title{font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:300;color:var(--gold);letter-spacing:2px;margin-bottom:6px}
+.fb-sub{font-size:9px;color:var(--dim);letter-spacing:1.5px;line-height:1.7;margin-bottom:20px}
+.fb-step{font-size:8px;letter-spacing:2px;text-transform:uppercase;color:var(--gold-d);margin:14px 0 6px;padding-bottom:4px;border-bottom:1px solid var(--b)}
+.fb-note{font-size:9px;color:var(--dim);line-height:1.7;margin-bottom:10px}
+.fb-code{background:var(--s3);border:1px solid var(--b);padding:8px 10px;font-size:9px;color:var(--mid);border-radius:3px;margin:6px 0;font-family:'DM Mono',monospace;line-height:1.6;white-space:pre-wrap;word-break:break-all}
+.fb-skip{background:none;border:1px solid var(--b);color:var(--dim);padding:8px 16px;font-family:'DM Mono',monospace;font-size:9px;letter-spacing:1.5px;cursor:pointer;border-radius:var(--r);margin-top:8px;width:100%}
+.fb-skip:hover{color:var(--mid);border-color:var(--mid)}
+
+/* ── ORDER TYPE TOGGLE ── */
+.otype-wrap{display:flex;gap:8px;margin-bottom:14px}
+.otype-btn{flex:1;padding:10px 8px;border:1px solid var(--b);background:var(--s2);color:var(--mid);font-family:'DM Mono',monospace;font-size:9px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;border-radius:var(--r);transition:all .2s;text-align:center}
+.otype-btn.selected.normal{border-color:var(--or);color:var(--or);background:#5aac8a12}
+.otype-btn.selected.urgent{border-color:var(--cx);color:var(--cx);background:#c4545412}
+.otype-btn .otype-icon{font-size:16px;display:block;margin-bottom:3px}
+.otype-btn .otype-days{font-size:8px;color:var(--dim);margin-top:3px;letter-spacing:0}
+
+/* ── URGENT BADGE on order cards ── */
+.urgent-tag{display:inline-flex;align-items:center;gap:3px;font-size:7px;letter-spacing:1.5px;text-transform:uppercase;padding:2px 6px;border-radius:2px;color:var(--cx);background:#c4545415;border:1px solid #c4545430;margin-left:4px}
+
+/* ── PO / INVOICE field highlight ── */
+.inp.required-empty{border-color:var(--cx)!important}
+.inp.required-empty::placeholder{color:#c4545488}
+
+/* ── CANCELLATION MODAL ── */
+/* reuses .overlay / .sheet */
+
+/* ── INLINE INVOICE PROMPT in detail ── */
+.inv-prompt{background:var(--s2);border:1px solid var(--od);border-radius:var(--r);padding:12px;margin-top:12px}
+.inv-prompt-lbl{font-size:8px;letter-spacing:2px;text-transform:uppercase;color:var(--od);margin-bottom:8px}
+
+/* ── PIECE IMAGE UPLOAD ── */
+.piece-block{background:var(--s3);border:1px solid var(--b);border-radius:var(--r);padding:10px;margin-bottom:10px}
+.piece-block-hdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.piece-num{font-size:8px;letter-spacing:2px;text-transform:uppercase;color:var(--dim)}
+.piece-img-row{display:flex;align-items:center;gap:10px;margin-top:8px;padding-top:8px;border-top:1px dashed var(--b)}
+.piece-img-thumb{width:52px;height:52px;object-fit:cover;border:1px solid var(--b);border-radius:2px;flex-shrink:0}
+.piece-img-placeholder{width:52px;height:52px;background:var(--s2);border:1px dashed var(--b);border-radius:2px;display:flex;align-items:center;justify-content:center;font-size:18px;color:var(--dim);flex-shrink:0;cursor:pointer;position:relative;overflow:hidden}
+.piece-img-placeholder input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;font-size:0;width:100%;height:100%}
+.piece-img-upload-lbl{font-size:8px;color:var(--dim);letter-spacing:1px;flex:1}
+.piece-img-rm{background:var(--cx);color:#fff;border:none;border-radius:50%;width:16px;height:16px;font-size:9px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+
+/* ── PIECE image in detail table ── */
+.ptable td.td-img{padding:6px 8px;width:48px}
+.piece-det-img{width:42px;height:42px;object-fit:cover;border:1px solid var(--b);border-radius:2px;cursor:zoom-in}
+.piece-det-ph{width:42px;height:42px;background:var(--s3);border:1px solid var(--b);border-radius:2px;display:flex;align-items:center;justify-content:center;font-size:14px;color:var(--dim)}
+.fulog{display:flex;flex-direction:column;gap:8px;margin-top:8px}
+.fulog-entry{background:var(--s2);border:1px solid var(--b);border-left:3px solid var(--gold-d);padding:10px 12px;border-radius:var(--r)}
+.fulog-date{font-size:8px;color:var(--dim);letter-spacing:1.5px;margin-bottom:4px}
+.fulog-update{font-size:10px;color:var(--txt);margin-bottom:4px;line-height:1.5}
+.fulog-response{font-size:10px;color:var(--mid);font-style:italic;line-height:1.5}
+.fulog-response:before{content:"↳ Response: ";color:var(--dim);font-style:normal}
+.fulog-empty{font-size:9px;color:var(--dim);text-align:center;padding:12px}
+
+/* ── ACTIVITY LOG ── */
+.actlog{display:flex;flex-direction:column;gap:0}
+.actlog-item{display:flex;gap:10px;align-items:flex-start;padding:7px 0;border-bottom:1px solid var(--b)}
+.actlog-item:last-child{border-bottom:none}
+.actlog-dot{width:8px;height:8px;border-radius:50%;background:var(--gold-d);flex-shrink:0;margin-top:3px}
+.actlog-body{flex:1;min-width:0}
+.actlog-status{font-size:9px;color:var(--txt);letter-spacing:0.5px}
+.actlog-time{font-size:8px;color:var(--dim);margin-top:1px}
+
+/* ── EXPORT MENU ── */
+.export-menu{position:absolute;top:100%;right:0;background:var(--s1);border:1px solid var(--b);border-radius:var(--r);z-index:100;min-width:180px;margin-top:4px;box-shadow:0 8px 24px rgba(0,0,0,.5)}
+.export-item{display:flex;align-items:center;gap:8px;padding:10px 14px;font-size:10px;letter-spacing:1px;cursor:pointer;transition:background .15s;color:var(--mid);white-space:nowrap}
+.export-item:hover{background:var(--s2);color:var(--gold)}
+.export-item .ei{font-size:14px}
+.hdr-actions{position:relative}
+
+/* ── PRINT FRAME (hidden until print) ── */
+#printFrame{display:none}
+
+/* ── JOB CARD PRINT STYLES ── */
+.jc{font-family:'Cormorant Garamond',Georgia,serif;background:#fff;color:#111;max-width:680px;margin:0 auto;padding:32px}
+.jc-header{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:2px solid #b8963c;padding-bottom:16px;margin-bottom:20px}
+.jc-brand{font-size:24px;letter-spacing:6px;color:#b8963c;text-transform:uppercase;font-weight:300}
+.jc-brand-sub{font-size:9px;letter-spacing:3px;color:#888;margin-top:2px}
+.jc-type{font-size:11px;letter-spacing:3px;text-transform:uppercase;color:#888;text-align:right}
+.jc-orderno{font-size:16px;color:#b8963c;font-weight:600}
+.jc-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px 20px;margin-bottom:18px}
+.jc-field{display:flex;flex-direction:column;gap:2px}
+.jc-lbl{font-size:8px;letter-spacing:2px;text-transform:uppercase;color:#999;font-family:monospace}
+.jc-val{font-size:13px;color:#111}
+.jc-table{width:100%;border-collapse:collapse;margin-bottom:18px}
+.jc-table th{font-size:9px;letter-spacing:2px;text-transform:uppercase;border-bottom:1px solid #ccc;padding:6px 4px;text-align:left;font-family:monospace;color:#666;font-weight:normal}
+.jc-table td{padding:7px 4px;border-bottom:1px solid #eee;font-size:12px}
+.jc-table tfoot td{border-top:2px solid #b8963c;font-weight:600;font-size:13px;color:#b8963c}
+.jc-footer{border-top:1px solid #ddd;margin-top:20px;padding-top:12px;display:flex;justify-content:space-between;font-size:9px;letter-spacing:1.5px;color:#aaa;text-transform:uppercase}
+.jc-sig{margin-top:32px;display:flex;gap:60px}
+.jc-sig-line{flex:1;border-top:1px solid #bbb;padding-top:6px;font-size:9px;letter-spacing:1.5px;color:#aaa;text-transform:uppercase}
+.jc-section{font-size:9px;letter-spacing:2.5px;text-transform:uppercase;color:#b8963c;margin:16px 0 8px;font-family:monospace;border-bottom:1px solid #eee;padding-bottom:4px}
+.jc-badge{display:inline-block;padding:2px 8px;border-radius:2px;font-size:9px;letter-spacing:1px;text-transform:uppercase}
+.jc-urgent{background:#fee;color:#c44;border:1px solid #fcc}
+.jc-normal{background:#f0f9f5;color:#3a7;border:1px solid #cee}
+@media(max-width:380px){
+  .stats-grid{grid-template-columns:1fr 1fr}
+  .stat-val{font-size:24px}
+  .vcard-grid{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+<!-- LOGIN SCREEN -->
+<div class="login-screen" id="loginScreen">
+  <div class="login-card">
+    <div class="login-brand">Bharni Gems</div>
+    <div class="login-brand-sub">Order Management System</div>
+    <label class="login-label">Email</label>
+    <input class="login-inp" id="login_email" type="email" placeholder="you@example.com" autocomplete="username">
+    <label class="login-label">Password</label>
+    <input class="login-inp" id="login_pwd" type="password" placeholder="••••••••" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()">
+    <button class="login-btn" onclick="doLogin()">Sign In</button>
+    <div class="login-err" id="loginErr"></div>
+    <div class="login-ver">v9 · Secured by Firebase Auth</div>
+  </div>
+</div>
+
+<!-- HEADER -->
+<div class="hdr">
+  <div class="hdr-brand">
+    <h1>Bharni Gems</h1>
+    <p>Order Management</p>
+  </div>
+  <div class="hdr-actions">
+    <div style="display:flex;align-items:center;gap:5px;padding:0 6px" id="syncStatus" onclick="showFbConfig()" title="Firebase sync status" style="cursor:pointer">
+      <div class="sync-dot offline" id="syncDot"></div>
+      <span class="sync-label" id="syncLabel">offline</span>
+    </div>
+    <button class="btn-ico" onclick="toggleExportMenu()" title="Export" id="exportBtn">↓</button>
+    <div class="export-menu" id="exportMenu" style="display:none">
+      <div class="export-item" onclick="exportData();closeExportMenu()"><span class="ei">📦</span>JSON Backup</div>
+      <div class="export-item" onclick="exportExcel();closeExportMenu()"><span class="ei">📊</span>Excel (All Sheets)</div>
+      <div style="border-top:1px solid var(--b);margin:4px 0"></div>
+      <div class="export-item" onclick="closeExportMenu();printJobCard('vendor')" id="exportVendorCard"><span class="ei">🏭</span>Job Card — Vendor</div>
+      <div class="export-item" onclick="closeExportMenu();printJobCard('customer')"><span class="ei">👤</span>Job Card — Customer</div>
+      <div style="border-top:1px solid var(--b);margin:4px 0"></div>
+      <div class="export-item" onclick="closeExportMenu();showFbConfig()"><span class="ei">🔥</span>Firebase Settings</div>
+      <div class="export-item" onclick="closeExportMenu();uploadAllToFirestore()"><span class="ei">☁</span>Push all data to Cloud</div>
+    </div>
+    <!-- User menu -->
+    <div class="user-menu-wrap">
+      <button class="btn-ico" onclick="toggleUserMenu()" id="userMenuBtn" title="Account" style="font-size:13px">👤</button>
+      <div class="user-menu" id="userMenu" style="display:none">
+        <div class="user-menu-hdr" id="userMenuHdr">Loading…</div>
+        <div class="user-menu-item" id="menuManageUsers" onclick="toggleUserMenu();openUserManager()" style="display:none"><span>⚙</span> Manage Users</div>
+        <div class="user-menu-item danger" onclick="doLogout()"><span>→</span> Sign Out</div>
+      </div>
+    </div>
+    <button class="btn-gold" onclick="openAdd()">+ Order</button>
+  </div>
+</div>
+
+<!-- SCROLL AREA -->
+<div class="scroll" id="scrollArea">
+
+  <!-- ── DASHBOARD ── -->
+  <div class="view active" id="view-dash">
+    <div class="stats-grid" id="statsGrid"></div>
+    <div class="sec-title">Pipeline Overview</div>
+    <div class="pipeline-wrap" id="pipelineBoard"></div>
+  </div>
+
+  <!-- ── ALL ORDERS ── -->
+  <div class="view" id="view-orders">
+    <div id="ordersFilterTag"></div>
+    <div class="tbl-controls">
+      <input class="inp" type="text" placeholder="Search orders, customers…" id="orderSearch" oninput="renderOrders()">
+      <select class="sel" id="orderStatusF" onchange="renderOrders()" style="width:100%">
+        <option value="">All Statuses</option>
+        <option>Order Placed</option>
+        <option>CAD Approval Pending</option>
+        <option>CAD Approved</option>
+        <option>In Production</option>
+        <option>IGI</option>
+        <option>Order Received</option>
+        <option>Order Delivered</option>
+        <option>Cancelled</option>
+      </select>
+    </div>
+    <div class="card-list" id="ordersList"></div>
+  </div>
+
+  <!-- ── CUSTOMERS ── -->
+  <div class="view" id="view-customers">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+      <div class="sec-title" style="margin:0;border:none;padding:0">Customers</div>
+      <button class="btn-gold" onclick="openAddCustomer()">+ Customer</button>
+    </div>
+    <div id="custFilterTag"></div>
+    <div class="tbl-controls">
+      <input class="inp" type="text" placeholder="Search customers…" id="custSearch" oninput="renderCustomers()">
+    </div>
+    <div class="card-list" id="custList"></div>
+  </div>
+
+  <!-- ── VENDORS ── -->
+  <div class="view" id="view-vendors">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+      <div class="sec-title" style="margin:0;border:none;padding:0">Vendors</div>
+      <button class="btn-gold" onclick="openAddVendor()">+ Vendor</button>
+    </div>
+    <div class="vcard-grid" id="vcardGrid"></div>
+    <div id="vendorOrdersList"></div>
+  </div>
+
+  <!-- ── KARIGAR ── -->
+  <div class="view" id="view-karigar">
+    <div class="sec-title gold">Karigar Performance Analytics</div>
+
+    <div class="karigar-summary" id="karigarSummary"></div>
+
+    <div class="sec-title" style="margin-top:16px">Reminders & Due Soon</div>
+    <div class="reminder-list" id="reminderList"></div>
+    <div style="margin-top:16px">
+      <div class="sec-title">Reminder Settings</div>
+      <div class="fg">
+        <label class="flbl">Alert me when delivery is due within (days)</label>
+        <input class="inp" type="number" id="reminderDays" value="3" min="1" max="30" onchange="saveReminderPref();renderKarigar()">
+      </div>
+      <div style="font-size:9px;color:var(--dim);line-height:1.7;margin-top:6px">
+        💡 <strong style="color:var(--mid)">Tip:</strong> To get real phone reminders, use the Export button and set calendar alerts, or bookmark this page and check the Karigar tab regularly. Orders due within your threshold appear here automatically.
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- BOTTOM NAV -->
+<div class="bot-nav">
+  <button class="bnav-item active" onclick="switchView('dash',this)">
+    <span class="ico">◈</span><span class="lbl">Dashboard</span>
+  </button>
+  <button class="bnav-item" onclick="switchView('orders',this)">
+    <span class="ico">📋</span><span class="lbl">Orders</span>
+  </button>
+  <button class="bnav-item" onclick="switchView('customers',this)">
+    <span class="ico">👤</span><span class="lbl">Customers</span>
+  </button>
+  <button class="bnav-item" onclick="switchView('vendors',this)" id="navVendors">
+    <span class="ico">🏭</span><span class="lbl">Vendors</span>
+  </button>
+  <button class="bnav-item" onclick="switchView('karigar',this)">
+    <span class="ico">⚒</span><span class="lbl">Karigar</span>
+  </button>
+</div>
+
+<!-- ═══════════════════════════════════════════════════
+     ADD / EDIT MODAL
+═══════════════════════════════════════════════════ -->
+<div class="overlay" id="addModal">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-hdr">
+      <div class="sheet-title" id="addModalTitle">New Order</div>
+      <button class="sheet-close" onclick="closeModal('addModal')">✕</button>
+    </div>
+    <div class="sheet-body">
+
+      <!-- ORDER TYPE (new orders only, hidden when editing) -->
+      <div class="msec" id="orderTypeSection">
+        <div class="msec-title">Order Type</div>
+        <div class="otype-wrap">
+          <button class="otype-btn normal selected" id="otype_normal" onclick="setOrderType('normal')">
+            <span class="otype-icon">📦</span>
+            Normal
+            <div class="otype-days">Dispatch: 17d · Delivery: 19d</div>
+          </button>
+          <button class="otype-btn urgent" id="otype_urgent" onclick="setOrderType('urgent')">
+            <span class="otype-icon">⚡</span>
+            Urgent (W/o IGI)
+            <div class="otype-days">Dispatch: 10d · Delivery: 12d</div>
+          </button>
+        </div>
+      </div>
+
+      <div class="msec">
+        <div class="msec-title">Customer Info</div>
+        <div class="fg">
+          <label class="flbl">Customer *
+            <span style="color:var(--gold-d);cursor:pointer;margin-left:8px;font-size:9px" onclick="openAddCustomer()">[+ Add New]</span>
+          </label>
+          <select class="sel inp" id="f_name" onchange="onCustomerSelect()">
+            <option value="">— Select Customer —</option>
+          </select>
+        </div>
+        <div class="fl">
+          <div class="fg half"><label class="flbl">Contact</label><input class="inp" id="f_contact" placeholder="+91…"></div>
+          <div class="fg half"><label class="flbl">Location <span style="color:var(--dim);font-size:7px">(auto-tagged)</span></label><input class="inp" id="f_loc" placeholder="Sarjapura" readonly style="color:var(--mid)"></div>
+        </div>
+        <div class="fg" id="vendorFieldGroup">
+          <label class="flbl">Vendor / Karigar *
+            <span style="color:var(--gold-d);cursor:pointer;margin-left:8px;font-size:9px" onclick="openAddVendor()">[+ Add New]</span>
+          </label>
+          <select class="sel inp" id="f_vendor" onchange="onVendorSelect()">
+            <option value="">— Select Vendor —</option>
+          </select>
+        </div>
+        <div class="fg"><label class="flbl">Item Category</label>
+          <select class="sel inp" id="f_category">
+            <option value="">— Select Category —</option>
+            <option>Nosepin</option>
+            <option>Earrings</option>
+            <option>Necklace</option>
+            <option>Pendant</option>
+            <option>Bracelet</option>
+            <option>Ring</option>
+            <option>Bangles</option>
+            <option>Mixed</option>
+          </select>
+        </div>
+        <div class="fl">
+          <div class="fg half"><label class="flbl">PO Number *</label><input class="inp" id="f_po" placeholder="PO-2025-001"></div>
+          <div class="fg half" id="invoiceFieldWrap" style="display:none"><label class="flbl">Invoice Number *</label><input class="inp" id="f_invoice" placeholder="INV-2025-001"></div>
+        </div>
+      </div>
+
+      <!-- NEW DESIGN (new orders only) -->
+      <div class="msec" id="newDesignSection">
+        <div class="msec-title">Design</div>
+        <div class="fl" style="gap:10px;align-items:center">
+          <div class="flbl" style="flex-shrink:0">New Design?</div>
+          <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:10px">
+            <input type="radio" name="f_newdesign" id="f_nd_yes" value="yes" onchange="onNewDesignChange()" style="accent-color:var(--gold)"> Yes
+          </label>
+          <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:10px">
+            <input type="radio" name="f_newdesign" id="f_nd_no" value="no" onchange="onNewDesignChange()" style="accent-color:var(--gold)" checked> No
+          </label>
+        </div>
+        <div style="font-size:8px;color:var(--dim);margin-top:6px;letter-spacing:1px">If No → CAD stages are skipped from this order's workflow</div>
+      </div>
+
+      <div class="msec">
+        <div class="msec-title">Order Pieces</div>
+        <div id="piecesList"></div>
+        <button class="btn-add-row" onclick="addPiece()">+ Add Piece</button>
+      </div>
+
+      <div class="msec">
+        <div class="msec-title">Dates & Status</div>
+        <div class="fl">
+          <div class="fg half"><label class="flbl">Order Date</label><input class="inp" id="f_odate" type="date"></div>
+          <div class="fg half"><label class="flbl">Dispatch from Vendor</label><input class="inp" id="f_shipdate" type="date"></div>
+        </div>
+        <div class="fl">
+          <div class="fg half"><label class="flbl">Delivery to Customer</label><input class="inp" id="f_ddate" type="date"></div>
+        </div>
+        <div class="fg"><label class="flbl">Status</label>
+          <select class="sel inp" id="f_status" onchange="onStatusChange()">
+            <option>Order Placed</option>
+            <option>CAD Approval Pending</option>
+            <option>CAD Approved</option>
+            <option>In Production</option>
+            <option>IGI</option>
+            <option>Order Received</option>
+            <option>Order Delivered</option>
+            <option>Cancelled</option>
+          </select>
+        </div>
+        <!-- Invoice field shown when status = Order Delivered -->
+        <div class="fg" id="invoiceInlineWrap" style="display:none">
+          <label class="flbl" style="color:var(--od)">Invoice Number * (required for delivery)</label>
+          <input class="inp" id="f_invoice_inline" placeholder="INV-2025-001">
+        </div>
+        <!-- Cancel remarks shown when status = Cancelled -->
+        <div class="fg" id="cancelRemarksWrap" style="display:none">
+          <label class="flbl" style="color:var(--cx)">Cancellation Remarks * (required)</label>
+          <textarea class="inp" id="f_cancel_remarks" rows="2" placeholder="Reason for cancellation…" style="resize:vertical"></textarea>
+        </div>
+      </div>
+
+      <div class="msec">
+        <div class="msec-title">Product Images</div>
+        <div class="img-upload-area">
+          <input type="file" accept="image/*" multiple onchange="handleImgs(event)">
+          <div style="font-size:22px;margin-bottom:5px">◈</div>
+          <div style="font-size:9px;color:var(--dim);letter-spacing:1px">Tap to upload images</div>
+        </div>
+        <div class="img-previews" id="imgPreviews"></div>
+      </div>
+
+      <div class="msec">
+        <div class="msec-title">Notes</div>
+        <textarea class="inp" id="f_notes" rows="3" placeholder="Special instructions, follow-up notes…" style="resize:vertical"></textarea>
+      </div>
+
+    </div>
+    <div class="sheet-footer">
+      <button class="btn-xs" onclick="closeModal('addModal')">Cancel</button>
+      <button class="btn-gold" onclick="saveOrder()">Save Order</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════
+     DETAIL MODAL
+═══════════════════════════════════════════════════ -->
+<div class="overlay" id="detailModal">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-hdr">
+      <div class="sheet-title" id="detailTitle">Order</div>
+      <button class="sheet-close" onclick="closeModal('detailModal')">✕</button>
+    </div>
+    <div class="sheet-body" id="detailBody"></div>
+    <div class="sheet-footer">
+      <button class="btn-xs danger" onclick="delCurrent()">Delete</button>
+      <button class="btn-xs" onclick="closeModal('detailModal')">Close</button>
+      <button class="btn-gold" onclick="editCurrent()">Edit</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════
+     ADD VENDOR MODAL
+═══════════════════════════════════════════════════ -->
+<div class="overlay" id="addVendorModal">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-hdr">
+      <div class="sheet-title">New Vendor</div>
+      <button class="sheet-close" onclick="closeModal('addVendorModal')">✕</button>
+    </div>
+    <div class="sheet-body">
+      <div class="fg"><label class="flbl">Vendor Name *</label><input class="inp" id="fv_name" placeholder="Surat Diamonds"></div>
+      <div class="fg"><label class="flbl">Contact Person</label><input class="inp" id="fv_contact" placeholder="Name / number"></div>
+      <div class="fg"><label class="flbl">City / Location</label><input class="inp" id="fv_loc" placeholder="Surat, Gujarat"></div>
+      <div class="fg"><label class="flbl">Speciality</label><input class="inp" id="fv_spec" placeholder="Nosepins, LGD, etc."></div>
+      <div class="fg"><label class="flbl">Notes</label><textarea class="inp" id="fv_notes" rows="2" placeholder="Any remarks…" style="resize:vertical"></textarea></div>
+    </div>
+    <div class="sheet-footer">
+      <button class="btn-xs" onclick="closeModal('addVendorModal')">Cancel</button>
+      <button class="btn-gold" onclick="saveVendor()">Save Vendor</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════
+     ADD CUSTOMER MODAL
+═══════════════════════════════════════════════════ -->
+<div class="overlay" id="addCustomerModal">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-hdr">
+      <div class="sheet-title">New Customer</div>
+      <button class="sheet-close" onclick="closeModal('addCustomerModal')">✕</button>
+    </div>
+    <div class="sheet-body">
+      <div class="fg"><label class="flbl">Shop / Customer Name *</label><input class="inp" id="fc_name" placeholder="Anand Jewellers"></div>
+      <div class="fg"><label class="flbl">Contact</label><input class="inp" id="fc_contact" placeholder="+91…"></div>
+      <div class="fg"><label class="flbl">Location</label><input class="inp" id="fc_loc" placeholder="Sarjapura, Bengaluru"></div>
+      <div class="fg"><label class="flbl">Notes</label><textarea class="inp" id="fc_notes" rows="2" placeholder="Any remarks…" style="resize:vertical"></textarea></div>
+    </div>
+    <div class="sheet-footer">
+      <button class="btn-xs" onclick="closeModal('addCustomerModal')">Cancel</button>
+      <button class="btn-gold" onclick="saveCustomer()">Save Customer</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════
+     FOLLOW-UP LOG MODAL
+═══════════════════════════════════════════════════ -->
+<div class="overlay" id="fuModal">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-hdr">
+      <div class="sheet-title" id="fuModalTitle">Vendor Follow-ups</div>
+      <button class="sheet-close" onclick="closeModal('fuModal')">✕</button>
+    </div>
+    <div class="sheet-body">
+      <div class="msec">
+        <div class="msec-title">Add Follow-up</div>
+        <div class="fg"><label class="flbl">Update / Message sent to Vendor</label>
+          <textarea class="inp" id="fu_update" rows="2" placeholder="e.g. Called Kuldeep re delivery timeline…" style="resize:vertical"></textarea>
+        </div>
+        <div class="fg"><label class="flbl">Vendor Response</label>
+          <textarea class="inp" id="fu_response" rows="2" placeholder="e.g. Will dispatch by Friday…" style="resize:vertical"></textarea>
+        </div>
+        <button class="btn-gold" style="width:100%;margin-top:4px" onclick="saveFollowUp()">+ Log Follow-up</button>
+      </div>
+      <div class="msec">
+        <div class="msec-title">Follow-up History</div>
+        <div class="fulog" id="fuLogList"></div>
+      </div>
+    </div>
+    <div class="sheet-footer">
+      <button class="btn-xs" onclick="closeModal('fuModal')">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════
+     USER MANAGEMENT MODAL (Admin only)
+═══════════════════════════════════════════════════ -->
+<div class="overlay" id="userManagerModal">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-hdr">
+      <div class="sheet-title">User Management</div>
+      <button class="sheet-close" onclick="closeModal('userManagerModal')">✕</button>
+    </div>
+    <div class="sheet-body">
+      <div class="msec">
+        <div class="msec-title">Add New User</div>
+        <div class="fg"><label class="flbl">Display Name</label><input class="inp" id="nu_name" placeholder="Salesman Name"></div>
+        <div class="fg"><label class="flbl">Email *</label><input class="inp" id="nu_email" type="email" placeholder="name@bharni.com"></div>
+        <div class="fg"><label class="flbl">Password *</label><input class="inp" id="nu_pwd" type="password" placeholder="Min 6 characters"></div>
+        <div class="fg"><label class="flbl">Role</label>
+          <select class="sel inp" id="nu_role">
+            <option value="salesman">Salesman</option>
+            <option value="admin">Admin</option>
+          </select>
+        </div>
+        <div style="font-size:8px;color:var(--dim);line-height:1.6;margin-bottom:10px">
+          Salesman role: can view orders, customers, pipeline, and karigar analytics. <strong style="color:var(--mid)">Cannot see vendor details</strong> anywhere — vendor names, vendor tab, vendor job card, and vendor fields in orders are all hidden.
+        </div>
+        <button class="btn-gold" style="width:100%" onclick="createUser()">Create User</button>
+      </div>
+      <div class="msec">
+        <div class="msec-title">Existing Users</div>
+        <div id="userList"><div style="font-size:9px;color:var(--dim);padding:8px">Loading…</div></div>
+      </div>
+    </div>
+    <div class="sheet-footer">
+      <button class="btn-xs" onclick="closeModal('userManagerModal')">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- FIREBASE CONFIG OVERLAY -->
+<div class="fb-overlay" id="fbOverlay" style="display:none">
+  <div class="fb-card">
+    <div class="fb-title">◈ Firebase Setup</div>
+    <div class="fb-sub">Connect Bharni Gems to Firebase Firestore for real-time sync across all your devices. Takes 5 minutes. Free forever at your scale.</div>
+
+    <div class="fb-step">Step 1 — Create a Firebase Project</div>
+    <div class="fb-note">Go to <strong style="color:var(--mid)">console.firebase.google.com</strong> → Add project → name it "bharni-gems" → disable Google Analytics → Create project.</div>
+
+    <div class="fb-step">Step 2 — Create a Firestore Database</div>
+    <div class="fb-note">In your project → Build → Firestore Database → Create database → Start in <strong style="color:var(--mid)">test mode</strong> → Choose a region (asia-south1 for Mumbai) → Enable.</div>
+
+    <div class="fb-step">Step 3 — Get your Web App credentials</div>
+    <div class="fb-note">Project Settings (gear icon) → Your apps → Add app → Web (</> icon) → Register app as "bharni-gems-web" → Copy the firebaseConfig object. It looks like this:</div>
+    <div class="fb-code">const firebaseConfig = {
+  apiKey: "AIza...",
+  authDomain: "bharni-gems.firebaseapp.com",
+  projectId: "bharni-gems",
+  storageBucket: "bharni-gems.appspot.com",
+  messagingSenderId: "123456789",
+  appId: "1:123:web:abc"
+};</div>
+
+    <div class="fb-step">Step 4 — Paste your credentials below</div>
+    <div class="fg"><label class="flbl">API Key</label><input class="inp" id="fb_apiKey" placeholder="AIzaSy..."></div>
+    <div class="fg"><label class="flbl">Auth Domain</label><input class="inp" id="fb_authDomain" placeholder="yourapp.firebaseapp.com"></div>
+    <div class="fg"><label class="flbl">Project ID</label><input class="inp" id="fb_projectId" placeholder="your-project-id"></div>
+    <div class="fg"><label class="flbl">Storage Bucket</label><input class="inp" id="fb_storageBucket" placeholder="yourapp.appspot.com"></div>
+    <div class="fg"><label class="flbl">Messaging Sender ID</label><input class="inp" id="fb_messagingSenderId" placeholder="123456789012"></div>
+    <div class="fg"><label class="flbl">App ID</label><input class="inp" id="fb_appId" placeholder="1:123456:web:abc123"></div>
+
+    <div style="margin-top:6px;font-size:8px;color:var(--dim);line-height:1.7">
+      ⚠️ <strong style="color:var(--mid)">Note on images:</strong> Piece photos are large (base64). They are stored locally only and not synced to Firestore to keep documents under the 1MB limit. All other data — orders, vendors, customers, follow-ups, activity log — syncs fully.
+    </div>
+
+    <button class="btn-gold" style="width:100%;margin-top:18px" onclick="initFirebase()">Connect to Firebase</button>
+    <button class="fb-skip" onclick="skipFirebase()">Continue without Firebase (local only)</button>
+  </div>
+</div>
+
+<!-- PRINT FRAME -->
+<div id="printFrame"></div>
+
+<!-- LIGHTBOX -->
+<div class="lbx" id="lbx" onclick="this.classList.remove('open')">
+  <img id="lbxImg">
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<!-- Firebase SDKs loaded here (body end) to guarantee they execute before inline app script -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+
+<script>
+// ══════════════════════════════════════════════
+// FIREBASE + DATA LAYER
+// ══════════════════════════════════════════════
+const STATUS_LIST = ['Order Placed','CAD Approval Pending','CAD Approved','In Production','IGI','Order Received','Order Delivered','Cancelled'];
+const STATUS_KEY = {
+  'Order Placed':'op','CAD Approval Pending':'cap','CAD Approved':'ca',
+  'In Production':'ip','IGI':'igi','Order Received':'or',
+  'Order Delivered':'od','Cancelled':'cx'
+};
+const STATUS_COLOR = {
+  'Order Placed':'var(--op)','CAD Approval Pending':'var(--cap)','CAD Approved':'var(--ca)',
+  'In Production':'var(--ip)','IGI':'var(--igi)','Order Received':'var(--or)',
+  'Order Delivered':'var(--od)','Cancelled':'var(--cx)'
+};
+
+// ── HARDCODED DEFAULT CONFIG (Bharni Gems Firebase project) ──
+const DEFAULT_FB_CONFIG = {
+  apiKey:            "AIzaSyCqN4qVTKaWMGDa7pQsp-ge2SGe0vLDhZc",
+  authDomain:        "bharni-gems---customer-orders.firebaseapp.com",
+  projectId:         "bharni-gems---customer-orders",
+  storageBucket:     "bharni-gems---customer-orders.firebasestorage.app",
+  messagingSenderId: "799322147264",
+  appId:             "1:799322147264:web:722c6da04fb46bc170a025"
+};
+let orders = [];
+let standaloneVendors = [];
+let standaloneCustomers = [];
+let editId = null, curImgs = [], viewId = null, selVendor = null;
+let statFilter = null, custFilter = null;
+let reminderDays = parseInt(localStorage.getItem('bg_rem_days') || '3');
+
+// ── Firebase state ──
+let db = null;
+let auth = null;
+let fbReady = false;
+let unsubOrders = null, unsubVendors = null, unsubCustomers = null;
+
+// ── Auth state ──
+let currentUser = null;   // Firebase user object
+let currentRole = null;   // 'admin' or 'salesman'
+
+// ══════════════════════════════════════════════
+// ROLE GUARDS
+// ══════════════════════════════════════════════
+function isAdmin() { return currentRole === 'admin'; }
+
+function applyRoleUI() {
+  const salesman = currentRole === 'salesman';
+  // Vendors tab
+  document.getElementById('navVendors').style.display = salesman ? 'none' : '';
+  // Vendor job card in export menu
+  const vCard = document.getElementById('exportVendorCard');
+  if (vCard) vCard.style.display = salesman ? 'none' : '';
+  // Vendor field label in order form — handled at render time via guardVendor()
+  // Manage Users menu item
+  document.getElementById('menuManageUsers').style.display = isAdmin() ? 'flex' : 'none';
+  // Header sub-label
+  document.querySelector('.hdr-brand p').textContent =
+    salesman ? 'Sales · ' + (currentUser?.displayName||'') : 'Order Management';
+}
+
+// Returns vendor value masked for salesman
+function guardVendor(val) { return currentRole === 'salesman' ? '—' : (val||'—'); }
+
+// ══════════════════════════════════════════════
+// LOGIN / LOGOUT
+// ══════════════════════════════════════════════
+async function doLogin() {
+  const email = document.getElementById('login_email').value.trim();
+  const pwd   = document.getElementById('login_pwd').value;
+  const errEl = document.getElementById('loginErr');
+  errEl.textContent = '';
+  if (!email || !pwd) { errEl.textContent = 'Email and password required'; return; }
+  if (!auth) { errEl.textContent = 'Firebase not configured — set up Firebase first'; showFbConfig(); return; }
+  try {
+    document.querySelector('.login-btn').textContent = 'Signing in…';
+    await auth.signInWithEmailAndPassword(email, pwd);
+    // onAuthStateChanged handles the rest
+  } catch(e) {
+    document.querySelector('.login-btn').textContent = 'Sign In';
+    errEl.textContent = friendlyAuthError(e.code);
+  }
+}
+
+function friendlyAuthError(code) {
+  const map = {
+    'auth/user-not-found':    'No account with that email.',
+    'auth/wrong-password':    'Incorrect password.',
+    'auth/invalid-email':     'Invalid email address.',
+    'auth/too-many-requests': 'Too many attempts. Try again later.',
+    'auth/invalid-credential':'Email or password is incorrect.',
+  };
+  return map[code] || 'Sign-in failed: ' + code;
+}
+
+async function doLogout() {
+  if (auth) await auth.signOut();
+}
+
+// ══════════════════════════════════════════════
+// USER MANAGEMENT (Admin only)
+// ══════════════════════════════════════════════
+function openUserManager() {
+  if (!isAdmin()) { showToast('Admin only'); return; }
+  loadUserList();
+  document.getElementById('userManagerModal').classList.add('open');
+}
+
+async function loadUserList() {
+  const el = document.getElementById('userList');
+  if (!fbReady) { el.innerHTML = '<div style="font-size:9px;color:var(--dim)">Firebase not connected</div>'; return; }
+  try {
+    const snap = await db.collection('meta').doc('users').get();
+    const users = snap.exists ? (snap.data().list || []) : [];
+    if (!users.length) { el.innerHTML = '<div style="font-size:9px;color:var(--dim);padding:8px">No users yet — add one above.</div>'; return; }
+    el.innerHTML = users.map((u,i) => `
+      <div class="user-card">
+        <div>
+          <div class="user-card-name">${u.name||'Unnamed'}</div>
+          <div class="user-card-email">${u.email} · <span style="color:${u.role==='admin'?'var(--gold)':'var(--cap)'}">${u.role}</span></div>
+        </div>
+        <div style="display:flex;gap:6px;align-items:center">
+          <button class="btn-xs" onclick="toggleUserRole(${i})" title="Toggle role">${u.role==='admin'?'→ Salesman':'→ Admin'}</button>
+          <button class="btn-xs danger" onclick="deleteUserEntry(${i})">✕</button>
+        </div>
+      </div>`).join('');
+  } catch(e) { el.innerHTML = '<div style="font-size:9px;color:var(--cx)">Error loading users: '+e.message+'</div>'; }
+}
+
+async function createUser() {
+  if (!isAdmin()) return;
+  const name  = document.getElementById('nu_name').value.trim();
+  const email = document.getElementById('nu_email').value.trim();
+  const pwd   = document.getElementById('nu_pwd').value;
+  const role  = document.getElementById('nu_role').value;
+  if (!email || !pwd) { showToast('Email and password required'); return; }
+  if (pwd.length < 6) { showToast('Password must be at least 6 characters'); return; }
+  if (!fbReady) { showToast('Firebase not connected'); return; }
+  try {
+    // Create a secondary auth instance to create users without signing out current admin
+    const secondaryApp = firebase.initializeApp(firebase.app().options, 'secondary_'+Date.now());
+    const secondaryAuth = secondaryApp.auth();
+    const cred = await secondaryAuth.createUserWithEmailAndPassword(email, pwd);
+    await cred.user.updateProfile({ displayName: name });
+    await secondaryAuth.signOut();
+    secondaryApp.delete();
+    // Store role in Firestore users list
+    const snap = await db.collection('meta').doc('users').get();
+    const users = snap.exists ? (snap.data().list || []) : [];
+    users.push({ uid: cred.user.uid, email, name, role });
+    await db.collection('meta').doc('users').set({ list: users });
+    ['nu_name','nu_email','nu_pwd'].forEach(id => document.getElementById(id).value = '');
+    document.getElementById('nu_role').value = 'salesman';
+    loadUserList();
+    showToast('User created: '+email);
+  } catch(e) {
+    showToast('Error: ' + (e.message||e.code));
+  }
+}
+
+async function toggleUserRole(i) {
+  const snap = await db.collection('meta').doc('users').get();
+  const users = snap.data().list || [];
+  users[i].role = users[i].role === 'admin' ? 'salesman' : 'admin';
+  await db.collection('meta').doc('users').set({ list: users });
+  loadUserList();
+  showToast('Role updated');
+}
+
+async function deleteUserEntry(i) {
+  if (!confirm('Remove this user from the system? They will no longer be able to log in.')) return;
+  const snap = await db.collection('meta').doc('users').get();
+  const users = snap.data().list || [];
+  users.splice(i, 1);
+  await db.collection('meta').doc('users').set({ list: users });
+  loadUserList();
+  showToast('User removed');
+}
+
+function toggleUserMenu() {
+  const m = document.getElementById('userMenu');
+  if (m.style.display === 'none') {
+    document.getElementById('userMenuHdr').innerHTML =
+      `<strong style="color:var(--txt)">${currentUser?.displayName||currentUser?.email||'User'}</strong><br>
+       <span class="role-badge ${currentRole}">${currentRole}</span>`;
+    m.style.display = 'block';
+  } else {
+    m.style.display = 'none';
+  }
+}
+
+// Close user menu on outside click
+document.addEventListener('click', function(e) {
+  const menu = document.getElementById('userMenu');
+  const btn  = document.getElementById('userMenuBtn');
+  if (menu && menu.style.display !== 'none' && !menu.contains(e.target) && e.target !== btn) {
+    menu.style.display = 'none';
+  }
+});
+
+// ── Sync status UI ──
+function setSyncStatus(state, label) {
+  const dot = document.getElementById('syncDot');
+  const lbl = document.getElementById('syncLabel');
+  dot.className = 'sync-dot ' + state;
+  lbl.textContent = label;
+}
+
+// ── Strip images from pieces before Firestore write (keeps docs under 1MB) ──
+function stripImages(order) {
+  const o = {...order, pieces: (order.pieces||[]).map(p => {
+    const {img, ...rest} = p; return rest;
+  })};
+  delete o.images; // order-level images also stripped
+  return o;
+}
+
+// ── Restore images from localStorage cache into order ──
+function restoreImages(order) {
+  const cache = JSON.parse(localStorage.getItem('bg_imgs_'+order.id)||'null');
+  if (cache) {
+    order.images = cache.images || [];
+    (order.pieces||[]).forEach((p,i) => { p.img = cache.pieces?.[i] || ''; });
+  } else {
+    order.images = order.images || [];
+    (order.pieces||[]).forEach(p => { p.img = p.img || ''; });
+  }
+  return order;
+}
+
+// ── Cache images locally when saving ──
+function cacheImages(order) {
+  const cache = {
+    images: order.images || [],
+    pieces: (order.pieces||[]).map(p => p.img||'')
+  };
+  if (cache.images.length || cache.pieces.some(Boolean)) {
+    localStorage.setItem('bg_imgs_'+order.id, JSON.stringify(cache));
+  }
+}
+
+// ── SAVE functions ──
+async function save(orderData) {
+  // Always write to localStorage as backup cache
+  localStorage.setItem('bg_orders_v2', JSON.stringify(orders));
+  // If no specific order passed, or Firebase not ready, stop here
+  if (!fbReady || !db || !orderData) return;
+  try {
+    setSyncStatus('syncing', 'saving…');
+    cacheImages(orderData);
+    const doc = stripImages(orderData);
+    await db.collection('orders').doc(doc.id).set(doc);
+    setSyncStatus('synced', 'synced');
+  } catch(e) {
+    console.error('Firestore write error:', e);
+    setSyncStatus('error', 'sync err');
+    showToast('Saved locally — sync failed: ' + e.message);
+  }
+}
+
+async function saveVendors() {
+  localStorage.setItem('bg_vendors', JSON.stringify(standaloneVendors));
+  if (!fbReady) return;
+  try {
+    setSyncStatus('syncing','saving…');
+    await db.collection('meta').doc('vendors').set({ list: standaloneVendors });
+    setSyncStatus('synced','synced');
+  } catch(e) { setSyncStatus('error','sync err'); }
+}
+
+async function saveCustomers() {
+  localStorage.setItem('bg_customers', JSON.stringify(standaloneCustomers));
+  if (!fbReady) return;
+  try {
+    setSyncStatus('syncing','saving…');
+    await db.collection('meta').doc('customers').set({ list: standaloneCustomers });
+    setSyncStatus('synced','synced');
+  } catch(e) { setSyncStatus('error','sync err'); }
+}
+
+async function deleteOrderFromFirestore(id) {
+  localStorage.setItem('bg_orders_v2', JSON.stringify(orders));
+  if (!fbReady) return;
+  try {
+    await db.collection('orders').doc(id).delete();
+    localStorage.removeItem('bg_imgs_'+id);
+  } catch(e) { console.error('Delete error:', e); }
+}
+
+// ── FIREBASE INIT ──
+function initFirebase() {
+  if (typeof firebase === 'undefined') {
+    showToast('Firebase SDK not loaded — reload the page and try again.');
+    return;
+  }
+  const cfg = {
+    apiKey:            document.getElementById('fb_apiKey').value.trim(),
+    authDomain:        document.getElementById('fb_authDomain').value.trim(),
+    projectId:         document.getElementById('fb_projectId').value.trim(),
+    storageBucket:     document.getElementById('fb_storageBucket').value.trim(),
+    messagingSenderId: document.getElementById('fb_messagingSenderId').value.trim(),
+    appId:             document.getElementById('fb_appId').value.trim()
+  };
+  if (!cfg.apiKey || !cfg.projectId) { showToast('API Key and Project ID are required'); return; }
+  localStorage.setItem('bg_fb_config', JSON.stringify(cfg));
+  document.getElementById('fbOverlay').style.display = 'none';
+  connectFirebase(cfg);
+}
+
+function connectFirebase(cfg) {
+  if (typeof firebase === 'undefined') {
+    setSyncStatus('error', 'load error');
+    showToast('Firebase SDK failed to load — check your internet and reload.');
+    return;
+  }
+  try {
+    // Clean re-init: delete existing app synchronously if present
+    if (firebase.apps.length) {
+      firebase.apps.forEach(app => {
+        try { app.delete(); } catch(e) {}
+      });
+    }
+    firebase.initializeApp(cfg);
+    db   = firebase.firestore();
+    auth = firebase.auth();
+
+    // Enable offline persistence — ignore all errors (tab conflict, unsupported browser, etc.)
+    db.enablePersistence().catch(() => {});
+
+    fbReady = true;
+    setSyncStatus('syncing', 'connecting…');
+
+    // Auth state listener — gatekeeper for the entire app
+    auth.onAuthStateChanged(async user => {
+      if (user) {
+        currentUser = user;
+        try {
+          const snap = await db.collection('meta').doc('users').get();
+          const users = snap.exists ? (snap.data().list || []) : [];
+          const record = users.find(u => u.uid === user.uid || u.email === user.email);
+          if (!snap.exists || users.length === 0) {
+            // Bootstrap: first ever login becomes admin
+            currentRole = 'admin';
+            await db.collection('meta').doc('users').set({
+              list: [{ uid: user.uid, email: user.email, name: user.displayName || 'Admin', role: 'admin' }]
+            });
+          } else {
+            currentRole = record?.role || 'salesman';
+          }
+        } catch(e) {
+          console.warn('Role lookup failed, defaulting to salesman:', e);
+          currentRole = 'salesman';
+        }
+        document.getElementById('loginScreen').style.display = 'none';
+        document.querySelector('.login-btn').textContent = 'Sign In';
+        document.getElementById('loginErr').textContent = '';
+        // Wipe any stale localStorage orders — Firestore snapshot will repopulate
+        localStorage.removeItem('bg_orders_v2');
+        orders = [];
+        applyRoleUI();
+        startListeners();
+        renderDash();
+      } else {
+        currentUser = null;
+        currentRole = null;
+        if (unsubOrders)   { try { unsubOrders();   } catch(e){} unsubOrders   = null; }
+        if (unsubVendors)  { try { unsubVendors();  } catch(e){} unsubVendors  = null; }
+        if (unsubCustomers){ try { unsubCustomers();} catch(e){} unsubCustomers = null; }
+        document.getElementById('loginScreen').style.display = 'flex';
+        document.querySelector('.login-btn').textContent = 'Sign In';
+      }
+    });
+
+  } catch(e) {
+    console.error('Firebase connect error:', e);
+    setSyncStatus('error', 'connect err');
+    showToast('Firebase error: ' + e.message);
+  }
+}
+
+function startListeners() {
+  // Show a loading state while we wait for the first Firestore snapshot
+  setSyncStatus('syncing', 'loading…');
+
+  // Orders — Firestore is the single source of truth
+  if (unsubOrders) try { unsubOrders(); } catch(e) {}
+  unsubOrders = db.collection('orders').onSnapshot(snap => {
+    const fresh = snap.docs.map(d => restoreImages({ id: d.id, ...d.data() }));
+    fresh.sort((a,b) => (b.odate||'').localeCompare(a.odate||''));
+    orders = fresh;
+    // Write back to localStorage as offline cache (not as source of truth)
+    localStorage.setItem('bg_orders_v2', JSON.stringify(orders));
+    setSyncStatus('synced', 'synced');
+    renderAll();
+  }, err => {
+    console.error('Orders listener error:', err.code, err.message);
+    setSyncStatus('error', 'sync err');
+    showToast('Firestore error: ' + err.message);
+  });
+
+  // Vendors
+  if (unsubVendors) try { unsubVendors(); } catch(e) {}
+  unsubVendors = db.collection('meta').doc('vendors').onSnapshot(snap => {
+    if (snap.exists) {
+      standaloneVendors = snap.data().list || [];
+      localStorage.setItem('bg_vendors', JSON.stringify(standaloneVendors));
+    }
+  }, err => { console.warn('Vendors listener:', err.message); });
+
+  // Customers
+  if (unsubCustomers) try { unsubCustomers(); } catch(e) {}
+  unsubCustomers = db.collection('meta').doc('customers').onSnapshot(snap => {
+    if (snap.exists) {
+      standaloneCustomers = snap.data().list || [];
+      localStorage.setItem('bg_customers', JSON.stringify(standaloneCustomers));
+    }
+  }, err => { console.warn('Customers listener:', err.message); });
+}
+
+function skipFirebase() {
+  localStorage.setItem('bg_fb_skip', '1');
+  document.getElementById('fbOverlay').style.display = 'none';
+  setSyncStatus('offline', 'local only');
+  // In local mode bypass login
+  document.getElementById('loginScreen').style.display = 'none';
+  currentRole = 'admin';
+  applyRoleUI();
+  renderDash();
+}
+
+async function uploadAllToFirestore() {
+  if (!fbReady) { showToast('Firebase not connected — open Firebase Settings first'); return; }
+  if (!confirm(`Upload all ${orders.length} orders, ${standaloneVendors.length} vendors, and ${standaloneCustomers.length} customers to Firestore?`)) return;
+  setSyncStatus('syncing', 'uploading…');
+  try {
+    const batch = db.batch();
+    orders.forEach(o => {
+      const ref = db.collection('orders').doc(o.id);
+      batch.set(ref, stripImages(o));
+    });
+    await batch.commit();
+    await db.collection('meta').doc('vendors').set({ list: standaloneVendors });
+    await db.collection('meta').doc('customers').set({ list: standaloneCustomers });
+    setSyncStatus('synced', 'synced');
+    showToast(`Uploaded ${orders.length} orders to Firestore ✓`);
+  } catch(e) {
+    console.error('Bulk upload error:', e);
+    setSyncStatus('error', 'upload err');
+    showToast('Upload failed: ' + e.message);
+  }
+}
+
+function showFbConfig() {
+  const cfg = JSON.parse(localStorage.getItem('bg_fb_config') || 'null') || DEFAULT_FB_CONFIG;
+  Object.entries(cfg).forEach(([k,v]) => {
+    const el = document.getElementById('fb_'+k);
+    if (el) el.value = v;
+  });
+  document.getElementById('fbOverlay').style.display = 'flex';
+}
+
+// ── STARTUP ──
+function appStart() {
+  // Load from localStorage as instant offline cache ONLY
+  orders              = JSON.parse(localStorage.getItem('bg_orders_v2') || '[]');
+  standaloneVendors   = JSON.parse(localStorage.getItem('bg_vendors') || '[]');
+  standaloneCustomers = JSON.parse(localStorage.getItem('bg_customers') || '[]');
+  orders.forEach(restoreImages);
+
+  // Only seed demo data if there is NO Firebase config at all (pure local mode first run)
+  const hasFbConfig = !!localStorage.getItem('bg_fb_config');
+  if (!orders.length && !hasFbConfig) seedDemoData();
+
+  // Always show login screen — onAuthStateChanged will hide it after auth
+  document.getElementById('loginScreen').style.display = 'flex';
+
+  // Use hardcoded config (or saved override)
+  const savedCfg = JSON.parse(localStorage.getItem('bg_fb_config') || 'null');
+  const cfg = savedCfg || DEFAULT_FB_CONFIG;
+  if (!savedCfg) localStorage.setItem('bg_fb_config', JSON.stringify(cfg));
+
+  connectFirebase(cfg);
+}
+
+function gid() { return 'BG' + Date.now().toString(36).toUpperCase().slice(-5); }
+function today() { return new Date().toISOString().split('T')[0]; }
+function addDays(d, n) { const x = new Date(d); x.setDate(x.getDate()+n); return x.toISOString().split('T')[0]; }
+function saveReminderPref() {
+  reminderDays = parseInt(document.getElementById('reminderDays').value) || 3;
+  localStorage.setItem('bg_rem_days', reminderDays);
+}
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+function seedDemoData() {
+  const t = today();
+  orders = [
+    {id:gid(),name:'Anand Jewellers',contact:'+91 98450 11234',loc:'Sarjapura',vendor:'Surat Diamonds',category:'Nosepin',status:'Order Delivered',orderType:'normal',newDesign:'no',po:'PO-001',invoice:'INV-001',odate:addDays(t,-22),ddate:addDays(t,-10),shipdate:addDays(t,-12),notes:'Regular — fancy nosepins.',images:[],pieces:[{styleNo:'BG-NP-F01',gwt:1.20,dwt:0.18,size:'S',purity:'18KT',diaType:'LGD',img:''},{styleNo:'BG-NP-S01',gwt:0.80,dwt:0.12,size:'S',purity:'18KT',diaType:'Natural',img:''}]},
+    {id:gid(),name:'Mahalaxmi Jewellers',contact:'+91 97421 33210',loc:'Devanahalli',vendor:'Surat Diamonds',category:'Nosepin',status:'In Production',orderType:'normal',newDesign:'yes',po:'PO-002',invoice:'',odate:addDays(t,-10),ddate:addDays(t,5),shipdate:addDays(t,3),notes:'Confirm Kuldeep on delivery.',images:[],pieces:[{styleNo:'BG-NP-A02',gwt:1.50,dwt:0.22,size:'M',purity:'18KT',diaType:'LGD',img:''},{styleNo:'BG-ER-L01',gwt:2.10,dwt:0.30,size:'—',purity:'18KT',diaType:'LGD',img:''}]},
+    {id:gid(),name:'Sri Balakrishna Jewellers',contact:'+91 94483 77891',loc:'Kolar',vendor:'Mumbai Gems',category:'Nosepin',status:'CAD Approved',orderType:'normal',newDesign:'yes',po:'PO-003',invoice:'',odate:addDays(t,-6),ddate:addDays(t,8),shipdate:addDays(t,11),notes:'27 pieces confirmed.',images:[],pieces:[{styleNo:'BG-NP-C03',gwt:1.10,dwt:0.15,size:'S',purity:'22KT',diaType:'Natural',img:''},{styleNo:'BG-NP-CL03',gwt:0.90,dwt:0.10,size:'XS',purity:'22KT',diaType:'Natural',img:''}]},
+    {id:gid(),name:'Pratyusha Jewellery',contact:'+91 80012 56781',loc:'Electronic City',vendor:'Surat Diamonds',category:'Pendant',status:'Order Delivered',orderType:'urgent',newDesign:'no',po:'PO-004',invoice:'INV-002',odate:addDays(t,-18),ddate:addDays(t,-7),shipdate:addDays(t,-9),notes:'6 pieces sold.',images:[],pieces:[{styleNo:'BG-PD-L04',gwt:3.20,dwt:0.40,size:'—',purity:'18KT',diaType:'LGD',img:''},{styleNo:'BG-BR-D04',gwt:4.50,dwt:0.55,size:'M',purity:'18KT',diaType:'LGD',img:''}]},
+    {id:gid(),name:'Swarna Mahal Jewellers',contact:'+91 99001 44321',loc:'Anekal',vendor:'Mumbai Gems',category:'Necklace',status:'IGI',orderType:'normal',newDesign:'no',po:'PO-005',invoice:'',odate:addDays(t,-5),ddate:addDays(t,3),shipdate:addDays(t,2),notes:'Close setting pinge model.',images:[],pieces:[{styleNo:'BG-NK-P05',gwt:2.80,dwt:0.25,size:'—',purity:'PT',diaType:'Natural',img:''}]},
+    {id:gid(),name:'Dinesh Jewellers',contact:'+91 87654 32109',loc:'Vijapur',vendor:'Mumbai Gems',category:'Necklace',status:'CAD Approval Pending',orderType:'normal',newDesign:'yes',po:'PO-006',invoice:'',odate:addDays(t,-4),ddate:addDays(t,10),shipdate:addDays(t,13),notes:'Interested in big LGD necklaces.',images:[],pieces:[{styleNo:'BG-NK-B06',gwt:8.50,dwt:1.20,size:'—',purity:'18KT',diaType:'LGD',img:''},{styleNo:'BG-NK-S06',gwt:6.20,dwt:0.80,size:'—',purity:'18KT',diaType:'LGD',img:''}]},
+    {id:gid(),name:'Vandana Jewellers',contact:'+91 84321 11987',loc:'Jayanagar',vendor:'Surat Diamonds',category:'Earrings',status:'Order Placed',orderType:'normal',newDesign:'no',po:'PO-007',invoice:'',odate:today(),ddate:addDays(t,19),shipdate:addDays(t,17),notes:'Contact: Shrenik.',images:[],pieces:[{styleNo:'BG-ER-ST07',gwt:1.60,dwt:0.20,size:'—',purity:'18KT',diaType:'LGD',img:''}]},
+    {id:gid(),name:'Raj Shree Jewellery',contact:'+91 91234 09876',loc:'Wilson Road',vendor:'Surat Diamonds',category:'Ring',status:'Order Placed',orderType:'urgent',newDesign:'no',po:'PO-008',invoice:'',odate:today(),ddate:addDays(t,12),shipdate:addDays(t,10),notes:'Very positive. Nosepins variety.',images:[],pieces:[{styleNo:'BG-RG-SO08',gwt:2.90,dwt:0.35,size:'16',purity:'18KT',diaType:'Natural',img:''}]},
+  ];
+  // Save to localStorage only (Firebase will sync later if connected)
+  localStorage.setItem('bg_orders_v2', JSON.stringify(orders));
+}
+
+// ══════════════════════════════════════════════
+// VIEW SWITCHING
+// ══════════════════════════════════════════════
+function switchView(v, btn) {
+  document.querySelectorAll('.view').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.bnav-item').forEach(el => el.classList.remove('active'));
+  document.getElementById('view-'+v).classList.add('active');
+  if (btn) btn.classList.add('active');
+  document.getElementById('scrollArea').scrollTop = 0;
+  if (v==='dash') renderDash();
+  if (v==='orders') renderOrders();
+  if (v==='customers') renderCustomers();
+  if (v==='vendors') { selVendor=null; renderVendors(); }
+  if (v==='karigar') renderKarigar();
+}
+
+// ══════════════════════════════════════════════
+// HELPERS
+// ══════════════════════════════════════════════
+function totalPcs(o) { return o.pieces.reduce((a,p)=>a+Number(p.qty||1),0); }
+function totalGrossWt(arr) { return arr.reduce((a,o)=>a+o.pieces.reduce((b,p)=>b+Number(p.gwt||0)*Number(p.qty||1),0),0); }
+function totalDiamondWt(arr) { return arr.reduce((a,o)=>a+o.pieces.reduce((b,p)=>b+Number(p.dwt||0)*Number(p.qty||1),0),0); }
+function orderGrossWt(o) { return o.pieces.reduce((a,p)=>a+Number(p.gwt||0)*Number(p.qty||1),0); }
+function orderDiamondWt(o) { return o.pieces.reduce((a,p)=>a+Number(p.dwt||0)*Number(p.qty||1),0); }
+function sbadge(s) { return `<span class="sbadge ${STATUS_KEY[s]||'op'}">● ${s}</span>`; }
+function daysUntil(d) { if(!d) return null; const diff = new Date(d)-new Date(); return Math.ceil(diff/86400000); }
+function formatDate(d) { if(!d) return '—'; const [y,m,day]=d.split('-'); return `${day}/${m}/${y}`; }
+
+// ══════════════════════════════════════════════
+// DASHBOARD
+// ══════════════════════════════════════════════
+function renderDash() {
+  const now = new Date();
+  const weekEnd = new Date(); weekEnd.setDate(weekEnd.getDate()+7);
+  const active = orders.filter(o => !['Order Delivered','Cancelled'].includes(o.status));
+  const dueWeek = orders.filter(o => {
+    if(!o.ddate || ['Order Delivered','Cancelled'].includes(o.status)) return false;
+    const d = new Date(o.ddate); return d>=now && d<=weekEnd;
+  });
+  const overdue = orders.filter(o => {
+    if(!o.ddate || ['Order Delivered','Cancelled'].includes(o.status)) return false;
+    return new Date(o.ddate)<now;
+  });
+
+
+  document.getElementById('statsGrid').innerHTML = `
+    <div class="stat-card" onclick="goFilteredOrders('active')">
+      <div class="stat-lbl">Active Orders</div>
+      <div class="stat-val">${active.length}</div>
+      <div class="stat-sub">in pipeline</div>
+      <span class="arrow">→</span>
+    </div>
+    <div class="stat-card" onclick="goFilteredOrders('dueweek')">
+      <div class="stat-lbl">Due This Week</div>
+      <div class="stat-val" style="color:${dueWeek.length>0?'var(--ip)':'var(--gold)'}">${dueWeek.length}</div>
+      <div class="stat-sub">delivery expected</div>
+      <span class="arrow">→</span>
+    </div>
+    <div class="stat-card" onclick="goFilteredOrders('overdue')" style="border-color:${overdue.length>0?'var(--cx)':'var(--b)'}">
+      <div class="stat-lbl">Overdue</div>
+      <div class="stat-val" style="color:${overdue.length>0?'var(--cx)':'var(--gold)'}">${overdue.length}</div>
+      <div class="stat-sub">past delivery date</div>
+      <span class="arrow">→</span>
+    </div>
+    <div class="stat-card" onclick="goFilteredOrders('all')">
+      <div class="stat-lbl">Total Orders</div>
+      <div class="stat-val">${orders.length}</div>
+      <div class="stat-sub">all time</div>
+      <span class="arrow">→</span>
+    </div>
+    <div class="stat-card">
+      <div class="stat-lbl">Gross Wt Active</div>
+      <div class="stat-val" style="font-size:22px">${totalGrossWt(active).toFixed(2)}<span style="font-size:12px;color:var(--dim)"> g</span></div>
+      <div class="stat-sub">in pipeline</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-lbl">Diamond Wt Active</div>
+      <div class="stat-val" style="font-size:22px">${totalDiamondWt(active).toFixed(2)}<span style="font-size:12px;color:var(--dim)"> ct</span></div>
+      <div class="stat-sub">in pipeline</div>
+    </div>
+  `;
+  renderPipeline();
+}
+
+function goFilteredOrders(filter) {
+  statFilter = filter;
+  custFilter = null;
+  // activate orders tab
+  document.querySelectorAll('.view').forEach(el=>el.classList.remove('active'));
+  document.querySelectorAll('.bnav-item').forEach(el=>el.classList.remove('active'));
+  document.getElementById('view-orders').classList.add('active');
+  document.querySelectorAll('.bnav-item')[1].classList.add('active');
+  document.getElementById('scrollArea').scrollTop = 0;
+  document.getElementById('orderStatusF').value = '';
+  document.getElementById('orderSearch').value = '';
+  renderOrders();
+}
+
+// ══════════════════════════════════════════════
+// PIPELINE
+// ══════════════════════════════════════════════
+function renderPipeline() {
+  const board = document.getElementById('pipelineBoard');
+  board.innerHTML = STATUS_LIST.map(s => {
+    const cols = orders.filter(o=>o.status===s);
+    return `
+      <div class="pipe-col" data-s="${s}">
+        <div class="pipe-hdr">
+          <span class="pipe-title">${s}</span>
+          <span class="pipe-cnt">${cols.length}</span>
+        </div>
+        <div class="pipe-cards">
+          ${cols.length===0?`<div class="empty"><div class="empty-ico">◇</div><p>Empty</p></div>`:''}
+          ${cols.map(o=>{
+            const pcs=totalPcs(o),gwt=orderGrossWt(o),dwt=orderDiamondWt(o);
+            const thumb=o.images&&o.images.length>0?o.images[0]:(o.pieces&&o.pieces.find(p=>p.img)?.img||null);
+            const du=daysUntil(o.ddate);
+            const hasRem=du!==null&&du<=reminderDays&&du>=0;
+            return `<div class="ocard" onclick="viewOrder('${o.id}')">
+              <div class="ocard-id">${o.id}${o.po?` · ${o.po}`:''}</div>
+              ${thumb?`<img class="ocard-thumb" src="${thumb}">`:`<div class="ocard-thumb-ph">◈</div>`}
+              <div class="ocard-name">${o.name}${o.orderType==='urgent'?'<span class="urgent-tag">⚡ URGENT</span>':''}</div>
+              <div class="ocard-loc">📍 ${o.loc}</div>
+              <div class="ocard-meta">
+                <span class="ocard-pcs">${pcs} pcs</span>
+                <span class="ocard-val">${gwt.toFixed(2)}g · ${dwt.toFixed(2)}ct</span>
+              </div>
+              <div class="ocard-date">
+                <span>${guardVendor(o.vendor)}</span>
+                ${o.ddate?`<span style="color:${du!==null&&du<0?'var(--cx)':du<=3?'var(--ip)':'var(--dim)'}"> Del: ${formatDate(o.ddate)}</span>`:''}
+              </div>
+              ${hasRem?`<div class="reminder-dot"></div>`:''}
+            </div>`;
+          }).join('')}
+        </div>
+      </div>`;
+  }).join('');
+}
+
+// ══════════════════════════════════════════════
+// ORDERS LIST
+// ══════════════════════════════════════════════
+function renderOrders() {
+  const now = new Date();
+  const weekEnd = new Date(); weekEnd.setDate(weekEnd.getDate()+7);
+  const search = (document.getElementById('orderSearch').value||'').toLowerCase();
+  const sf = document.getElementById('orderStatusF').value;
+
+  // Filter tag
+  let tagHtml='', tagLabel='';
+  if(statFilter==='active') tagLabel='Active Orders';
+  else if(statFilter==='dueweek') tagLabel='Due This Week';
+  else if(statFilter==='overdue') tagLabel='Overdue';
+  else if(custFilter) tagLabel='Customer: '+custFilter;
+  if(tagLabel) tagHtml=`<div class="filter-tag">${tagLabel}<button onclick="clearFilter()">×</button></div>`;
+  document.getElementById('ordersFilterTag').innerHTML=tagHtml;
+
+  let list = orders.filter(o => {
+    const txt = (o.name+o.id+(o.vendor||'')+(o.loc||'')).toLowerCase();
+    const sm = !sf || o.status===sf;
+    const tm = !search || txt.includes(search);
+    let fm=true;
+    if(statFilter==='active') fm=!['Order Delivered','Cancelled'].includes(o.status);
+    else if(statFilter==='dueweek') { if(!o.ddate||['Order Delivered','Cancelled'].includes(o.status)) fm=false; else { const d=new Date(o.ddate); fm=d>=now&&d<=weekEnd; } }
+    else if(statFilter==='overdue') { if(!o.ddate||['Order Delivered','Cancelled'].includes(o.status)) fm=false; else fm=new Date(o.ddate)<now; }
+    else if(custFilter) fm=o.name===custFilter;
+    return sm&&tm&&fm;
+  });
+
+  const el = document.getElementById('ordersList');
+  if(!list.length){ el.innerHTML=`<div class="empty"><div class="empty-ico">◇</div><p>No orders found</p></div>`; return; }
+  el.innerHTML = list.map(o=>{
+    const pcs=totalPcs(o),gwt=orderGrossWt(o),dwt=orderDiamondWt(o);
+    const du=daysUntil(o.ddate);
+    return `<div class="row-card" onclick="viewOrder('${o.id}')">
+      <div class="row-id">${o.id}${o.po?` · PO: ${o.po}`:''} · ${o.category||''}</div>
+      <div class="row-top">
+        <div class="row-name">${o.name}${o.orderType==='urgent'?'<span class="urgent-tag">⚡ URGENT</span>':''}</div>
+        <div>${sbadge(o.status)}</div>
+      </div>
+      <div style="font-size:9px;color:var(--dim)">📍 ${o.loc} · ${guardVendor(o.vendor)}</div>
+      <div class="row-bottom">
+        <div class="row-meta">${pcs} pcs</div>
+        <div class="row-meta">GW: <span>${gwt.toFixed(2)}g</span></div>
+        <div class="row-meta">DW: <span style="color:var(--gold)">${dwt.toFixed(2)}ct</span></div>
+        ${o.ddate?`<div class="row-meta">Del: <span style="color:${du!==null&&du<0?'var(--cx)':du<=3?'var(--ip)':'var(--mid)'}">${formatDate(o.ddate)}${du!==null?` (${du<0?'overdue':du===0?'today':du+'d'})`:''}  </span></div>`:''}
+      </div>
+      <div class="row-actions" onclick="event.stopPropagation()">
+        <button class="btn-xs" onclick="openEdit('${o.id}')">Edit</button>
+        <button class="btn-xs" onclick="openFollowUp('${o.id}')">Follow-up${o.followUps&&o.followUps.length?` (${o.followUps.length})`:''}</button>
+        <button class="btn-xs danger" onclick="confirmDel('${o.id}')">Delete</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function clearFilter(){statFilter=null;custFilter=null;renderOrders();}
+
+// ══════════════════════════════════════════════
+// CUSTOMERS
+// ══════════════════════════════════════════════
+function renderCustomers() {
+  const search=(document.getElementById('custSearch').value||'').toLowerCase();
+  const map={};
+  orders.forEach(o=>{
+    if(!map[o.name]) map[o.name]={name:o.name,contact:o.contact,loc:o.loc,orders:[],pcs:0,gwt:0,dwt:0};
+    map[o.name].orders.push(o);
+    map[o.name].pcs+=totalPcs(o);
+    map[o.name].gwt+=orderGrossWt(o);
+    map[o.name].dwt+=orderDiamondWt(o);
+  });
+  // merge in standalone customers
+  standaloneCustomers.forEach(c=>{
+    if(!map[c.name]) map[c.name]={name:c.name,contact:c.contact,loc:c.loc,orders:[],pcs:0,gwt:0,dwt:0};
+  });
+  let list=Object.values(map).filter(c=>c.name.toLowerCase().includes(search)||(c.loc||'').toLowerCase().includes(search));
+  list.sort((a,b)=>b.orders.length-a.orders.length);
+  const el=document.getElementById('custList');
+  if(!list.length){el.innerHTML=`<div class="empty"><div class="empty-ico">◇</div><p>No customers</p></div>`;return;}
+  el.innerHTML=list.map(c=>{
+    const last=c.orders.length?c.orders.sort((a,b)=>new Date(b.odate)-new Date(a.odate))[0]:null;
+    return `<div class="row-card">
+      <div class="row-name">${c.name}</div>
+      <div style="font-size:9px;color:var(--dim);margin-bottom:6px">📍 ${c.loc||'—'} · ${c.contact||'—'}</div>
+      <div class="row-bottom">
+        <div class="row-meta">Orders: <span>${c.orders.length}</span></div>
+        <div class="row-meta">Pieces: <span>${c.pcs}</span></div>
+        <div class="row-meta">GW: <span>${c.gwt.toFixed(2)}g</span></div>
+        <div class="row-meta">DW: <span style="color:var(--gold)">${c.dwt.toFixed(2)}ct</span></div>
+        ${last?`<div class="row-meta">Last: <span>${formatDate(last.odate)}</span></div>`:''}
+      </div>
+      <div class="row-actions">
+        ${c.orders.length?`<button class="btn-xs" onclick="filterByCust('${c.name}')">View Orders →</button>`:''}
+        <button class="btn-xs danger" onclick="removeStandaloneCustomer('${c.name}')">Remove</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function filterByCust(name){
+  custFilter=name; statFilter=null;
+  document.querySelectorAll('.view').forEach(el=>el.classList.remove('active'));
+  document.querySelectorAll('.bnav-item').forEach(el=>el.classList.remove('active'));
+  document.getElementById('view-orders').classList.add('active');
+  document.querySelectorAll('.bnav-item')[1].classList.add('active');
+  document.getElementById('orderSearch').value='';
+  document.getElementById('orderStatusF').value='';
+  renderOrders();
+}
+
+// ══════════════════════════════════════════════
+// VENDORS
+// ══════════════════════════════════════════════
+function renderVendors() {
+  const map={};
+  orders.forEach(o=>{
+    const k=o.vendor||'Unassigned';
+    if(!map[k]) map[k]={name:k,orders:[],pcs:0,gwt:0,dwt:0};
+    map[k].orders.push(o);
+    map[k].pcs+=totalPcs(o);
+    map[k].gwt+=orderGrossWt(o);
+    map[k].dwt+=orderDiamondWt(o);
+  });
+  // merge in standalone vendors
+  standaloneVendors.forEach(v=>{
+    if(!map[v.name]) map[v.name]={name:v.name,orders:[],pcs:0,gwt:0,dwt:0};
+  });
+  const vendors=Object.values(map);
+  document.getElementById('vcardGrid').innerHTML=vendors.map(v=>`
+    <div class="vcard ${selVendor===v.name?'active':''}" onclick="selectVendor('${v.name}')">
+      <div class="vcard-name">${v.name}</div>
+      <div class="vcard-sub">${v.orders.length} orders</div>
+      <div class="vcard-stats">
+        <div class="vs"><div class="vs-v">${v.pcs}</div><div class="vs-l">Pieces</div></div>
+        <div class="vs"><div class="vs-v">${v.gwt.toFixed(1)}g</div><div class="vs-l">Gross Wt</div></div>
+        <div class="vs"><div class="vs-v">${v.orders.filter(o=>!['Order Delivered','Cancelled'].includes(o.status)).length}</div><div class="vs-l">Active</div></div>
+      </div>
+    </div>`).join('');
+
+  const vEl=document.getElementById('vendorOrdersList');
+  if(!selVendor){vEl.innerHTML='';return;}
+  const vOrders=orders.filter(o=>(o.vendor||'Unassigned')===selVendor);
+  vEl.innerHTML=`<div class="sec-title" style="margin-top:14px">${selVendor} — ${vOrders.length} Orders</div>
+    <div class="row-actions" style="margin-bottom:10px">
+      <button class="btn-xs danger" onclick="removeStandaloneVendor('${selVendor}')">Remove Vendor</button>
+    </div>
+    <div class="card-list">${vOrders.map(o=>{
+      const pcs=totalPcs(o),gwt=orderGrossWt(o),dwt=orderDiamondWt(o);
+      return `<div class="row-card" onclick="viewOrder('${o.id}')">
+        <div class="row-id">${o.id}</div>
+        <div class="row-top"><div class="row-name">${o.name}</div>${sbadge(o.status)}</div>
+        <div class="row-bottom">
+          <div class="row-meta">${pcs} pcs</div>
+          <div class="row-meta">GW: <span>${gwt.toFixed(2)}g</span></div>
+          <div class="row-meta">DW: <span style="color:var(--gold)">${dwt.toFixed(2)}ct</span></div>
+          ${o.ddate?`<div class="row-meta">Del: <span>${formatDate(o.ddate)}</span></div>`:''}
+        </div>
+      </div>`;
+    }).join('')}</div>`;
+}
+
+function selectVendor(name){selVendor=selVendor===name?null:name;renderVendors();}
+
+// ══════════════════════════════════════════════
+// KARIGAR ANALYTICS
+// ══════════════════════════════════════════════
+function renderKarigar() {
+  document.getElementById('reminderDays').value=reminderDays;
+
+  // Only delivered orders with both dates
+  const delivered = orders.filter(o=>o.status==='Order Delivered'&&o.odate&&o.ddate);
+  
+  // Overall avg
+  const allDays = delivered.map(o=>Math.max(0,Math.round((new Date(o.ddate)-new Date(o.odate))/86400000)));
+  const avgAll = allDays.length ? (allDays.reduce((a,b)=>a+b,0)/allDays.length).toFixed(1) : '—';
+  const maxD = allDays.length ? Math.max(...allDays) : 1;
+
+  // Category breakdown
+  const catMap={};
+  delivered.forEach(o=>{
+    const cat=o.category||'Uncategorised';
+    if(!catMap[cat]) catMap[cat]={days:[],count:0};
+    const d=Math.max(0,Math.round((new Date(o.ddate)-new Date(o.odate))/86400000));
+    catMap[cat].days.push(d);
+    catMap[cat].count++;
+  });
+  const cats=Object.entries(catMap).map(([cat,d])=>({cat,avg:(d.days.reduce((a,b)=>a+b,0)/d.days.length).toFixed(1),count:d.count})).sort((a,b)=>b.avg-a.avg);
+  const maxCat = cats.length ? Math.max(...cats.map(c=>parseFloat(c.avg))) : 1;
+
+  // Active orders avg age
+  const active=orders.filter(o=>!['Order Delivered','Cancelled'].includes(o.status)&&o.odate);
+  const avgAge=active.length?(active.map(o=>Math.round((new Date()-new Date(o.odate))/86400000)).reduce((a,b)=>a+b,0)/active.length).toFixed(1):'—';
+
+  document.getElementById('karigarSummary').innerHTML=`
+    <div class="k-total">
+      <div>
+        <div class="k-total-lbl">Avg. Completion Time</div>
+        <div class="k-total-sub">(delivered orders, order→delivery)</div>
+      </div>
+      <div>
+        <div class="k-total-val">${avgAll} days</div>
+        <div class="k-total-sub" style="text-align:right">${delivered.length} orders</div>
+      </div>
+    </div>
+    <div style="font-size:9px;color:var(--dim);margin-bottom:10px;letter-spacing:1.5px;text-transform:uppercase">Active orders avg age: <span style="color:var(--mid)">${avgAge} days</span></div>
+    ${cats.length===0?`<div style="font-size:10px;color:var(--dim);text-align:center;padding:16px">No delivered orders yet — data builds over time.</div>`:''}
+    <div class="k-cats">
+      ${cats.map(c=>`
+        <div class="k-cat-row">
+          <div class="k-cat-name">${c.cat}</div>
+          <div class="k-bar-wrap"><div class="k-bar" style="width:${Math.round((parseFloat(c.avg)/maxCat)*100)}%"></div></div>
+          <div class="k-days">${c.avg}d</div>
+          <div class="k-count">(${c.count})</div>
+        </div>`).join('')}
+    </div>`;
+
+  // Reminders
+  const now=new Date();
+  const remOrders=orders.filter(o=>{
+    if(['Order Delivered','Cancelled'].includes(o.status)||!o.ddate) return false;
+    const du=daysUntil(o.ddate);
+    return du!==null&&du<=reminderDays;
+  }).sort((a,b)=>new Date(a.ddate)-new Date(b.ddate));
+
+  const remEl=document.getElementById('reminderList');
+  if(!remOrders.length){remEl.innerHTML=`<div class="empty"><div class="empty-ico">🔔</div><p>No orders due within ${reminderDays} days</p></div>`;return;}
+  remEl.innerHTML=remOrders.map(o=>{
+    const du=daysUntil(o.ddate);
+    let cls='',dayCls='',dayTxt='';
+    if(du<0){cls='urgent';dayCls='urgent';dayTxt=Math.abs(du)+'d overdue';}
+    else if(du===0){cls='urgent';dayCls='urgent';dayTxt='Due TODAY';}
+    else if(du<=2){cls='soon';dayCls='soon';dayTxt='Due in '+du+'d';}
+    else{dayCls='ok';dayTxt='Due in '+du+'d';}
+    return `<div class="rem-item ${cls}" onclick="viewOrder('${o.id}')">
+      <div class="rem-meta">${o.id} · ${o.status}</div>
+      <div class="rem-name">${o.name}</div>
+      <div class="rem-meta">📍 ${o.loc} · ${guardVendor(o.vendor)}</div>
+      <div class="rem-days ${dayCls}">${dayTxt}</div>
+    </div>`;
+  }).join('');
+}
+
+// ══════════════════════════════════════════════
+// VIEW ORDER DETAIL
+// ══════════════════════════════════════════════
+function viewOrder(id){
+  const o=orders.find(x=>x.id===id);
+  if(!o) return;
+  viewId=id;
+  const pcs=totalPcs(o),gwt=orderGrossWt(o),dwt=orderDiamondWt(o);
+  document.getElementById('detailTitle').textContent=o.id+(o.orderType==='urgent'?' ⚡':'');
+  document.getElementById('detailBody').innerHTML=`
+    <div class="dg">
+      <div class="df"><div class="dl">Customer</div><div class="dv gold">${o.name}</div></div>
+      <div class="df"><div class="dl">Location</div><div class="dv">${o.loc||'—'}</div></div>
+      <div class="df"><div class="dl">Contact</div><div class="dv">${o.contact||'—'}</div></div>
+      <div class="df"><div class="dl">Vendor</div><div class="dv">${guardVendor(o.vendor)}</div></div>
+      <div class="df"><div class="dl">Category</div><div class="dv">${o.category||'—'}</div></div>
+      <div class="df"><div class="dl">Status</div><div class="dv">${sbadge(o.status)}</div></div>
+      <div class="df"><div class="dl">Order Type</div><div class="dv" style="color:${o.orderType==='urgent'?'var(--cx)':'var(--or)'}">${o.orderType==='urgent'?'⚡ Urgent (W/o IGI)':'📦 Normal'}</div></div>
+      <div class="df"><div class="dl">New Design</div><div class="dv">${o.newDesign==='yes'?'✓ Yes':'✗ No'}</div></div>
+      <div class="df"><div class="dl">PO Number</div><div class="dv" style="color:var(--gold)">${o.po||'—'}</div></div>
+      <div class="df"><div class="dl">Invoice</div><div class="dv" style="color:${o.invoice?'var(--or)':'var(--dim)'}">${o.invoice||'—'}</div></div>
+    </div>
+    <div class="msec-title" style="margin-bottom:10px">Pieces</div>
+    <table class="ptable">
+      <thead><tr><th style="width:50px">Photo</th><th>Style No.</th><th>Gross Wt</th><th>Dia Wt</th><th>Size</th><th>Purity</th><th>Dia</th></tr></thead>
+      <tbody>
+        ${o.pieces.map(p=>`<tr>
+          <td class="td-img">${p.img?`<img class="piece-det-img" src="${p.img}" onclick="lbx('${p.img}')">`:`<div class="piece-det-ph">◈</div>`}</td>
+          <td>${p.styleNo||p.item||'—'}</td>
+          <td style="color:var(--mid)">${p.gwt||'—'}g</td>
+          <td style="color:var(--gold)">${p.dwt||'—'}ct</td>
+          <td>${p.size||p.qty||'—'}</td>
+          <td>${p.purity||'—'}</td>
+          <td>${p.diaType||'—'}</td>
+        </tr>`).join('')}
+        <tr><td></td><td colspan="2" style="color:var(--dim);font-size:9px;letter-spacing:1.5px;text-transform:uppercase">Total · ${pcs} pcs</td><td style="color:var(--gold)">${gwt.toFixed(2)}g</td><td style="color:var(--gold)">${dwt.toFixed(2)}ct</td><td colspan="2"></td></tr>
+      </tbody>
+    </table>
+    <div class="dg" style="margin-top:14px">
+      <div class="df"><div class="dl">Gross Weight</div><div class="dv gold">${gwt.toFixed(2)} g</div></div>
+      <div class="df"><div class="dl">Diamond Weight</div><div class="dv gold">${dwt.toFixed(2)} ct</div></div>
+      <div class="df"><div class="dl">Order Date</div><div class="dv">${formatDate(o.odate)}</div></div>
+      <div class="df"><div class="dl">Expected Delivery</div><div class="dv">${formatDate(o.ddate)}</div></div>
+      <div class="df"><div class="dl">Dispatch Date</div><div class="dv">${formatDate(o.shipdate)}</div></div>
+    </div>
+    ${o.images&&o.images.length?`<div class="msec-title" style="margin:14px 0 8px">Images</div><div class="det-imgs">${o.images.map(s=>`<img src="${s}" onclick="lbx('${s}')">`).join('')}</div>`:''}
+    ${o.cancelRemarks?`<div class="msec-title" style="margin:14px 0 8px;color:var(--cx)">Cancellation Remarks</div><div style="font-size:12px;color:var(--mid);line-height:1.7">${o.cancelRemarks}</div>`:''}
+    ${o.notes?`<div class="msec-title" style="margin:14px 0 8px">Notes</div><div style="font-size:12px;color:var(--mid);line-height:1.7">${o.notes}</div>`:''}
+
+    <!-- ACTIVITY LOG -->
+    <div class="msec-title" style="margin:18px 0 8px">Activity Log</div>
+    <div class="actlog">
+      ${(o.activityLog&&o.activityLog.length)?o.activityLog.slice().reverse().map(e=>`
+        <div class="actlog-item">
+          <div class="actlog-dot" style="background:${STATUS_COLOR[e.status]||'var(--gold-d)'}"></div>
+          <div class="actlog-body">
+            <div class="actlog-status">${sbadge(e.status)}</div>
+            <div class="actlog-time">${e.ts}</div>
+          </div>
+        </div>`).join(''):`<div style="font-size:9px;color:var(--dim);padding:8px 0">No activity logged yet</div>`}
+    </div>
+
+    <!-- FOLLOW-UP PREVIEW (last 2 entries) -->
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-top:18px;margin-bottom:8px">
+      <div class="msec-title" style="margin:0">Vendor Follow-ups</div>
+      <button class="btn-xs" onclick="openFollowUp('${o.id}')">Manage →</button>
+    </div>
+    ${(o.followUps&&o.followUps.length)?
+      `<div class="fulog">${o.followUps.slice(-2).reverse().map(f=>`
+        <div class="fulog-entry">
+          <div class="fulog-date">${f.ts}</div>
+          <div class="fulog-update">${f.update}</div>
+          ${f.response?`<div class="fulog-response">${f.response}</div>`:''}
+        </div>`).join('')}</div>
+        ${o.followUps.length>2?`<div style="font-size:8px;color:var(--dim);text-align:center;margin-top:4px">${o.followUps.length-2} more — tap Manage to see all</div>`:''}
+      `:
+      `<div class="fulog-empty">No follow-ups yet</div>`
+    }
+
+    <!-- EXPORT ACTIONS -->
+    <div style="margin-top:20px;padding-top:14px;border-top:1px solid var(--b);display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn-xs" onclick="printJobCard('vendor','${o.id}')">🏭 Vendor Job Card</button>
+      <button class="btn-xs" onclick="printJobCard('customer','${o.id}')">👤 Customer Job Card</button>
+    </div>
+
+    <div class="status-update">
+      <div class="flbl" style="width:100%;margin-bottom:6px">Update Status</div>
+      <select class="sel inp" id="quickStatus" style="flex:1;min-width:0" onchange="onQuickStatusChange('${o.id}')">${statusOptions(o)}</select>
+      <button class="btn-gold" onclick="quickStatusSave('${o.id}')">Update</button>
+      <div id="quickInvoiceWrap" style="display:${o.status==='Order Delivered'?'flex':'none'};width:100%;margin-top:8px;flex-direction:column;gap:5px">
+        <label class="flbl" style="color:var(--od)">Invoice Number * (required for delivery)</label>
+        <input class="inp" id="quickInvoice" placeholder="INV-2025-001" value="${o.invoice||''}">
+      </div>
+      <div id="quickCancelWrap" style="display:${o.status==='Cancelled'?'flex':'none'};width:100%;margin-top:8px;flex-direction:column;gap:5px">
+        <label class="flbl" style="color:var(--cx)">Cancellation Remarks * (required)</label>
+        <textarea class="inp" id="quickCancelRemarks" rows="2" placeholder="Reason for cancellation…" style="resize:vertical">${o.cancelRemarks||''}</textarea>
+      </div>
+    </div>
+  `;
+  document.getElementById('detailModal').classList.add('open');
+}
+
+// ── Status helper: filter CAD stages for non-new-design orders ──
+function statusOptions(o){
+  return STATUS_LIST.filter(s=>{
+    if(o.newDesign==='no'&&(s==='CAD Approval Pending'||s==='CAD Approved')) return false;
+    if(o.orderType==='urgent'&&s==='IGI') return false;
+    return true;
+  }).map(s=>`<option ${o.status===s?'selected':''}>${s}</option>`).join('');
+}
+
+// ── Quick status change handler in detail modal ──
+function onQuickStatusChange(id){
+  const s=document.getElementById('quickStatus').value;
+  const iw=document.getElementById('quickInvoiceWrap');
+  const cw=document.getElementById('quickCancelWrap');
+  iw.style.display=s==='Order Delivered'?'flex':'none';
+  cw.style.display=s==='Cancelled'?'flex':'none';
+}
+
+function tsNow(){
+  const d=new Date();
+  return d.toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'})+' '+d.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit',hour12:true});
+}
+function pushActivity(o, status){
+  if(!o.activityLog) o.activityLog=[];
+  // avoid duplicate consecutive same-status
+  if(o.activityLog.length&&o.activityLog[o.activityLog.length-1].status===status) return;
+  o.activityLog.push({status, ts:tsNow()});
+}
+
+function quickStatusSave(id){
+  const s=document.getElementById('quickStatus').value;
+  const o=orders.find(x=>x.id===id);
+  if(!o) return;
+  if(s==='Order Delivered'){
+    const inv=(document.getElementById('quickInvoice').value||'').trim();
+    if(!inv){showToast('Invoice number is required for delivery');document.getElementById('quickInvoice').focus();return;}
+    o.invoice=inv;
+  }
+  if(s==='Cancelled'){
+    const rem=(document.getElementById('quickCancelRemarks').value||'').trim();
+    if(!rem){showToast('Cancellation remarks are required');document.getElementById('quickCancelRemarks').focus();return;}
+    o.cancelRemarks=rem;
+  }
+  pushActivity(o, s);
+  o.status=s;
+  save(o);renderAll();closeModal('detailModal');showToast('Status → '+s);
+}
+
+function delCurrent(){
+  if(!viewId) return;
+  if(confirm('Delete this order?')){
+    orders=orders.filter(o=>o.id!==viewId);
+    deleteOrderFromFirestore(viewId);
+    renderAll();closeModal('detailModal');showToast('Order deleted');
+  }
+}
+function editCurrent(){closeModal('detailModal');openEdit(viewId);}
+function confirmDel(id){
+  if(confirm('Delete order '+id+'?')){
+    orders=orders.filter(o=>o.id!==id);
+    deleteOrderFromFirestore(id);
+    renderAll();showToast('Deleted');
+  }
+}
+
+// ══════════════════════════════════════════════
+// ADD / EDIT
+// ══════════════════════════════════════════════
+let curOrderType = 'normal'; // module-level so setOrderType can update it
+
+function setOrderType(type){
+  curOrderType = type;
+  document.getElementById('otype_normal').classList.toggle('selected', type==='normal');
+  document.getElementById('otype_urgent').classList.toggle('selected', type==='urgent');
+  // Auto-set dates if order date is set
+  const odate = document.getElementById('f_odate').value;
+  if(odate){
+    const dispDays = type==='urgent'?10:17;
+    const delDays  = type==='urgent'?12:19;
+    document.getElementById('f_shipdate').value = addDays(odate, dispDays);
+    document.getElementById('f_ddate').value    = addDays(odate, delDays);
+  }
+  // Hide IGI from status if urgent
+  refreshStatusOptions();
+}
+
+function onNewDesignChange(){
+  refreshStatusOptions();
+}
+
+function refreshStatusOptions(){
+  const isUrgent = curOrderType==='urgent';
+  const isNewDesignNo = document.querySelector('input[name="f_newdesign"]:checked')?.value === 'no';
+  const sel = document.getElementById('f_status');
+  const cur = sel.value;
+  sel.innerHTML = STATUS_LIST.filter(s=>{
+    if(isNewDesignNo&&(s==='CAD Approval Pending'||s==='CAD Approved')) return false;
+    if(isUrgent&&s==='IGI') return false;
+    return true;
+  }).map(s=>`<option ${cur===s?'selected':''}>${s}</option>`).join('');
+  // If current selection was removed, reset to first
+  if(!sel.value) sel.value = 'Order Placed';
+}
+
+function onStatusChange(){
+  const s = document.getElementById('f_status').value;
+  document.getElementById('invoiceInlineWrap').style.display  = s==='Order Delivered'?'block':'none';
+  document.getElementById('cancelRemarksWrap').style.display  = s==='Cancelled'?'block':'none';
+}
+
+function populateCustomerDropdown(selectedName){
+  const sel = document.getElementById('f_name');
+  const allNames = new Set([
+    ...standaloneCustomers.map(c=>c.name),
+    ...orders.map(o=>o.name).filter(Boolean)
+  ]);
+  sel.innerHTML = `<option value="">— Select Customer —</option>`
+    + [...allNames].sort().map(n=>`<option value="${n}" ${n===selectedName?'selected':''}>${n}</option>`).join('');
+}
+
+function populateVendorDropdown(selectedName){
+  // Hide vendor field entirely for salesman
+  const vendorFg = document.getElementById('vendorFieldGroup');
+  if (vendorFg) vendorFg.style.display = currentRole === 'salesman' ? 'none' : '';
+  if (currentRole === 'salesman') return;
+  const sel = document.getElementById('f_vendor');
+  const allNames = new Set([
+    ...standaloneVendors.map(v=>v.name),
+    ...orders.map(o=>o.vendor).filter(Boolean)
+  ]);
+  sel.innerHTML = `<option value="">— Select Vendor —</option>`
+    + [...allNames].sort().map(n=>`<option value="${n}" ${n===selectedName?'selected':''}>${n}</option>`).join('');
+}
+
+function onCustomerSelect(){
+  const name = document.getElementById('f_name').value;
+  // look up in standaloneCustomers first, then orders
+  const c = standaloneCustomers.find(x=>x.name===name)
+    || orders.find(o=>o.name===name);
+  if(c){
+    document.getElementById('f_contact').value = c.contact||'';
+    document.getElementById('f_loc').value = c.loc||'';
+  } else {
+    document.getElementById('f_contact').value = '';
+    document.getElementById('f_loc').value = '';
+  }
+}
+
+function onVendorSelect(){
+  // vendor location is stored in standaloneVendors but not surfaced in order form — nothing to autofill here yet
+}
+
+function openAdd(){
+  editId=null; curImgs=[]; curOrderType='normal'; curPieceImgs={};
+  document.getElementById('addModalTitle').textContent='New Order';
+  clearForm();
+  const t = today();
+  document.getElementById('f_odate').value=t;
+  document.getElementById('f_shipdate').value=addDays(t,17);
+  document.getElementById('f_ddate').value=addDays(t,19);
+  document.getElementById('orderTypeSection').style.display='block';
+  document.getElementById('newDesignSection').style.display='block';
+  document.getElementById('otype_normal').classList.add('selected');
+  document.getElementById('otype_urgent').classList.remove('selected');
+  document.getElementById('f_nd_no').checked=true;
+  document.getElementById('invoiceFieldWrap').style.display='none';
+  document.getElementById('invoiceInlineWrap').style.display='none';
+  document.getElementById('cancelRemarksWrap').style.display='none';
+  populateCustomerDropdown();
+  populateVendorDropdown();
+  refreshStatusOptions();
+  renderPieces([{styleNo:'',gwt:'',dwt:'',size:'',purity:'',diaType:'',img:''}]);
+  renderImgPrev();
+  document.getElementById('addModal').classList.add('open');
+}
+
+function openEdit(id){
+  const o=orders.find(x=>x.id===id);
+  if(!o) return;
+  editId=id; curImgs=[...(o.images||[])]; curOrderType=o.orderType||'normal';
+  curPieceImgs={};
+  (o.pieces||[]).forEach((p,i)=>{ if(p.img) curPieceImgs[i]=p.img; });
+  document.getElementById('addModalTitle').textContent='Edit — '+id;
+  document.getElementById('orderTypeSection').style.display='none';
+  document.getElementById('newDesignSection').style.display='none';
+  populateCustomerDropdown(o.name);
+  // Make location editable on edit (remove readonly)
+  const locEl = document.getElementById('f_loc');
+  locEl.removeAttribute('readonly');
+  locEl.style.color='';
+  document.getElementById('f_contact').value=o.contact||'';
+  locEl.value=o.loc||'';
+  populateVendorDropdown(o.vendor);
+  document.getElementById('f_category').value=o.category||'';
+  document.getElementById('f_po').value=o.po||'';
+  document.getElementById('f_odate').value=o.odate||'';
+  document.getElementById('f_ddate').value=o.ddate||'';
+  document.getElementById('f_shipdate').value=o.shipdate||'';
+  document.getElementById('f_notes').value=o.notes||'';
+  const isDelivered = o.status==='Order Delivered';
+  const isCancelled = o.status==='Cancelled';
+  document.getElementById('invoiceFieldWrap').style.display = isDelivered?'flex':'none';
+  if(isDelivered) document.getElementById('f_invoice').value=o.invoice||'';
+  document.getElementById('invoiceInlineWrap').style.display = isDelivered?'block':'none';
+  if(isDelivered) document.getElementById('f_invoice_inline').value=o.invoice||'';
+  document.getElementById('cancelRemarksWrap').style.display = isCancelled?'block':'none';
+  if(isCancelled) document.getElementById('f_cancel_remarks').value=o.cancelRemarks||'';
+  const isUrgent = o.orderType==='urgent';
+  const isNDNo = o.newDesign==='no';
+  const sel = document.getElementById('f_status');
+  sel.innerHTML = STATUS_LIST.filter(s=>{
+    if(isNDNo&&(s==='CAD Approval Pending'||s==='CAD Approved')) return false;
+    if(isUrgent&&s==='IGI') return false;
+    return true;
+  }).map(s=>`<option ${o.status===s?'selected':''}>${s}</option>`).join('');
+  // Map old piece structure to new fields gracefully
+  const pieces = (o.pieces&&o.pieces.length) ? o.pieces.map(p=>({
+    styleNo: p.styleNo||p.item||'',
+    gwt: p.gwt||0,
+    dwt: p.dwt||0,
+    size: p.size||(p.qty?String(p.qty):''),
+    purity: p.purity||'',
+    diaType: p.diaType||'',
+    img: p.img||''
+  })) : [{styleNo:'',gwt:'',dwt:'',size:'',purity:'',diaType:'',img:''}];
+  renderPieces(pieces);
+  renderImgPrev();
+  document.getElementById('addModal').classList.add('open');
+}
+
+function clearForm(){
+  ['f_contact','f_odate','f_ddate','f_shipdate','f_notes','f_po','f_invoice','f_invoice_inline','f_cancel_remarks'].forEach(i=>{const el=document.getElementById(i);if(el)el.value='';});
+  document.getElementById('f_loc').value='';
+  document.getElementById('f_loc').setAttribute('readonly','');
+  document.getElementById('f_loc').style.color='var(--mid)';
+  const fName=document.getElementById('f_name'); if(fName.tagName==='SELECT') fName.value=''; else fName.value='';
+  const fVendor=document.getElementById('f_vendor'); if(fVendor.tagName==='SELECT') fVendor.value=''; else fVendor.value='';
+  document.getElementById('f_status').value='Order Placed';
+  document.getElementById('f_category').value='';
+}
+
+// curPieceImgs: map of pieceIndex -> base64 string (live during form session)
+let curPieceImgs = {};
+
+function renderPieces(pieces){
+  document.getElementById('piecesList').innerHTML = pieces.map((p,i) => {
+    const hasImg = p.img || curPieceImgs[i];
+    const imgSrc = p.img || curPieceImgs[i] || '';
+    return `
+    <div class="piece-block" id="pblock-${i}">
+      <div class="piece-block-hdr">
+        <span class="piece-num">Piece ${i+1}</span>
+        <button class="btn-rm" onclick="rmPiece(${i})" ${i===0&&pieces.length===1?'style="visibility:hidden"':''}>× Remove</button>
+      </div>
+      <div class="piece-row-4">
+        <div class="fg"><label class="flbl">Style No.</label><input class="inp" placeholder="BG-NP-001" value="${p.styleNo||''}" data-f="styleNo" data-i="${i}"></div>
+        <div class="fg"><label class="flbl">Gross Wt (g)</label><input class="inp" type="number" step="0.01" placeholder="2.50" value="${p.gwt||''}" data-f="gwt" data-i="${i}" min="0"></div>
+        <div class="fg"><label class="flbl">Dia Wt (ct)</label><input class="inp" type="number" step="0.01" placeholder="0.18" value="${p.dwt||''}" data-f="dwt" data-i="${i}" min="0"></div>
+        <div class="fg"><label class="flbl">Size</label><input class="inp" placeholder="12 / L / 6.5" value="${p.size||''}" data-f="size" data-i="${i}"></div>
+      </div>
+      <div class="fl" style="gap:8px;margin-top:0">
+        <div class="fg half">
+          <label class="flbl">Purity</label>
+          <select class="sel inp" data-f="purity" data-i="${i}">
+            <option value="">—</option>
+            <option ${p.purity==='18KT'?'selected':''}>18KT</option>
+            <option ${p.purity==='22KT'?'selected':''}>22KT</option>
+            <option ${p.purity==='PT'?'selected':''}>PT</option>
+          </select>
+        </div>
+        <div class="fg half">
+          <label class="flbl">Diamond Type</label>
+          <select class="sel inp" data-f="diaType" data-i="${i}">
+            <option value="">—</option>
+            <option ${p.diaType==='LGD'?'selected':''}>LGD</option>
+            <option ${p.diaType==='Natural'?'selected':''}>Natural</option>
+          </select>
+        </div>
+      </div>
+      <div class="piece-img-row">
+        ${hasImg
+          ? `<div style="position:relative;flex-shrink:0">
+               <img class="piece-img-thumb" src="${imgSrc}" onclick="lbx('${imgSrc}')">
+               <button class="piece-img-rm" onclick="rmPieceImg(${i})" title="Remove image">×</button>
+             </div>
+             <span class="piece-img-upload-lbl" style="color:var(--mid)">Image attached · tap to zoom</span>`
+          : `<div class="piece-img-placeholder" title="Upload image for this piece">
+               <input type="file" accept="image/*" onchange="handlePieceImg(event,${i})">
+               ◈
+             </div>
+             <span class="piece-img-upload-lbl">Tap to upload piece image</span>`
+        }
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function getPieces(){
+  const els = document.querySelectorAll('[data-f="styleNo"]');
+  return Array.from(els).map((_,i) => ({
+    styleNo: document.querySelector(`[data-f="styleNo"][data-i="${i}"]`).value,
+    gwt:     Number(document.querySelector(`[data-f="gwt"][data-i="${i}"]`).value)||0,
+    dwt:     Number(document.querySelector(`[data-f="dwt"][data-i="${i}"]`).value)||0,
+    size:    document.querySelector(`[data-f="size"][data-i="${i}"]`).value,
+    purity:  document.querySelector(`[data-f="purity"][data-i="${i}"]`).value,
+    diaType: document.querySelector(`[data-f="diaType"][data-i="${i}"]`).value,
+    img:     curPieceImgs[i] || ''
+  }));
+}
+
+function addPiece(){
+  const cur = getPieces();
+  renderPieces([...cur, {styleNo:'',gwt:'',dwt:'',size:'',purity:'',diaType:'',img:''}]);
+}
+
+function rmPiece(i){
+  const p = getPieces();
+  p.splice(i,1);
+  const newImgs = {};
+  p.forEach((piece,ni) => { if(piece.img) newImgs[ni]=piece.img; });
+  curPieceImgs = newImgs;
+  if(!p.length) p.push({styleNo:'',gwt:'',dwt:'',size:'',purity:'',diaType:'',img:''});
+  renderPieces(p);
+}
+
+function handlePieceImg(e, i){
+  const file = e.target.files[0];
+  if(!file) return;
+  const r = new FileReader();
+  r.onload = ev => {
+    const cur = getPieces();
+    curPieceImgs[i] = ev.target.result;
+    cur[i].img = ev.target.result;
+    renderPieces(cur);
+  };
+  r.readAsDataURL(file);
+}
+
+function rmPieceImg(i){
+  const cur = getPieces();
+  delete curPieceImgs[i];
+  cur[i].img = '';
+  renderPieces(cur);
+}
+
+function handleImgs(e){
+  Array.from(e.target.files).forEach(f=>{
+    const r=new FileReader();
+    r.onload=ev=>{curImgs.push(ev.target.result);renderImgPrev();};
+    r.readAsDataURL(f);
+  });
+}
+function renderImgPrev(){
+  document.getElementById('imgPreviews').innerHTML=curImgs.map((s,i)=>`
+    <div class="img-pw"><img src="${s}"><button class="img-rm" onclick="rmImg(${i})">×</button></div>`).join('');
+}
+function rmImg(i){curImgs.splice(i,1);renderImgPrev();}
+
+function saveOrder(){
+  const nameEl = document.getElementById('f_name');
+  const name = (nameEl.tagName==='SELECT'?nameEl.value:nameEl.value).trim();
+  if(!name){showToast('Customer name required');return;}
+  const po=document.getElementById('f_po').value.trim();
+  if(!po){showToast('PO number is required');document.getElementById('f_po').focus();return;}
+  const vendorEl = document.getElementById('f_vendor');
+  const vendor = (vendorEl.tagName==='SELECT'?vendorEl.value:vendorEl.value).trim();
+  const contact = document.getElementById('f_contact').value.trim();
+  const loc = document.getElementById('f_loc').value.trim();
+  const status=document.getElementById('f_status').value;
+  let invoice='';
+  if(status==='Order Delivered'){
+    invoice=(document.getElementById('f_invoice_inline').value||document.getElementById('f_invoice').value||'').trim();
+    if(!invoice){showToast('Invoice number required for delivery');return;}
+  }
+  let cancelRemarks='';
+  if(status==='Cancelled'){
+    cancelRemarks=(document.getElementById('f_cancel_remarks').value||'').trim();
+    if(!cancelRemarks){showToast('Cancellation remarks are required');document.getElementById('f_cancel_remarks').focus();return;}
+  }
+  const pieces=getPieces().filter(p=>p.styleNo||p.gwt||p.dwt);
+  const existingOrder = editId?orders.find(o=>o.id===editId):null;
+  const orderType = editId?(existingOrder?.orderType||'normal'):curOrderType;
+  const newDesign = editId?(existingOrder?.newDesign||'no'):(document.querySelector('input[name="f_newdesign"]:checked')?.value||'no');
+  const existingLog = existingOrder?.activityLog || [];
+  const newLog = [...existingLog];
+  if(!newLog.length || newLog[newLog.length-1].status !== status)
+    newLog.push({status, ts:tsNow()});
+  const data={
+    id:editId||gid(),
+    name, contact, loc, vendor,
+    category:document.getElementById('f_category').value,
+    po,
+    invoice: invoice||(existingOrder?.invoice||''),
+    cancelRemarks: cancelRemarks||(existingOrder?.cancelRemarks||''),
+    orderType, newDesign,
+    odate:document.getElementById('f_odate').value,
+    ddate:document.getElementById('f_ddate').value,
+    shipdate:document.getElementById('f_shipdate').value,
+    status,
+    notes:document.getElementById('f_notes').value.trim(),
+    images:[...curImgs],
+    pieces:pieces.length?pieces:[],
+    activityLog: newLog,
+    followUps: existingOrder?.followUps||[]
+  };
+  // Auto-update customer database with latest contact/loc
+  if(name && contact) {
+    const ci = standaloneCustomers.findIndex(c=>c.name===name);
+    if(ci>=0){ standaloneCustomers[ci].contact=contact; standaloneCustomers[ci].loc=loc; }
+    else standaloneCustomers.push({name, contact, loc, notes:''});
+    saveCustomers();
+  }
+  if(editId){const i=orders.findIndex(o=>o.id===editId);if(i!==-1)orders[i]=data;}
+  else orders.unshift(data);
+  save(data); renderAll(); closeModal('addModal');
+  showToast(editId?'Order updated':'New order added');
+}
+
+// ══════════════════════════════════════════════
+// VENDOR FOLLOW-UP LOG
+// ══════════════════════════════════════════════
+let fuOrderId = null;
+
+function openFollowUp(id){
+  fuOrderId = id;
+  const o = orders.find(x=>x.id===id);
+  if(!o) return;
+  document.getElementById('fuModalTitle').textContent = 'Follow-ups · '+o.id;
+  document.getElementById('fu_update').value = '';
+  document.getElementById('fu_response').value = '';
+  renderFollowUpList(o);
+  document.getElementById('fuModal').classList.add('open');
+}
+
+function renderFollowUpList(o){
+  const list = o.followUps||[];
+  const el = document.getElementById('fuLogList');
+  if(!list.length){ el.innerHTML='<div class="fulog-empty">No follow-ups yet. Add the first one above.</div>'; return; }
+  el.innerHTML = list.slice().reverse().map((f,ri)=>{
+    const i = list.length-1-ri;
+    return `<div class="fulog-entry">
+      <div class="fulog-date" style="display:flex;justify-content:space-between">
+        <span>${f.ts}</span>
+        <button onclick="deleteFollowUp(${i})" style="background:none;border:none;color:var(--dim);cursor:pointer;font-size:10px" title="Delete">✕</button>
+      </div>
+      <div class="fulog-update">${f.update}</div>
+      ${f.response?`<div class="fulog-response">${f.response}</div>`:'<div style="font-size:9px;color:var(--dim);font-style:italic">No response recorded</div>'}
+    </div>`;
+  }).join('');
+}
+
+function saveFollowUp(){
+  const upd = document.getElementById('fu_update').value.trim();
+  if(!upd){ showToast('Enter an update message'); return; }
+  const resp = document.getElementById('fu_response').value.trim();
+  const o = orders.find(x=>x.id===fuOrderId);
+  if(!o) return;
+  if(!o.followUps) o.followUps=[];
+  o.followUps.push({ update:upd, response:resp, ts:tsNow() });
+  save(o);
+  document.getElementById('fu_update').value='';
+  document.getElementById('fu_response').value='';
+  renderFollowUpList(o);
+  showToast('Follow-up logged');
+}
+
+function deleteFollowUp(i){
+  const o = orders.find(x=>x.id===fuOrderId);
+  if(!o||!o.followUps) return;
+  if(confirm('Delete this follow-up entry?')){
+    o.followUps.splice(i,1);
+    save(o);
+    renderFollowUpList(o);
+    showToast('Entry deleted');
+  }
+}
+
+// ══════════════════════════════════════════════
+// JOB CARD PDF (print)
+// ══════════════════════════════════════════════
+function printJobCard(type, id){
+  // if called from header menu, use viewId; else use passed id
+  const oid = id || viewId;
+  const o = orders.find(x=>x.id===oid);
+  if(!o){ showToast('Open an order first'); return; }
+
+  const isVendor = type==='vendor';
+  const pcs = totalPcs(o), gwt = orderGrossWt(o), dwt = orderDiamondWt(o);
+
+  const html = `
+  <div class="jc">
+    <div class="jc-header">
+      <div>
+        <div class="jc-brand">Bharni Gems</div>
+        <div class="jc-brand-sub">B2B Diamond Jewellery · Bengaluru</div>
+      </div>
+      <div style="text-align:right">
+        <div class="jc-type">${isVendor?'Vendor Job Card':'Customer Job Card'}</div>
+        <div class="jc-orderno">${o.id}</div>
+        <div style="font-size:10px;color:#888;margin-top:4px">PO: ${o.po||'—'}</div>
+        ${isVendor?'':o.invoice?`<div style="font-size:10px;color:#888">INV: ${o.invoice}</div>`:''}
+      </div>
+    </div>
+
+    <div class="jc-grid">
+      <div class="jc-field"><div class="jc-lbl">Customer</div><div class="jc-val">${o.name}</div></div>
+      <div class="jc-field"><div class="jc-lbl">Location</div><div class="jc-val">${o.loc||'—'}</div></div>
+      ${isVendor?`<div class="jc-field"><div class="jc-lbl">Vendor / Karigar</div><div class="jc-val">${o.vendor||'—'}</div></div>`:''}
+      <div class="jc-field"><div class="jc-lbl">Category</div><div class="jc-val">${o.category||'—'}</div></div>
+      <div class="jc-field"><div class="jc-lbl">Order Type</div><div class="jc-val"><span class="jc-badge ${o.orderType==='urgent'?'jc-urgent':'jc-normal'}">${o.orderType==='urgent'?'⚡ Urgent':'📦 Normal'}</span></div></div>
+      <div class="jc-field"><div class="jc-lbl">New Design</div><div class="jc-val">${o.newDesign==='yes'?'Yes':'No'}</div></div>
+      <div class="jc-field"><div class="jc-lbl">Order Date</div><div class="jc-val">${formatDate(o.odate)}</div></div>
+      ${isVendor?`<div class="jc-field"><div class="jc-lbl">Dispatch by</div><div class="jc-val">${formatDate(o.shipdate)}</div></div>`:''}
+      <div class="jc-field"><div class="jc-lbl">Expected Delivery</div><div class="jc-val">${formatDate(o.ddate)}</div></div>
+      <div class="jc-field"><div class="jc-lbl">Status</div><div class="jc-val">${o.status}</div></div>
+    </div>
+
+    <div class="jc-section">Order Pieces</div>
+    <table class="jc-table">
+      <thead><tr>
+        <th style="width:52px">Photo</th>
+        <th>Style No.</th>
+        <th>Gross Wt (g)</th>
+        <th>Dia Wt (ct)</th>
+        <th>Size</th>
+        <th>Purity</th>
+        <th>Diamond</th>
+      </tr></thead>
+      <tbody>
+        ${o.pieces.map(p=>`<tr>
+          <td>${p.img?`<img src="${p.img}" style="width:44px;height:44px;object-fit:cover;border:1px solid #ddd;border-radius:2px">`:`<div style="width:44px;height:44px;background:#f5f5f5;border:1px solid #ddd;border-radius:2px;display:flex;align-items:center;justify-content:center;color:#bbb;font-size:18px">◈</div>`}</td>
+          <td>${p.styleNo||p.item||'—'}</td>
+          <td>${p.gwt||'—'}</td>
+          <td>${p.dwt||'—'}</td>
+          <td>${p.size||p.qty||'—'}</td>
+          <td>${p.purity||'—'}</td>
+          <td>${p.diaType||'—'}</td>
+        </tr>`).join('')}
+      </tbody>
+      <tfoot><tr>
+        <td></td>
+        <td>Total · ${pcs} pcs</td>
+        <td>${gwt.toFixed(2)} g</td>
+        <td>${dwt.toFixed(2)} ct</td>
+        <td colspan="3"></td>
+      </tr></tfoot>
+    </table>
+
+    ${o.notes?`<div class="jc-section">Notes / Instructions</div><div style="font-size:12px;color:#444;line-height:1.7;margin-bottom:16px">${o.notes}</div>`:''}
+
+    ${isVendor&&o.followUps&&o.followUps.length?`
+      <div class="jc-section">Vendor Follow-up History</div>
+      ${o.followUps.map(f=>`<div style="margin-bottom:10px;padding-bottom:10px;border-bottom:1px solid #eee">
+        <div style="font-size:9px;color:#aaa;margin-bottom:3px">${f.ts}</div>
+        <div style="font-size:11px;color:#333">${f.update}</div>
+        ${f.response?`<div style="font-size:11px;color:#888;margin-top:3px"><em>Response: ${f.response}</em></div>`:''}
+      </div>`).join('')}
+    `:''}
+
+    <div class="jc-sig">
+      <div class="jc-sig-line">${isVendor?'Vendor Signature':'Customer Signature'}</div>
+      <div class="jc-sig-line">Bharni Gems Representative</div>
+    </div>
+
+    <div class="jc-footer">
+      <span>Generated: ${tsNow()}</span>
+      <span>Bharni Gems · Bengaluru</span>
+      <span>${isVendor?'Vendor Copy':'Customer Copy'}</span>
+    </div>
+  </div>`;
+
+  document.getElementById('printFrame').innerHTML = html;
+  window.print();
+  // Restore after print
+  setTimeout(()=>{ document.getElementById('printFrame').innerHTML=''; }, 1000);
+}
+
+// ══════════════════════════════════════════════
+// EXCEL EXPORT
+// ══════════════════════════════════════════════
+function exportExcel(){
+  if(typeof XLSX === 'undefined'){ showToast('Excel library not loaded'); return; }
+
+  const wb = XLSX.utils.book_new();
+
+  // ── Helper: flatten order to row ──
+  function orderRow(o){
+    return {
+      'Order ID':        o.id,
+      'PO Number':       o.po||'',
+      'Customer':        o.name,
+      'Location':        o.loc||'',
+      'Contact':         o.contact||'',
+      'Vendor':          o.vendor||'',
+      'Category':        o.category||'',
+      'Order Type':      o.orderType==='urgent'?'Urgent':'Normal',
+      'New Design':      o.newDesign==='yes'?'Yes':'No',
+      'Status':          o.status,
+      'Order Date':      o.odate||'',
+      'Dispatch Date':   o.shipdate||'',
+      'Delivery Date':   o.ddate||'',
+      'Invoice No':      o.invoice||'',
+      'Pieces':          totalPcs(o),
+      'Gross Wt (g)':    +orderGrossWt(o).toFixed(3),
+      'Diamond Wt (ct)': +orderDiamondWt(o).toFixed(3),
+      'Style Numbers':   o.pieces.map(p=>p.styleNo||p.item||'').filter(Boolean).join(', '),
+      'Sizes':           o.pieces.map(p=>p.size||p.qty||'').filter(Boolean).join(', '),
+      'Purities':        o.pieces.map(p=>p.purity||'').filter(Boolean).join(', '),
+      'Diamond Types':   o.pieces.map(p=>p.diaType||'').filter(Boolean).join(', '),
+      'Cancel Remarks':  o.cancelRemarks||'',
+      'Notes':           o.notes||''
+    };
+  }
+
+  // ── Sheet 1: All Orders ──
+  const allRows = orders.map(orderRow);
+  const wsAll = XLSX.utils.json_to_sheet(allRows);
+  setColWidths(wsAll, allRows);
+  XLSX.utils.book_append_sheet(wb, wsAll, 'All Orders');
+
+  // ── Sheet 2: Vendor-wise ──
+  const vendorMap = {};
+  orders.forEach(o=>{ const k=o.vendor||'Unassigned'; if(!vendorMap[k]) vendorMap[k]=[]; vendorMap[k].push(o); });
+  const vendorRows = [];
+  Object.entries(vendorMap).sort((a,b)=>a[0].localeCompare(b[0])).forEach(([vendor,vOrders])=>{
+    vendorRows.push({'Vendor':vendor,'—':'───────────────────────────────────────────────────'});
+    vOrders.forEach(o=>vendorRows.push(orderRow(o)));
+    const gwt=vOrders.reduce((a,o)=>a+orderGrossWt(o),0);
+    const dwt=vOrders.reduce((a,o)=>a+orderDiamondWt(o),0);
+    const pcs=vOrders.reduce((a,o)=>a+totalPcs(o),0);
+    vendorRows.push({'Order ID':'SUBTOTAL','Customer':`${vOrders.length} orders`,'Pieces':pcs,'Gross Wt (g)':+gwt.toFixed(3),'Diamond Wt (ct)':+dwt.toFixed(3)});
+    vendorRows.push({});
+  });
+  const wsVendor = XLSX.utils.json_to_sheet(vendorRows);
+  XLSX.utils.book_append_sheet(wb, wsVendor, 'Vendor-wise');
+
+  // ── Sheet 3: Customer-wise ──
+  const custMap = {};
+  orders.forEach(o=>{ if(!custMap[o.name]) custMap[o.name]=[]; custMap[o.name].push(o); });
+  const custRows = [];
+  Object.entries(custMap).sort((a,b)=>a[0].localeCompare(b[0])).forEach(([cust,cOrders])=>{
+    custRows.push({'Order ID':cust,'—':'───────────────────────────────────────────────────'});
+    cOrders.forEach(o=>custRows.push(orderRow(o)));
+    const gwt=cOrders.reduce((a,o)=>a+orderGrossWt(o),0);
+    const dwt=cOrders.reduce((a,o)=>a+orderDiamondWt(o),0);
+    const pcs=cOrders.reduce((a,o)=>a+totalPcs(o),0);
+    custRows.push({'Order ID':'SUBTOTAL','Customer':`${cOrders.length} orders`,'Pieces':pcs,'Gross Wt (g)':+gwt.toFixed(3),'Diamond Wt (ct)':+dwt.toFixed(3)});
+    custRows.push({});
+  });
+  const wsCust = XLSX.utils.json_to_sheet(custRows);
+  XLSX.utils.book_append_sheet(wb, wsCust, 'Customer-wise');
+
+  // ── Sheet 4: Summary ──
+  const delivered = orders.filter(o=>o.status==='Order Delivered');
+  const active    = orders.filter(o=>!['Order Delivered','Cancelled'].includes(o.status));
+  const cancelled = orders.filter(o=>o.status==='Cancelled');
+  const summaryRows = [
+    {'Metric':'OVERALL SUMMARY','Value':''},
+    {'Metric':'Total Orders',          'Value': orders.length},
+    {'Metric':'Active Orders',         'Value': active.length},
+    {'Metric':'Delivered Orders',      'Value': delivered.length},
+    {'Metric':'Cancelled Orders',      'Value': cancelled.length},
+    {'Metric':'','Value':''},
+    {'Metric':'Total Pieces (all)',    'Value': orders.reduce((a,o)=>a+totalPcs(o),0)},
+    {'Metric':'Total Gross Wt (g)',    'Value': +totalGrossWt(orders).toFixed(3)},
+    {'Metric':'Total Diamond Wt (ct)','Value': +totalDiamondWt(orders).toFixed(3)},
+    {'Metric':'Active Gross Wt (g)',   'Value': +totalGrossWt(active).toFixed(3)},
+    {'Metric':'Active Diamond Wt (ct)','Value':+totalDiamondWt(active).toFixed(3)},
+    {'Metric':'','Value':''},
+    {'Metric':'VENDOR BREAKDOWN','Value':''},
+  ];
+  Object.entries(vendorMap).sort((a,b)=>a[0].localeCompare(b[0])).forEach(([v,vo])=>{
+    summaryRows.push({'Metric':v,'Value':`${vo.length} orders · ${vo.reduce((a,o)=>a+totalPcs(o),0)} pcs · ${vo.reduce((a,o)=>a+orderGrossWt(o),0).toFixed(2)}g · ${vo.reduce((a,o)=>a+orderDiamondWt(o),0).toFixed(2)}ct`});
+  });
+  summaryRows.push({'Metric':'','Value':''});
+  summaryRows.push({'Metric':'STATUS BREAKDOWN','Value':''});
+  STATUS_LIST.forEach(s=>{
+    const cnt = orders.filter(o=>o.status===s).length;
+    if(cnt) summaryRows.push({'Metric':s,'Value':cnt});
+  });
+  const wsSummary = XLSX.utils.json_to_sheet(summaryRows);
+  wsSummary['!cols']=[{wch:35},{wch:60}];
+  XLSX.utils.book_append_sheet(wb, wsSummary, 'Summary');
+
+  const fname = 'BharniGems_'+today().replace(/-/g,'')+'.xlsx';
+  XLSX.writeFile(wb, fname);
+  showToast('Excel exported: '+fname);
+}
+
+function setColWidths(ws, rows){
+  if(!rows.length) return;
+  const keys = Object.keys(rows[0]);
+  ws['!cols'] = keys.map(k=>({ wch: Math.max(k.length, ...rows.map(r=>String(r[k]||'').length).slice(0,50))+2 }));
+}
+
+// ══════════════════════════════════════════════
+// UTILS
+// ══════════════════════════════════════════════
+function closeModal(id){document.getElementById(id).classList.remove('open');}
+function toggleExportMenu(){
+  const m=document.getElementById('exportMenu');
+  m.style.display=m.style.display==='none'?'block':'none';
+}
+function closeExportMenu(){ document.getElementById('exportMenu').style.display='none'; }
+// Close export menu on outside click
+document.addEventListener('click',function(e){
+  const menu=document.getElementById('exportMenu');
+  const btn=document.getElementById('exportBtn');
+  if(menu.style.display!=='none'&&!menu.contains(e.target)&&e.target!==btn) closeExportMenu();
+});
+function lbx(src){document.getElementById('lbxImg').src=src;document.getElementById('lbx').classList.add('open');}
+function exportData(){
+  const b=new Blob([JSON.stringify(orders,null,2)],{type:'application/json'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='bharni-gems-orders.json';a.click();
+  showToast('Exported successfully');
+}
+
+// ══════════════════════════════════════════════
+// VENDOR & CUSTOMER MANAGEMENT
+// ══════════════════════════════════════════════
+function openAddVendor(){
+  ['fv_name','fv_contact','fv_loc','fv_spec','fv_notes'].forEach(i=>document.getElementById(i).value='');
+  document.getElementById('addVendorModal').classList.add('open');
+}
+function saveVendor(){
+  const name=document.getElementById('fv_name').value.trim();
+  if(!name){showToast('Vendor name required');return;}
+  if(standaloneVendors.find(v=>v.name===name)){showToast('Vendor already exists');return;}
+  standaloneVendors.push({
+    name,
+    contact:document.getElementById('fv_contact').value.trim(),
+    loc:document.getElementById('fv_loc').value.trim(),
+    spec:document.getElementById('fv_spec').value.trim(),
+    notes:document.getElementById('fv_notes').value.trim()
+  });
+  saveVendors();
+  closeModal('addVendorModal');
+  renderVendors();
+  // Refresh vendor dropdown in order form if open
+  if(document.getElementById('addModal').classList.contains('open')) populateVendorDropdown(name);
+  showToast('Vendor added: '+name);
+}
+function removeStandaloneVendor(name){
+  const inUse=orders.some(o=>o.vendor===name);
+  if(inUse){showToast('Vendor has orders — cannot remove');return;}
+  if(confirm('Remove vendor "'+name+'"?')){
+    standaloneVendors=standaloneVendors.filter(v=>v.name!==name);
+    saveVendors();
+    selVendor=null;
+    renderVendors();
+    showToast('Vendor removed');
+  }
+}
+
+function openAddCustomer(){
+  ['fc_name','fc_contact','fc_loc','fc_notes'].forEach(i=>document.getElementById(i).value='');
+  document.getElementById('addCustomerModal').classList.add('open');
+}
+function saveCustomer(){
+  const name=document.getElementById('fc_name').value.trim();
+  if(!name){showToast('Customer name required');return;}
+  if(standaloneCustomers.find(c=>c.name===name)){showToast('Customer already exists');return;}
+  standaloneCustomers.push({
+    name,
+    contact:document.getElementById('fc_contact').value.trim(),
+    loc:document.getElementById('fc_loc').value.trim(),
+    notes:document.getElementById('fc_notes').value.trim()
+  });
+  saveCustomers();
+  closeModal('addCustomerModal');
+  renderCustomers();
+  // Refresh customer dropdown in order form if open
+  if(document.getElementById('addModal').classList.contains('open')) populateCustomerDropdown(name);
+  showToast('Customer added: '+name);
+}
+function removeStandaloneCustomer(name){
+  const inOrders=orders.some(o=>o.name===name);
+  if(inOrders) return; // customers derived from orders can't be removed this way
+  standaloneCustomers=standaloneCustomers.filter(c=>c.name!==name);
+  saveCustomers();
+  renderCustomers();
+  showToast('Customer removed');
+}
+
+// Auto-populate dispatch/delivery dates when order date changes (new orders only)
+document.getElementById('f_odate').addEventListener('change', function(){
+  if(editId) return; // don't auto-fill when editing
+  const v = this.value;
+  if(!v) return;
+  const dispDays = curOrderType==='urgent'?10:17;
+  const delDays  = curOrderType==='urgent'?12:19;
+  document.getElementById('f_shipdate').value = addDays(v, dispDays);
+  document.getElementById('f_ddate').value    = addDays(v, delDays);
+});
+
+// Close overlays on backdrop tap
+['addModal','detailModal','addVendorModal','addCustomerModal','fuModal','userManagerModal'].forEach(id=>{
+  document.getElementById(id).addEventListener('click',function(e){if(e.target===this)closeModal(id);});
+});
+
+function renderAll(){
+  const av=document.querySelector('.view.active');
+  if(!av) return;
+  const v=av.id.replace('view-','');
+  if(v==='dash') renderDash();
+  if(v==='orders') renderOrders();
+  if(v==='customers') renderCustomers();
+  if(v==='vendors') renderVendors();
+  if(v==='karigar') renderKarigar();
+}
+
+// INIT
+appStart();
+</script>
+</body>
+</html>
