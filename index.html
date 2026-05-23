@@ -264,6 +264,8 @@ body{font-family:'DM Mono',monospace;color:var(--txt);display:flex;flex-directio
 .role-badge{font-size:7px;letter-spacing:2px;text-transform:uppercase;padding:2px 7px;border-radius:2px;white-space:nowrap}
 .role-badge.admin{color:var(--gold);background:#C9A96E18;border:1px solid #C9A96E35}
 .role-badge.salesman{color:var(--cap);background:#4a8fd418;border:1px solid #4a8fd435}
+.role-badge.vendor{color:var(--or);background:#5aac8a18;border:1px solid #5aac8a35}
+.role-badge.accounts{color:var(--mid);background:#aaaaaa18;border:1px solid #aaaaaa35}
 
 /* ── USER MENU ── */
 .user-menu-wrap{position:relative}
@@ -422,8 +424,8 @@ body{font-family:'DM Mono',monospace;color:var(--txt);display:flex;flex-directio
     </div>
     <button class="btn-ico" onclick="toggleExportMenu()" title="Export" id="exportBtn">↓</button>
     <div class="export-menu" id="exportMenu" style="display:none">
-      <div class="export-item" onclick="exportData();closeExportMenu()"><span class="ei">📦</span>JSON Backup</div>
-      <div class="export-item" onclick="exportExcel();closeExportMenu()"><span class="ei">📊</span>Excel (All Sheets)</div>
+      <div class="export-item" onclick="exportData();closeExportMenu()" id="exportJsonItem"><span class="ei">📦</span>JSON Backup</div>
+      <div class="export-item" onclick="exportExcel();closeExportMenu()" id="exportExcelItem"><span class="ei">📊</span>Excel (All Sheets)</div>
       <div style="border-top:1px solid var(--b);margin:4px 0"></div>
       <div class="export-item" onclick="closeExportMenu();printJobCard('vendor')" id="exportVendorCard"><span class="ei">🏭</span>Job Card — Vendor</div>
       <div class="export-item" onclick="closeExportMenu();printJobCard('customer')"><span class="ei">👤</span>Job Card — Customer</div>
@@ -440,7 +442,7 @@ body{font-family:'DM Mono',monospace;color:var(--txt);display:flex;flex-directio
         <div class="user-menu-item danger" onclick="doLogout()"><span>→</span> Sign Out</div>
       </div>
     </div>
-    <button class="btn-gold" onclick="openAdd()">+ Order</button>
+    <button class="btn-gold" onclick="openAdd()" id="btnAddOrder">+ Order</button>
   </div>
 </div>
 
@@ -527,13 +529,13 @@ body{font-family:'DM Mono',monospace;color:var(--txt);display:flex;flex-directio
   <button class="bnav-item" onclick="switchView('orders',this)">
     <span class="ico">📋</span><span class="lbl">Orders</span>
   </button>
-  <button class="bnav-item" onclick="switchView('customers',this)">
+  <button class="bnav-item" onclick="switchView('customers',this)" id="navCustomers">
     <span class="ico">👤</span><span class="lbl">Customers</span>
   </button>
   <button class="bnav-item" onclick="switchView('vendors',this)" id="navVendors">
     <span class="ico">🏭</span><span class="lbl">Vendors</span>
   </button>
-  <button class="bnav-item" onclick="switchView('karigar',this)">
+  <button class="bnav-item" onclick="switchView('karigar',this)" id="navKarigar">
     <span class="ico">⚒</span><span class="lbl">Karigar</span>
   </button>
 </div>
@@ -802,13 +804,22 @@ body{font-family:'DM Mono',monospace;color:var(--txt);display:flex;flex-directio
         <div class="fg"><label class="flbl">Email *</label><input class="inp" id="nu_email" type="email" placeholder="name@bharni.com"></div>
         <div class="fg"><label class="flbl">Password *</label><input class="inp" id="nu_pwd" type="password" placeholder="Min 6 characters"></div>
         <div class="fg"><label class="flbl">Role</label>
-          <select class="sel inp" id="nu_role">
+          <select class="sel inp" id="nu_role" onchange="document.getElementById('nu_vendor_wrap').style.display=this.value==='vendor'?'block':'none'">
             <option value="salesman">Salesman</option>
+            <option value="vendor">Vendor</option>
+            <option value="accounts">Accounts</option>
             <option value="admin">Admin</option>
           </select>
         </div>
+        <div id="nu_vendor_wrap" style="display:none">
+          <label class="flbl">Vendor Name (must match exactly)</label>
+          <input class="inp" id="nu_vendor_name" placeholder="e.g. Surat Diamonds">
+        </div>
         <div style="font-size:8px;color:var(--dim);line-height:1.6;margin-bottom:10px">
-          Salesman role: can view orders, customers, pipeline, and karigar analytics. <strong style="color:var(--mid)">Cannot see vendor details</strong> anywhere — vendor names, vendor tab, vendor job card, and vendor fields in orders are all hidden.
+          <strong style="color:var(--mid)">Salesman:</strong> Full access, no vendor details.<br>
+          <strong style="color:var(--mid)">Vendor:</strong> Sees only their orders, no customer details.<br>
+          <strong style="color:var(--mid)">Accounts:</strong> Full view, cannot add/edit orders or manage users.<br>
+          <strong style="color:var(--mid)">Admin:</strong> Full access including user management.
         </div>
         <button class="btn-gold" style="width:100%" onclick="createUser()">Create User</button>
       </div>
@@ -918,31 +929,74 @@ let fbReady = false;
 let unsubOrders = null, unsubVendors = null, unsubCustomers = null;
 
 // ── Auth state ──
-let currentUser = null;   // Firebase user object
-let currentRole = null;   // 'admin' or 'salesman'
+let currentUser = null;
+let currentRole = null;   // 'admin' | 'salesman' | 'vendor' | 'accounts'
+let currentVendorName = null; // set when role === 'vendor'
 
 // ══════════════════════════════════════════════
 // ROLE GUARDS
 // ══════════════════════════════════════════════
-function isAdmin() { return currentRole === 'admin'; }
+function isAdmin()    { return currentRole === 'admin'; }
+function isVendorRole(){ return currentRole === 'vendor'; }
+function isAccounts() { return currentRole === 'accounts'; }
+function isSalesman() { return currentRole === 'salesman'; }
 
-function applyRoleUI() {
-  const salesman = currentRole === 'salesman';
-  // Vendors tab
-  document.getElementById('navVendors').style.display = salesman ? 'none' : '';
-  // Vendor job card in export menu
-  const vCard = document.getElementById('exportVendorCard');
-  if (vCard) vCard.style.display = salesman ? 'none' : '';
-  // Vendor field label in order form — handled at render time via guardVendor()
-  // Manage Users menu item
-  document.getElementById('menuManageUsers').style.display = isAdmin() ? 'flex' : 'none';
-  // Header sub-label
-  document.querySelector('.hdr-brand p').textContent =
-    salesman ? 'Sales · ' + (currentUser?.displayName||'') : 'Order Management';
+// Hide vendor info from: salesman, accounts (accounts can see vendor but can't manage)
+// Hide completely from: vendor (they see their own name via currentVendorName, not other vendor data)
+function guardVendor(val) {
+  if(currentRole === 'salesman') return '—';
+  if(currentRole === 'vendor') return '—';   // vendor sees own name in card label, not in order rows
+  return val||'—';
 }
 
-// Returns vendor value masked for salesman
-function guardVendor(val) { return currentRole === 'salesman' ? '—' : (val||'—'); }
+// Hide customer info from: vendor
+function guardCustomer(val) {
+  if(currentRole === 'vendor') return '—';
+  return val||'—';
+}
+
+function applyRoleUI() {
+  const r = currentRole;
+  const hide = (id) => { const el=document.getElementById(id); if(el) el.style.display='none'; };
+  const show = (id, d='') => { const el=document.getElementById(id); if(el) el.style.display=d; };
+
+  // Reset all first
+  ['navCustomers','navVendors','navKarigar','exportVendorCard','btnAddOrder','exportJsonItem','exportExcelItem'].forEach(id=>show(id));
+  show('menuManageUsers','flex');
+
+  if(r === 'salesman'){
+    hide('navVendors');
+    hide('exportVendorCard');
+  }
+  else if(r === 'vendor'){
+    hide('navCustomers');
+    hide('navVendors');
+    hide('navKarigar');
+    hide('exportVendorCard');
+    hide('btnAddOrder');
+    // Also hide export menu entirely — no excel/json for vendor
+    const exportBtn = document.getElementById('exportBtn');
+    if(exportBtn) exportBtn.style.display='none';
+  }
+  else if(r === 'accounts'){
+    // Full view but no user management
+    hide('menuManageUsers');
+    hide('btnAddOrder');
+    // Accounts can export but not add/edit orders
+  }
+  // admin: everything visible
+
+  // Excel + JSON: admin only
+  if(r !== 'admin'){ hide('exportJsonItem'); hide('exportExcelItem'); }
+
+  // Manage Users: admin only
+  if(r !== 'admin') hide('menuManageUsers');
+
+  // Header sub-label with role + name
+  const roleLabels = {admin:'Order Management', salesman:'Sales', vendor:'Vendor View', accounts:'Accounts'};
+  const name = currentUser?.displayName || '';
+  document.querySelector('.hdr-brand p').textContent = roleLabels[r]||r + (name?' · '+name:'');
+}
 
 // ══════════════════════════════════════════════
 // LOGIN / LOGOUT
@@ -995,44 +1049,54 @@ async function loadUserList() {
     const snap = await db.collection('meta').doc('users').get();
     const users = snap.exists ? (snap.data().list || []) : [];
     if (!users.length) { el.innerHTML = '<div style="font-size:9px;color:var(--dim);padding:8px">No users yet — add one above.</div>'; return; }
+    const roleColour = {admin:'var(--gold)',salesman:'var(--cap)',vendor:'var(--or)',accounts:'var(--mid)'};
     el.innerHTML = users.map((u,i) => `
       <div class="user-card">
         <div>
           <div class="user-card-name">${u.name||'Unnamed'}</div>
-          <div class="user-card-email">${u.email} · <span style="color:${u.role==='admin'?'var(--gold)':'var(--cap)'}">${u.role}</span></div>
+          <div class="user-card-email">${u.email}${u.vendorName?' · '+u.vendorName:''}</div>
+          <div style="font-size:8px;color:${roleColour[u.role]||'var(--mid)'};margin-top:2px;letter-spacing:1px;text-transform:uppercase">${u.role}</div>
         </div>
         <div style="display:flex;gap:6px;align-items:center">
-          <button class="btn-xs" onclick="toggleUserRole(${i})" title="Toggle role">${u.role==='admin'?'→ Salesman':'→ Admin'}</button>
+          <select class="sel inp" style="font-size:8px;padding:4px 6px;height:auto" onchange="changeUserRole(${i},this.value)">
+            <option ${u.role==='salesman'?'selected':''} value="salesman">Salesman</option>
+            <option ${u.role==='vendor'?'selected':''} value="vendor">Vendor</option>
+            <option ${u.role==='accounts'?'selected':''} value="accounts">Accounts</option>
+            <option ${u.role==='admin'?'selected':''} value="admin">Admin</option>
+          </select>
           <button class="btn-xs danger" onclick="deleteUserEntry(${i})">✕</button>
         </div>
       </div>`).join('');
-  } catch(e) { el.innerHTML = '<div style="font-size:9px;color:var(--cx)">Error loading users: '+e.message+'</div>'; }
+  } catch(e) { el.innerHTML = '<div style="font-size:9px;color:var(--cx)">Error: '+e.message+'</div>'; }
 }
 
 async function createUser() {
   if (!isAdmin()) return;
-  const name  = document.getElementById('nu_name').value.trim();
-  const email = document.getElementById('nu_email').value.trim();
-  const pwd   = document.getElementById('nu_pwd').value;
-  const role  = document.getElementById('nu_role').value;
+  const name       = document.getElementById('nu_name').value.trim();
+  const email      = document.getElementById('nu_email').value.trim();
+  const pwd        = document.getElementById('nu_pwd').value;
+  const role       = document.getElementById('nu_role').value;
+  const vendorName = document.getElementById('nu_vendor_name').value.trim();
   if (!email || !pwd) { showToast('Email and password required'); return; }
   if (pwd.length < 6) { showToast('Password must be at least 6 characters'); return; }
+  if (role === 'vendor' && !vendorName) { showToast('Vendor name is required for vendor role'); return; }
   if (!fbReady) { showToast('Firebase not connected'); return; }
   try {
-    // Create a secondary auth instance to create users without signing out current admin
     const secondaryApp = firebase.initializeApp(firebase.app().options, 'secondary_'+Date.now());
     const secondaryAuth = secondaryApp.auth();
     const cred = await secondaryAuth.createUserWithEmailAndPassword(email, pwd);
     await cred.user.updateProfile({ displayName: name });
     await secondaryAuth.signOut();
     secondaryApp.delete();
-    // Store role in Firestore users list
     const snap = await db.collection('meta').doc('users').get();
     const users = snap.exists ? (snap.data().list || []) : [];
-    users.push({ uid: cred.user.uid, email, name, role });
+    const entry = { uid: cred.user.uid, email, name, role };
+    if (role === 'vendor') entry.vendorName = vendorName;
+    users.push(entry);
     await db.collection('meta').doc('users').set({ list: users });
-    ['nu_name','nu_email','nu_pwd'].forEach(id => document.getElementById(id).value = '');
+    ['nu_name','nu_email','nu_pwd','nu_vendor_name'].forEach(id => document.getElementById(id).value = '');
     document.getElementById('nu_role').value = 'salesman';
+    document.getElementById('nu_vendor_wrap').style.display = 'none';
     loadUserList();
     showToast('User created: '+email);
   } catch(e) {
@@ -1040,13 +1104,13 @@ async function createUser() {
   }
 }
 
-async function toggleUserRole(i) {
+async function changeUserRole(i, newRole) {
   const snap = await db.collection('meta').doc('users').get();
   const users = snap.data().list || [];
-  users[i].role = users[i].role === 'admin' ? 'salesman' : 'admin';
+  users[i].role = newRole;
   await db.collection('meta').doc('users').set({ list: users });
   loadUserList();
-  showToast('Role updated');
+  showToast('Role updated to ' + newRole);
 }
 
 async function deleteUserEntry(i) {
@@ -1225,11 +1289,13 @@ function connectFirebase(cfg) {
           if (!snap.exists || users.length === 0) {
             // Bootstrap: first ever login becomes admin
             currentRole = 'admin';
+            currentVendorName = null;
             await db.collection('meta').doc('users').set({
               list: [{ uid: user.uid, email: user.email, name: user.displayName || 'Admin', role: 'admin' }]
             });
           } else {
             currentRole = record?.role || 'salesman';
+            currentVendorName = record?.vendorName || null;
           }
         } catch(e) {
           console.warn('Role lookup failed, defaulting to salesman:', e);
@@ -1250,6 +1316,7 @@ function connectFirebase(cfg) {
       } else {
         currentUser = null;
         currentRole = null;
+        currentVendorName = null;
         if (unsubOrders)   { try { unsubOrders();   } catch(e){} unsubOrders   = null; }
         if (unsubVendors)  { try { unsubVendors();  } catch(e){} unsubVendors  = null; }
         if (unsubCustomers){ try { unsubCustomers();} catch(e){} unsubCustomers = null; }
@@ -1434,12 +1501,16 @@ function formatDate(d) { if(!d) return '—'; const [y,m,day]=d.split('-'); retu
 function renderDash() {
   const now = new Date();
   const weekEnd = new Date(); weekEnd.setDate(weekEnd.getDate()+7);
-  const active = orders.filter(o => !['Order Delivered','Cancelled'].includes(o.status));
-  const dueWeek = orders.filter(o => {
+  // For vendor role: only count/show their own orders
+  const visibleOrders = (currentRole === 'vendor' && currentVendorName)
+    ? orders.filter(o => o.vendor === currentVendorName)
+    : orders;
+  const active = visibleOrders.filter(o => !['Order Delivered','Cancelled'].includes(o.status));
+  const dueWeek = visibleOrders.filter(o => {
     if(!o.ddate || ['Order Delivered','Cancelled'].includes(o.status)) return false;
     const d = new Date(o.ddate); return d>=now && d<=weekEnd;
   });
-  const overdue = orders.filter(o => {
+  const overdue = visibleOrders.filter(o => {
     if(!o.ddate || ['Order Delivered','Cancelled'].includes(o.status)) return false;
     return new Date(o.ddate)<now;
   });
@@ -1466,7 +1537,7 @@ function renderDash() {
     </div>
     <div class="stat-card" onclick="goFilteredOrders('all')">
       <div class="stat-lbl">Total Orders</div>
-      <div class="stat-val">${orders.length}</div>
+      <div class="stat-val">${visibleOrders.length}</div>
       <div class="stat-sub">all time</div>
       <span class="arrow">→</span>
     </div>
@@ -1521,8 +1592,8 @@ function renderPipeline() {
             return `<div class="ocard" onclick="viewOrder('${o.id}')">
               <div class="ocard-id">${o.id}${o.po?` · ${o.po}`:''}</div>
               ${thumb?`<img class="ocard-thumb" src="${thumb}">`:`<div class="ocard-thumb-ph">◈</div>`}
-              <div class="ocard-name">${o.name}${o.orderType==='urgent'?'<span class="urgent-tag">⚡ URGENT</span>':''}</div>
-              <div class="ocard-loc">📍 ${o.loc}</div>
+              <div class="ocard-name">${guardCustomer(o.name)}${o.orderType==='urgent'?'<span class="urgent-tag">⚡ URGENT</span>':''}</div>
+              <div class="ocard-loc">📍 ${guardCustomer(o.loc)}</div>
               <div class="ocard-meta">
                 <span class="ocard-pcs">${pcs} pcs</span>
                 <span class="ocard-val">${gwt.toFixed(2)}g · ${dwt.toFixed(2)}ct</span>
@@ -1558,6 +1629,8 @@ function renderOrders() {
   document.getElementById('ordersFilterTag').innerHTML=tagHtml;
 
   let list = orders.filter(o => {
+    // Vendor role: only see their own orders
+    if(currentRole === 'vendor' && currentVendorName && o.vendor !== currentVendorName) return false;
     const txt = (o.name+o.id+(o.vendor||'')+(o.loc||'')).toLowerCase();
     const sm = !sf || o.status===sf;
     const tm = !search || txt.includes(search);
@@ -1577,10 +1650,10 @@ function renderOrders() {
     return `<div class="row-card" onclick="viewOrder('${o.id}')">
       <div class="row-id">${o.id}${o.po?` · PO: ${o.po}`:''} · ${o.category||''}</div>
       <div class="row-top">
-        <div class="row-name">${o.name}${o.orderType==='urgent'?'<span class="urgent-tag">⚡ URGENT</span>':''}</div>
+        <div class="row-name">${guardCustomer(o.name)}${o.orderType==='urgent'?'<span class="urgent-tag">⚡ URGENT</span>':''}</div>
         <div>${sbadge(o.status)}</div>
       </div>
-      <div style="font-size:9px;color:var(--dim)">📍 ${o.loc} · ${guardVendor(o.vendor)}</div>
+      <div style="font-size:9px;color:var(--dim)">📍 ${guardCustomer(o.loc)} · ${guardVendor(o.vendor)}</div>
       <div class="row-bottom">
         <div class="row-meta">${pcs} pcs</div>
         <div class="row-meta">GW: <span>${gwt.toFixed(2)}g</span></div>
@@ -1588,9 +1661,11 @@ function renderOrders() {
         ${o.ddate?`<div class="row-meta">Del: <span style="color:${du!==null&&du<0?'var(--cx)':du<=3?'var(--ip)':'var(--mid)'}">${formatDate(o.ddate)}${du!==null?` (${du<0?'overdue':du===0?'today':du+'d'})`:''}  </span></div>`:''}
       </div>
       <div class="row-actions" onclick="event.stopPropagation()">
+        ${(currentRole==='admin'||currentRole==='salesman')?`
         <button class="btn-xs" onclick="openEdit('${o.id}')">Edit</button>
         <button class="btn-xs" onclick="openFollowUp('${o.id}')">Follow-up${o.followUps&&o.followUps.length?` (${o.followUps.length})`:''}</button>
-        <button class="btn-xs danger" onclick="confirmDel('${o.id}')">Delete</button>
+        ${currentRole==='admin'?`<button class="btn-xs danger" onclick="confirmDel('${o.id}')">Delete</button>`:''}`
+        :`<button class="btn-xs" onclick="openFollowUp('${o.id}')">Follow-up${o.followUps&&o.followUps.length?` (${o.followUps.length})`:''}</button>`}
       </div>
     </div>`;
   }).join('');
@@ -1775,8 +1850,8 @@ function renderKarigar() {
     else{dayCls='ok';dayTxt='Due in '+du+'d';}
     return `<div class="rem-item ${cls}" onclick="viewOrder('${o.id}')">
       <div class="rem-meta">${o.id} · ${o.status}</div>
-      <div class="rem-name">${o.name}</div>
-      <div class="rem-meta">📍 ${o.loc} · ${guardVendor(o.vendor)}</div>
+      <div class="rem-name">${guardCustomer(o.name)}</div>
+      <div class="rem-meta">📍 ${guardCustomer(o.loc)} · ${guardVendor(o.vendor)}</div>
       <div class="rem-days ${dayCls}">${dayTxt}</div>
     </div>`;
   }).join('');
@@ -1793,9 +1868,9 @@ function viewOrder(id){
   document.getElementById('detailTitle').textContent=o.id+(o.orderType==='urgent'?' ⚡':'');
   document.getElementById('detailBody').innerHTML=`
     <div class="dg">
-      <div class="df"><div class="dl">Customer</div><div class="dv gold">${o.name}</div></div>
-      <div class="df"><div class="dl">Location</div><div class="dv">${o.loc||'—'}</div></div>
-      <div class="df"><div class="dl">Contact</div><div class="dv">${o.contact||'—'}</div></div>
+      <div class="df"><div class="dl">Customer</div><div class="dv gold">${guardCustomer(o.name)}</div></div>
+      <div class="df"><div class="dl">Location</div><div class="dv">${guardCustomer(o.loc||'—')}</div></div>
+      <div class="df"><div class="dl">Contact</div><div class="dv">${guardCustomer(o.contact||'—')}</div></div>
       <div class="df"><div class="dl">Vendor</div><div class="dv">${guardVendor(o.vendor)}</div></div>
       <div class="df"><div class="dl">Category</div><div class="dv">${o.category||'—'}</div></div>
       <div class="df"><div class="dl">Status</div><div class="dv">${sbadge(o.status)}</div></div>
@@ -1933,6 +2008,7 @@ function quickStatusSave(id){
 }
 
 function delCurrent(){
+  if(!isAdmin()){ showToast('Admin only'); return; }
   if(!viewId) return;
   if(confirm('Delete this order?')){
     orders=orders.filter(o=>o.id!==viewId);
@@ -1942,6 +2018,7 @@ function delCurrent(){
 }
 function editCurrent(){closeModal('detailModal');openEdit(viewId);}
 function confirmDel(id){
+  if(!isAdmin()){ showToast('Admin only'); return; }
   if(confirm('Delete order '+id+'?')){
     orders=orders.filter(o=>o.id!==id);
     deleteOrderFromFirestore(id);
@@ -2005,10 +2082,10 @@ function populateCustomerDropdown(selectedName){
 }
 
 function populateVendorDropdown(selectedName){
-  // Hide vendor field entirely for salesman
   const vendorFg = document.getElementById('vendorFieldGroup');
-  if (vendorFg) vendorFg.style.display = currentRole === 'salesman' ? 'none' : '';
-  if (currentRole === 'salesman') return;
+  const hideVendor = currentRole === 'salesman' || currentRole === 'vendor' || currentRole === 'accounts';
+  if (vendorFg) vendorFg.style.display = hideVendor ? 'none' : '';
+  if (hideVendor) return;
   const sel = document.getElementById('f_vendor');
   const allNames = new Set([
     ...standaloneVendors.map(v=>v.name),
@@ -2037,6 +2114,7 @@ function onVendorSelect(){
 }
 
 function openAdd(){
+  if(currentRole === 'accounts' || currentRole === 'vendor'){ showToast('View only access'); return; }
   editId=null; curImgs=[]; curOrderType='normal'; curPieceImgs={};
   document.getElementById('addModalTitle').textContent='New Order';
   clearForm();
@@ -2374,235 +2452,185 @@ function printJobCard(type, id){
   const o = orders.find(x=>x.id===oid);
   if(!o){ showToast('Open an order first'); return; }
 
-  const isVendor = type==='vendor';
-  const pcs = totalPcs(o), gwt = orderGrossWt(o), dwt = orderDiamondWt(o);
+  const isVendor = (type === 'vendor');
+  const pcs = totalPcs(o);
+  const gwt = orderGrossWt(o).toFixed(2);
+  const dwt = orderDiamondWt(o).toFixed(2);
 
-  // ── SHARED CSS ──
-  const css = `
-    *{box-sizing:border-box;margin:0;padding:0}
-    body{font-family:-apple-system,'Helvetica Neue',Arial,sans-serif;background:#fff;color:#1a1a1a;padding:40px;max-width:680px;margin:0 auto;font-size:13px;line-height:1.5}
-    .header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:28px;padding-bottom:20px;border-bottom:2px solid #1a1a1a}
-    .brand{font-size:20px;font-weight:700;letter-spacing:4px;text-transform:uppercase;color:#1a1a1a}
-    .card-label{font-size:9px;font-weight:600;letter-spacing:3px;text-transform:uppercase;color:#888;text-align:right;margin-bottom:4px}
-    .order-id{font-size:22px;font-weight:300;color:#1a1a1a;text-align:right;letter-spacing:1px}
-    .meta-row{display:flex;gap:6px;align-items:center;justify-content:flex-end;margin-top:4px}
-    .meta-chip{font-size:9px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;padding:3px 8px;border-radius:2px}
-    .chip-urgent{background:#1a1a1a;color:#fff}
-    .chip-normal{background:#f0f0f0;color:#555}
-    .chip-lgd{background:#e8f4fd;color:#1a6fa8;border:1px solid #bee3f8}
-    .chip-natural{background:#fdf8e8;color:#a07c1a;border:1px solid #f5e89a}
-    .section{margin-bottom:24px}
-    .section-title{font-size:8px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:#888;margin-bottom:12px;padding-bottom:6px;border-bottom:1px solid #e8e8e8}
-    .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
-    .grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
-    .field{display:flex;flex-direction:column;gap:3px}
-    .field-label{font-size:8px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:#aaa}
-    .field-value{font-size:13px;color:#1a1a1a;font-weight:400}
-    .field-value.highlight{font-size:15px;font-weight:600;color:#1a1a1a}
-    table{width:100%;border-collapse:collapse;margin-top:4px}
-    thead tr{border-bottom:2px solid #1a1a1a}
-    th{font-size:8px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#888;padding:8px 8px 8px 0;text-align:left}
-    th:last-child,td:last-child{text-align:right;padding-right:0}
-    td{padding:10px 8px 10px 0;border-bottom:1px solid #f0f0f0;font-size:12px;color:#1a1a1a;vertical-align:middle}
-    .piece-img{width:44px;height:44px;object-fit:cover;border-radius:3px;border:1px solid #e8e8e8}
-    .piece-ph{width:44px;height:44px;background:#f5f5f5;border-radius:3px;display:inline-flex;align-items:center;justify-content:center;color:#ccc;font-size:14px;font-weight:300}
-    tfoot td{border-top:2px solid #1a1a1a;border-bottom:none;font-size:12px;font-weight:700;padding-top:10px;color:#1a1a1a}
-    .totals-row{display:flex;gap:0;margin-top:16px;border:1px solid #e8e8e8;border-radius:4px;overflow:hidden}
-    .total-cell{flex:1;padding:12px 16px;text-align:center;border-right:1px solid #e8e8e8}
-    .total-cell:last-child{border-right:none}
-    .total-num{font-size:20px;font-weight:300;color:#1a1a1a;letter-spacing:-0.5px}
-    .total-lbl{font-size:8px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:#aaa;margin-top:2px}
-    .notes-box{background:#f8f8f8;border-radius:4px;padding:14px;font-size:12px;color:#444;line-height:1.7}
-    .fu-item{padding:10px 0;border-bottom:1px solid #f0f0f0}
-    .fu-item:last-child{border-bottom:none}
-    .fu-ts{font-size:9px;color:#aaa;letter-spacing:1px;margin-bottom:4px;font-weight:500}
-    .fu-msg{font-size:12px;color:#333;margin-bottom:3px}
-    .fu-resp{font-size:12px;color:#666;padding-left:12px;border-left:2px solid #e0e0e0;margin-top:5px}
-    .footer{display:flex;justify-content:space-between;align-items:center;margin-top:32px;padding-top:14px;border-top:1px solid #e8e8e8;font-size:9px;color:#aaa;letter-spacing:1.5px;text-transform:uppercase;font-weight:500}
-    .print-btn{display:block;margin:28px auto 0;padding:11px 36px;background:#1a1a1a;color:#fff;border:none;font-size:10px;font-weight:700;letter-spacing:3px;text-transform:uppercase;cursor:pointer;border-radius:3px}
-    .print-btn:hover{background:#333}
-    @media print{.print-btn{display:none!important}body{padding:24px}}
-  `;
+  const css = [
+    '*{box-sizing:border-box;margin:0;padding:0}',
+    'body{font-family:-apple-system,"Helvetica Neue",Arial,sans-serif;background:#fff;color:#1a1a1a;padding:40px;max-width:680px;margin:0 auto;font-size:13px;line-height:1.5}',
+    '.hdr{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:28px;padding-bottom:20px;border-bottom:2px solid #1a1a1a}',
+    '.brand{font-size:20px;font-weight:700;letter-spacing:4px;text-transform:uppercase}',
+    '.card-lbl{font-size:9px;font-weight:600;letter-spacing:3px;text-transform:uppercase;color:#888;text-align:right;margin-bottom:4px}',
+    '.oid{font-size:22px;font-weight:300;text-align:right;letter-spacing:1px}',
+    '.chips{display:flex;gap:6px;justify-content:flex-end;margin-top:5px;flex-wrap:wrap}',
+    '.chip{font-size:9px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;padding:3px 9px;border-radius:2px}',
+    '.cu{background:#1a1a1a;color:#fff}',
+    '.cn{background:#f0f0f0;color:#555}',
+    '.cl{background:#e8f4fd;color:#1a6fa8;border:1px solid #bee3f8}',
+    '.cnat{background:#fdf8e8;color:#a07c1a;border:1px solid #f5e89a}',
+    '.sec{margin-bottom:24px}',
+    '.sec-t{font-size:8px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:#888;margin-bottom:12px;padding-bottom:6px;border-bottom:1px solid #e8e8e8}',
+    '.g2{display:grid;grid-template-columns:1fr 1fr;gap:14px}',
+    '.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}',
+    '.f{display:flex;flex-direction:column;gap:3px}',
+    '.fl{font-size:8px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:#aaa}',
+    '.fv{font-size:13px;color:#1a1a1a}',
+    '.fvh{font-size:15px;font-weight:600;color:#1a1a1a}',
+    '.fvb{font-size:13px;font-weight:700;color:#1a1a1a}',
+    'table{width:100%;border-collapse:collapse;margin-top:4px}',
+    'thead tr{border-bottom:2px solid #1a1a1a}',
+    'th{font-size:8px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#888;padding:8px 6px 8px 0;text-align:left}',
+    'td{padding:9px 6px 9px 0;border-bottom:1px solid #f0f0f0;font-size:12px;vertical-align:middle}',
+    '.pi{width:44px;height:44px;object-fit:cover;border-radius:3px;border:1px solid #e8e8e8}',
+    '.ph{width:44px;height:44px;background:#f5f5f5;border-radius:3px;display:inline-flex;align-items:center;justify-content:center;color:#ccc;font-size:16px}',
+    'tfoot td{border-top:2px solid #1a1a1a;border-bottom:none;font-size:12px;font-weight:700;padding-top:10px}',
+    '.tots{display:flex;margin-top:14px;border:1px solid #e8e8e8;border-radius:4px;overflow:hidden}',
+    '.tc{flex:1;padding:12px;text-align:center;border-right:1px solid #e8e8e8}',
+    '.tc:last-child{border-right:none}',
+    '.tn{font-size:20px;font-weight:300;letter-spacing:-0.5px}',
+    '.tl{font-size:8px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:#aaa;margin-top:2px}',
+    '.nb{background:#f8f8f8;border-radius:4px;padding:14px;font-size:12px;color:#444;line-height:1.7}',
+    '.fui{padding:10px 0;border-bottom:1px solid #f0f0f0}',
+    '.fui:last-child{border-bottom:none}',
+    '.futs{font-size:9px;color:#aaa;letter-spacing:1px;margin-bottom:3px;font-weight:500}',
+    '.fum{font-size:12px;color:#333;margin-bottom:3px}',
+    '.fur{font-size:12px;color:#666;padding-left:12px;border-left:2px solid #e0e0e0;margin-top:4px}',
+    '.ft{display:flex;justify-content:space-between;align-items:center;margin-top:28px;padding-top:12px;border-top:1px solid #e8e8e8;font-size:9px;color:#aaa;letter-spacing:1.5px;text-transform:uppercase;font-weight:500}',
+    '.pb{display:block;margin:24px auto 0;padding:11px 36px;background:#1a1a1a;color:#fff;border:none;font-size:10px;font-weight:700;letter-spacing:3px;text-transform:uppercase;cursor:pointer;border-radius:3px}',
+    '@media print{.pb{display:none!important}body{padding:24px}}'
+  ].join('');
 
-  // ── CUSTOMER JOB CARD ──
-  const customerCard = `<!DOCTYPE html><html><head>
-  <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Job Card · ${o.id}</title>
-  <style>${css}</style></head><body>
+  // Build pieces rows
+  var pieceRows = '';
+  for(var i=0; i<o.pieces.length; i++){
+    var p = o.pieces[i];
+    var imgCell = p.img
+      ? '<img class="pi" src="' + p.img + '">'
+      : '<div class="ph">◈</div>';
+    var diaCell = p.diaType
+      ? '<span class="chip ' + (p.diaType==='LGD'?'cl':'cnat') + '" style="font-size:8px;padding:2px 6px">' + p.diaType + '</span>'
+      : '—';
+    pieceRows += '<tr>'
+      + '<td>' + imgCell + '</td>'
+      + '<td style="font-weight:500">' + (p.styleNo||p.item||'—') + '</td>'
+      + '<td>' + (p.gwt ? p.gwt+'g' : '—') + '</td>'
+      + '<td>' + (p.dwt ? p.dwt+'ct' : '—') + '</td>'
+      + '<td>' + (p.size||'—') + '</td>'
+      + '<td>' + (p.purity||'—') + '</td>'
+      + '<td>' + diaCell + '</td>'
+      + '</tr>';
+  }
 
-  <div class="header">
-    <div>
-      <div class="brand">Bharni Gems</div>
-    </div>
-    <div>
-      <div class="card-label">Job Card</div>
-      <div class="order-id">${o.id}</div>
-      <div class="meta-row">
-        <span class="meta-chip ${o.orderType==='urgent'?'chip-urgent':'chip-normal'}">${o.orderType==='urgent'?'⚡ Urgent':'Normal'}</span>
-      </div>
-    </div>
-  </div>
+  var piecesTable = '<table>'
+    + '<thead><tr><th style="width:52px">Photo</th><th>Style No.</th><th>Gross Wt</th><th>Dia Wt</th><th>Size</th><th>Purity</th><th>Diamond</th></tr></thead>'
+    + '<tbody>' + pieceRows + '</tbody>'
+    + '</table>'
+    + '<div class="tots">'
+    + '<div class="tc"><div class="tn">' + pcs + '</div><div class="tl">Pieces</div></div>'
+    + '<div class="tc"><div class="tn">' + gwt + '<span style="font-size:12px">g</span></div><div class="tl">Gross Wt</div></div>'
+    + '<div class="tc"><div class="tn">' + dwt + '<span style="font-size:12px">ct</span></div><div class="tl">Diamond Wt</div></div>'
+    + '</div>';
 
-  <div class="section">
-    <div class="section-title">Customer Details</div>
-    <div class="grid-2">
-      <div class="field"><div class="field-label">Customer</div><div class="field-value highlight">${o.name}</div></div>
-      <div class="field"><div class="field-label">Location</div><div class="field-value">${o.loc||'—'}</div></div>
-      <div class="field"><div class="field-label">Contact</div><div class="field-value">${o.contact||'—'}</div></div>
-      <div class="field"><div class="field-label">Category</div><div class="field-value">${o.category||'—'}</div></div>
-    </div>
-  </div>
+  var notesBlock = o.notes
+    ? '<div class="sec"><div class="sec-t">Notes</div><div class="nb">' + o.notes + '</div></div>'
+    : '';
 
-  <div class="section">
-    <div class="section-title">Order Details</div>
-    <div class="grid-3">
-      <div class="field"><div class="field-label">Order Date</div><div class="field-value">${formatDate(o.odate)}</div></div>
-      <div class="field"><div class="field-label">Expected Delivery</div><div class="field-value">${formatDate(o.ddate)}</div></div>
-      <div class="field"><div class="field-label">Status</div><div class="field-value">${o.status}</div></div>
-    </div>
-  </div>
+  // Follow-up log (vendor only)
+  var fuBlock = '';
+  if(isVendor && o.followUps && o.followUps.length){
+    var fuRows = '';
+    for(var j=0; j<o.followUps.length; j++){
+      var f = o.followUps[j];
+      fuRows += '<div class="fui">'
+        + '<div class="futs">' + f.ts + '</div>'
+        + '<div class="fum">' + f.update + '</div>'
+        + (f.response ? '<div class="fur">' + f.response + '</div>' : '')
+        + '</div>';
+    }
+    fuBlock = '<div class="sec"><div class="sec-t">Follow-up Log</div>' + fuRows + '</div>';
+  }
 
-  <div class="section">
-    <div class="section-title">Pieces</div>
-    <table>
-      <thead><tr>
-        <th style="width:52px">Photo</th>
-        <th>Style No.</th>
-        <th>Gross Wt</th>
-        <th>Dia Wt</th>
-        <th>Size</th>
-        <th>Purity</th>
-        <th>Diamond</th>
-      </tr></thead>
-      <tbody>
-        ${o.pieces.map(p=>`<tr>
-          <td>${p.img?`<img class="piece-img" src="${p.img}">`:`<div class="piece-ph">◈</div>`}</td>
-          <td style="font-weight:500">${p.styleNo||p.item||'—'}</td>
-          <td>${p.gwt?p.gwt+'g':'—'}</td>
-          <td>${p.dwt?p.dwt+'ct':'—'}</td>
-          <td>${p.size||'—'}</td>
-          <td>${p.purity||'—'}</td>
-          <td>${p.diaType?`<span class="meta-chip ${p.diaType==='LGD'?'chip-lgd':'chip-natural'}" style="font-size:8px;padding:2px 6px">${p.diaType}</span>`:'—'}</td>
-        </tr>`).join('')}
-      </tbody>
-    </table>
-    <div class="totals-row">
-      <div class="total-cell"><div class="total-num">${pcs}</div><div class="total-lbl">Pieces</div></div>
-      <div class="total-cell"><div class="total-num">${gwt.toFixed(2)}<span style="font-size:12px">g</span></div><div class="total-lbl">Gross Wt</div></div>
-      <div class="total-cell"><div class="total-num">${dwt.toFixed(2)}<span style="font-size:12px">ct</span></div><div class="total-lbl">Diamond Wt</div></div>
-    </div>
-  </div>
+  var urgentChip = o.orderType==='urgent'
+    ? '<span class="chip cu">⚡ Urgent</span>'
+    : '<span class="chip cn">Normal</span>';
 
-  ${o.notes?`<div class="section"><div class="section-title">Notes</div><div class="notes-box">${o.notes}</div></div>`:''}
+  var html;
 
-  <div class="footer">
-    <span>${tsNow()}</span>
-    <span>Customer Copy</span>
-  </div>
+  if(!isVendor){
+    // ── CUSTOMER CARD ──
+    html = '<!DOCTYPE html><html><head>'
+      + '<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">'
+      + '<title>Job Card · ' + o.id + '</title>'
+      + '<style>' + css + '</style></head><body>'
+      + '<div class="hdr">'
+      +   '<div class="brand">Bharni Gems</div>'
+      +   '<div>'
+      +     '<div class="card-lbl">Job Card</div>'
+      +     '<div class="oid">' + o.id + '</div>'
+      +     '<div class="chips">' + urgentChip + '</div>'
+      +   '</div>'
+      + '</div>'
+      + '<div class="sec"><div class="sec-t">Customer Details</div><div class="g2">'
+      +   '<div class="f"><div class="fl">Customer</div><div class="fvh">' + o.name + '</div></div>'
+      +   '<div class="f"><div class="fl">Location</div><div class="fv">' + (o.loc||'—') + '</div></div>'
+      +   '<div class="f"><div class="fl">Contact</div><div class="fv">' + (o.contact||'—') + '</div></div>'
+      +   '<div class="f"><div class="fl">Category</div><div class="fv">' + (o.category||'—') + '</div></div>'
+      + '</div></div>'
+      + '<div class="sec"><div class="sec-t">Order Details</div><div class="g3">'
+      +   '<div class="f"><div class="fl">Order Date</div><div class="fv">' + formatDate(o.odate) + '</div></div>'
+      +   '<div class="f"><div class="fl">Expected Delivery</div><div class="fv">' + formatDate(o.ddate) + '</div></div>'
+      +   '<div class="f"><div class="fl">Status</div><div class="fv">' + o.status + '</div></div>'
+      + '</div></div>'
+      + '<div class="sec"><div class="sec-t">Pieces</div>' + piecesTable + '</div>'
+      + notesBlock
+      + '<div class="ft"><span>' + tsNow() + '</span><span>Customer Copy</span></div>'
+      + '<button class="pb" onclick="window.print()">Save as PDF</button>'
+      + '</body></html>';
 
-  <button class="print-btn" onclick="window.print()">Save as PDF</button>
-  </body></html>`;
+  } else {
+    // ── VENDOR CARD ──
+    var ndChip = o.newDesign==='yes' ? '<span class="chip cl" style="font-size:8px;padding:2px 6px">New Design</span>' : '';
+    html = '<!DOCTYPE html><html><head>'
+      + '<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">'
+      + '<title>Vendor Job Card · ' + o.id + '</title>'
+      + '<style>' + css + '</style></head><body>'
+      + '<div class="hdr">'
+      +   '<div class="brand">Bharni Gems</div>'
+      +   '<div>'
+      +     '<div class="card-lbl">Vendor Job Card</div>'
+      +     '<div class="oid">' + o.id + '</div>'
+      +     '<div class="chips">' + urgentChip + ndChip + '</div>'
+      +   '</div>'
+      + '</div>'
+      + '<div class="sec"><div class="sec-t">Vendor Details</div><div class="g2">'
+      +   '<div class="f"><div class="fl">Vendor / Karigar</div><div class="fvh">' + (o.vendor||'—') + '</div></div>'
+      +   '<div class="f"><div class="fl">Category</div><div class="fv">' + (o.category||'—') + '</div></div>'
+      + '</div></div>'
+      + '<div class="sec"><div class="sec-t">Schedule</div><div class="g3">'
+      +   '<div class="f"><div class="fl">Order Date</div><div class="fv">' + formatDate(o.odate) + '</div></div>'
+      +   '<div class="f"><div class="fl">Dispatch by</div><div class="fvb">' + formatDate(o.shipdate) + '</div></div>'
+      +   '<div class="f"><div class="fl">PO Number</div><div class="fvb">' + (o.po||'—') + '</div></div>'
+      + '</div></div>'
+      + '<div class="sec"><div class="sec-t">Pieces to Manufacture</div>' + piecesTable + '</div>'
+      + notesBlock
+      + fuBlock
+      + '<div class="ft"><span>' + tsNow() + '</span><span>Vendor Copy</span></div>'
+      + '<button class="pb" onclick="window.print()">Save as PDF</button>'
+      + '</body></html>';
+  }
 
-  // ── VENDOR JOB CARD ──
-  const vendorCard = `<!DOCTYPE html><html><head>
-  <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Vendor Job Card · ${o.id}</title>
-  <style>${css}</style></head><body>
-
-  <div class="header">
-    <div>
-      <div class="brand">Bharni Gems</div>
-    </div>
-    <div>
-      <div class="card-label">Vendor Job Card</div>
-      <div class="order-id">${o.id}</div>
-      <div class="meta-row">
-        <span class="meta-chip ${o.orderType==='urgent'?'chip-urgent':'chip-normal'}">${o.orderType==='urgent'?'⚡ Urgent':'Normal'}</span>
-        ${o.newDesign==='yes'?'<span class="meta-chip chip-lgd" style="font-size:8px;padding:2px 6px">New Design</span>':''}
-      </div>
-    </div>
-  </div>
-
-  <div class="section">
-    <div class="section-title">Vendor Details</div>
-    <div class="grid-2">
-      <div class="field"><div class="field-label">Vendor / Karigar</div><div class="field-value highlight">${o.vendor||'—'}</div></div>
-      <div class="field"><div class="field-label">Category</div><div class="field-value">${o.category||'—'}</div></div>
-    </div>
-  </div>
-
-  <div class="section">
-    <div class="section-title">Schedule</div>
-    <div class="grid-3">
-      <div class="field"><div class="field-label">Order Date</div><div class="field-value">${formatDate(o.odate)}</div></div>
-      <div class="field"><div class="field-label">Dispatch by</div><div class="field-value" style="font-weight:600;color:#1a1a1a">${formatDate(o.shipdate)}</div></div>
-      <div class="field"><div class="field-label">PO Number</div><div class="field-value" style="font-weight:600">${o.po||'—'}</div></div>
-    </div>
-  </div>
-
-  <div class="section">
-    <div class="section-title">Pieces to Manufacture</div>
-    <table>
-      <thead><tr>
-        <th style="width:52px">Photo</th>
-        <th>Style No.</th>
-        <th>Gross Wt</th>
-        <th>Dia Wt</th>
-        <th>Size</th>
-        <th>Purity</th>
-        <th>Diamond</th>
-      </tr></thead>
-      <tbody>
-        ${o.pieces.map(p=>`<tr>
-          <td>${p.img?`<img class="piece-img" src="${p.img}">`:`<div class="piece-ph">◈</div>`}</td>
-          <td style="font-weight:500">${p.styleNo||p.item||'—'}</td>
-          <td>${p.gwt?p.gwt+'g':'—'}</td>
-          <td>${p.dwt?p.dwt+'ct':'—'}</td>
-          <td>${p.size||'—'}</td>
-          <td>${p.purity||'—'}</td>
-          <td>${p.diaType?`<span class="meta-chip ${p.diaType==='LGD'?'chip-lgd':'chip-natural'}" style="font-size:8px;padding:2px 6px">${p.diaType}</span>`:'—'}</td>
-        </tr>`).join('')}
-      </tbody>
-    </table>
-    <div class="totals-row">
-      <div class="total-cell"><div class="total-num">${pcs}</div><div class="total-lbl">Pieces</div></div>
-      <div class="total-cell"><div class="total-num">${gwt.toFixed(2)}<span style="font-size:12px">g</span></div><div class="total-lbl">Gross Wt</div></div>
-      <div class="total-cell"><div class="total-num">${dwt.toFixed(2)}<span style="font-size:12px">ct</span></div><div class="total-lbl">Diamond Wt</div></div>
-    </div>
-  </div>
-
-  ${o.notes?`<div class="section"><div class="section-title">Instructions</div><div class="notes-box">${o.notes}</div></div>`:''}
-
-  ${o.followUps&&o.followUps.length?`
-  <div class="section">
-    <div class="section-title">Follow-up Log</div>
-    ${o.followUps.map(f=>`<div class="fu-item">
-      <div class="fu-ts">${f.ts}</div>
-      <div class="fu-msg">${f.update}</div>
-      ${f.response?`<div class="fu-resp">${f.response}</div>`:''}
-    </div>`).join('')}
-  </div>`:''}
-
-  <div class="footer">
-    <span>${tsNow()}</span>
-    <span>Vendor Copy</span>
-  </div>
-
-  <button class="print-btn" onclick="window.print()">Save as PDF</button>
-  </body></html>`;
-
-  const html = isVendor ? vendorCard : customerCard;
-  const blob = new Blob([html], {type:'text/html'});
-  const url  = URL.createObjectURL(blob);
-  const w    = window.open(url, '_blank');
-  if (!w) { showToast('Allow pop-ups for this site to open job cards'); }
-  setTimeout(() => URL.revokeObjectURL(url), 10000);
+  var blob = new Blob([html], {type:'text/html'});
+  var url  = URL.createObjectURL(blob);
+  var w    = window.open(url, '_blank');
+  if(!w){ showToast('Allow pop-ups for this site to open job cards'); }
+  setTimeout(function(){ URL.revokeObjectURL(url); }, 10000);
 }
 
 // ══════════════════════════════════════════════
-// EXCEL EXPORT
-// ══════════════════════════════════════════════
 function exportExcel(){
+  if(!isAdmin()){ showToast('Admin only'); return; }
   if(typeof XLSX === 'undefined'){ showToast('Excel library not loaded'); return; }
 
   const wb = XLSX.utils.book_new();
@@ -2734,6 +2762,7 @@ document.addEventListener('click',function(e){
 });
 function lbx(src){document.getElementById('lbxImg').src=src;document.getElementById('lbx').classList.add('open');}
 function exportData(){
+  if(!isAdmin()){ showToast('Admin only'); return; }
   const b=new Blob([JSON.stringify(orders,null,2)],{type:'application/json'});
   const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='bharni-gems-orders.json';a.click();
   showToast('Exported successfully');
