@@ -2370,7 +2370,6 @@ function deleteFollowUp(i){
 // JOB CARD PDF (print)
 // ══════════════════════════════════════════════
 function printJobCard(type, id){
-  // if called from header menu, use viewId; else use passed id
   const oid = id || viewId;
   const o = orders.find(x=>x.id===oid);
   if(!o){ showToast('Open an order first'); return; }
@@ -2378,92 +2377,139 @@ function printJobCard(type, id){
   const isVendor = type==='vendor';
   const pcs = totalPcs(o), gwt = orderGrossWt(o), dwt = orderDiamondWt(o);
 
-  const html = `
-  <div class="jc">
-    <div class="jc-header">
-      <div>
-        <div class="jc-brand">Bharni Gems</div>
-        <div class="jc-brand-sub">B2B Diamond Jewellery · Bengaluru</div>
-      </div>
-      <div style="text-align:right">
-        <div class="jc-type">${isVendor?'Vendor Job Card':'Customer Job Card'}</div>
-        <div class="jc-orderno">${o.id}</div>
-        <div style="font-size:10px;color:#888;margin-top:4px">PO: ${o.po||'—'}</div>
-        ${isVendor?'':o.invoice?`<div style="font-size:10px;color:#888">INV: ${o.invoice}</div>`:''}
-      </div>
-    </div>
+  const html = `<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>${isVendor?'Vendor':'Customer'} Job Card · ${o.id}</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300&family=DM+Mono:wght@300;400&display=swap" rel="stylesheet">
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Cormorant Garamond',Georgia,serif;background:#fff;color:#111;padding:32px;max-width:720px;margin:0 auto}
+  .jc-header{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:2px solid #b8963c;padding-bottom:16px;margin-bottom:20px}
+  .jc-brand{font-size:24px;letter-spacing:6px;color:#b8963c;text-transform:uppercase;font-weight:300}
+  .jc-brand-sub{font-size:9px;letter-spacing:3px;color:#888;margin-top:2px;font-family:'DM Mono',monospace}
+  .jc-type{font-size:10px;letter-spacing:3px;text-transform:uppercase;color:#888;text-align:right;font-family:'DM Mono',monospace}
+  .jc-orderno{font-size:16px;color:#b8963c;font-weight:600;margin-top:4px}
+  .jc-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px 24px;margin-bottom:20px}
+  .jc-field{display:flex;flex-direction:column;gap:3px}
+  .jc-lbl{font-size:8px;letter-spacing:2px;text-transform:uppercase;color:#999;font-family:'DM Mono',monospace}
+  .jc-val{font-size:13px;color:#111}
+  .jc-section{font-size:8px;letter-spacing:2.5px;text-transform:uppercase;color:#b8963c;margin:18px 0 10px;font-family:'DM Mono',monospace;border-bottom:1px solid #eee;padding-bottom:5px}
+  table{width:100%;border-collapse:collapse;margin-bottom:20px}
+  th{font-size:8px;letter-spacing:1.5px;text-transform:uppercase;border-bottom:1px solid #ccc;padding:7px 6px;text-align:left;font-family:'DM Mono',monospace;color:#666;font-weight:normal}
+  td{padding:8px 6px;border-bottom:1px solid #f0f0f0;font-size:12px;vertical-align:middle}
+  tfoot td{border-top:2px solid #b8963c;border-bottom:none;font-weight:600;font-size:13px;color:#b8963c}
+  .piece-img{width:46px;height:46px;object-fit:cover;border:1px solid #ddd;border-radius:2px}
+  .piece-ph{width:46px;height:46px;background:#f5f5f5;border:1px solid #ddd;border-radius:2px;display:flex;align-items:center;justify-content:center;color:#ccc;font-size:20px}
+  .badge{display:inline-block;padding:2px 8px;border-radius:2px;font-size:9px;letter-spacing:1px;text-transform:uppercase;font-family:'DM Mono',monospace}
+  .badge-urgent{background:#fff0f0;color:#c44;border:1px solid #fcc}
+  .badge-normal{background:#f0faf5;color:#3a7;border:1px solid #cee}
+  .fu-entry{margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid #eee}
+  .fu-ts{font-size:8px;color:#aaa;letter-spacing:1px;margin-bottom:4px;font-family:'DM Mono',monospace}
+  .fu-msg{font-size:12px;color:#333}
+  .fu-resp{font-size:11px;color:#888;margin-top:4px;font-style:italic}
+  .sig-row{display:flex;gap:48px;margin-top:40px}
+  .sig-line{flex:1;border-top:1px solid #bbb;padding-top:8px;font-size:8px;letter-spacing:1.5px;color:#aaa;text-transform:uppercase;font-family:'DM Mono',monospace}
+  .footer{display:flex;justify-content:space-between;margin-top:24px;padding-top:12px;border-top:1px solid #ddd;font-size:8px;letter-spacing:1.5px;color:#aaa;text-transform:uppercase;font-family:'DM Mono',monospace}
+  @media print{body{padding:20px}button{display:none!important}}
+</style>
+</head>
+<body>
 
-    <div class="jc-grid">
-      <div class="jc-field"><div class="jc-lbl">Customer</div><div class="jc-val">${o.name}</div></div>
-      <div class="jc-field"><div class="jc-lbl">Location</div><div class="jc-val">${o.loc||'—'}</div></div>
-      ${isVendor?`<div class="jc-field"><div class="jc-lbl">Vendor / Karigar</div><div class="jc-val">${o.vendor||'—'}</div></div>`:''}
-      <div class="jc-field"><div class="jc-lbl">Category</div><div class="jc-val">${o.category||'—'}</div></div>
-      <div class="jc-field"><div class="jc-lbl">Order Type</div><div class="jc-val"><span class="jc-badge ${o.orderType==='urgent'?'jc-urgent':'jc-normal'}">${o.orderType==='urgent'?'⚡ Urgent':'📦 Normal'}</span></div></div>
-      <div class="jc-field"><div class="jc-lbl">New Design</div><div class="jc-val">${o.newDesign==='yes'?'Yes':'No'}</div></div>
-      <div class="jc-field"><div class="jc-lbl">Order Date</div><div class="jc-val">${formatDate(o.odate)}</div></div>
-      ${isVendor?`<div class="jc-field"><div class="jc-lbl">Dispatch by</div><div class="jc-val">${formatDate(o.shipdate)}</div></div>`:''}
-      <div class="jc-field"><div class="jc-lbl">Expected Delivery</div><div class="jc-val">${formatDate(o.ddate)}</div></div>
-      <div class="jc-field"><div class="jc-lbl">Status</div><div class="jc-val">${o.status}</div></div>
-    </div>
+<div class="jc-header">
+  <div>
+    <div class="jc-brand">Bharni Gems</div>
+    <div class="jc-brand-sub">B2B Diamond Jewellery · Bengaluru</div>
+  </div>
+  <div style="text-align:right">
+    <div class="jc-type">${isVendor ? 'Vendor Job Card' : 'Customer Job Card'}</div>
+    <div class="jc-orderno">${o.id}</div>
+    <div style="font-size:10px;color:#888;margin-top:4px;font-family:monospace">PO: ${o.po||'—'}</div>
+    ${!isVendor && o.invoice ? `<div style="font-size:10px;color:#888;font-family:monospace">INV: ${o.invoice}</div>` : ''}
+  </div>
+</div>
 
-    <div class="jc-section">Order Pieces</div>
-    <table class="jc-table">
-      <thead><tr>
-        <th style="width:52px">Photo</th>
-        <th>Style No.</th>
-        <th>Gross Wt (g)</th>
-        <th>Dia Wt (ct)</th>
-        <th>Size</th>
-        <th>Purity</th>
-        <th>Diamond</th>
-      </tr></thead>
-      <tbody>
-        ${o.pieces.map(p=>`<tr>
-          <td>${p.img?`<img src="${p.img}" style="width:44px;height:44px;object-fit:cover;border:1px solid #ddd;border-radius:2px">`:`<div style="width:44px;height:44px;background:#f5f5f5;border:1px solid #ddd;border-radius:2px;display:flex;align-items:center;justify-content:center;color:#bbb;font-size:18px">◈</div>`}</td>
-          <td>${p.styleNo||p.item||'—'}</td>
-          <td>${p.gwt||'—'}</td>
-          <td>${p.dwt||'—'}</td>
-          <td>${p.size||p.qty||'—'}</td>
-          <td>${p.purity||'—'}</td>
-          <td>${p.diaType||'—'}</td>
-        </tr>`).join('')}
-      </tbody>
-      <tfoot><tr>
-        <td></td>
-        <td>Total · ${pcs} pcs</td>
-        <td>${gwt.toFixed(2)} g</td>
-        <td>${dwt.toFixed(2)} ct</td>
-        <td colspan="3"></td>
-      </tr></tfoot>
-    </table>
+<div class="jc-grid">
+  <div class="jc-field"><div class="jc-lbl">Customer</div><div class="jc-val" style="color:#b8963c;font-size:15px">${o.name}</div></div>
+  <div class="jc-field"><div class="jc-lbl">Location</div><div class="jc-val">${o.loc||'—'}</div></div>
+  <div class="jc-field"><div class="jc-lbl">Contact</div><div class="jc-val">${o.contact||'—'}</div></div>
+  ${isVendor ? `<div class="jc-field"><div class="jc-lbl">Vendor / Karigar</div><div class="jc-val">${o.vendor||'—'}</div></div>` : ''}
+  <div class="jc-field"><div class="jc-lbl">Category</div><div class="jc-val">${o.category||'—'}</div></div>
+  <div class="jc-field"><div class="jc-lbl">Order Type</div><div class="jc-val"><span class="badge ${o.orderType==='urgent'?'badge-urgent':'badge-normal'}">${o.orderType==='urgent'?'⚡ Urgent':'📦 Normal'}</span></div></div>
+  <div class="jc-field"><div class="jc-lbl">New Design</div><div class="jc-val">${o.newDesign==='yes'?'Yes':'No'}</div></div>
+  <div class="jc-field"><div class="jc-lbl">Order Date</div><div class="jc-val">${formatDate(o.odate)}</div></div>
+  ${isVendor ? `<div class="jc-field"><div class="jc-lbl">Dispatch by</div><div class="jc-val">${formatDate(o.shipdate)}</div></div>` : ''}
+  <div class="jc-field"><div class="jc-lbl">Expected Delivery</div><div class="jc-val">${formatDate(o.ddate)}</div></div>
+  <div class="jc-field"><div class="jc-lbl">Status</div><div class="jc-val">${o.status}</div></div>
+</div>
 
-    ${o.notes?`<div class="jc-section">Notes / Instructions</div><div style="font-size:12px;color:#444;line-height:1.7;margin-bottom:16px">${o.notes}</div>`:''}
+<div class="jc-section">Order Pieces</div>
+<table>
+  <thead><tr>
+    <th style="width:54px">Photo</th>
+    <th>Style No.</th>
+    <th>Gross Wt (g)</th>
+    <th>Dia Wt (ct)</th>
+    <th>Size</th>
+    <th>Purity</th>
+    <th>Diamond</th>
+  </tr></thead>
+  <tbody>
+    ${o.pieces.map(p=>`<tr>
+      <td>${p.img
+        ? `<img class="piece-img" src="${p.img}">`
+        : `<div class="piece-ph">◈</div>`}</td>
+      <td>${p.styleNo||p.item||'—'}</td>
+      <td>${p.gwt||'—'}</td>
+      <td>${p.dwt||'—'}</td>
+      <td>${p.size||'—'}</td>
+      <td>${p.purity||'—'}</td>
+      <td>${p.diaType||'—'}</td>
+    </tr>`).join('')}
+  </tbody>
+  <tfoot><tr>
+    <td></td>
+    <td>Total · ${pcs} pcs</td>
+    <td>${gwt.toFixed(2)} g</td>
+    <td>${dwt.toFixed(2)} ct</td>
+    <td colspan="3"></td>
+  </tr></tfoot>
+</table>
 
-    ${isVendor&&o.followUps&&o.followUps.length?`
-      <div class="jc-section">Vendor Follow-up History</div>
-      ${o.followUps.map(f=>`<div style="margin-bottom:10px;padding-bottom:10px;border-bottom:1px solid #eee">
-        <div style="font-size:9px;color:#aaa;margin-bottom:3px">${f.ts}</div>
-        <div style="font-size:11px;color:#333">${f.update}</div>
-        ${f.response?`<div style="font-size:11px;color:#888;margin-top:3px"><em>Response: ${f.response}</em></div>`:''}
-      </div>`).join('')}
-    `:''}
+${o.notes ? `<div class="jc-section">Notes / Instructions</div>
+<div style="font-size:12px;color:#444;line-height:1.8;margin-bottom:20px">${o.notes}</div>` : ''}
 
-    <div class="jc-sig">
-      <div class="jc-sig-line">${isVendor?'Vendor Signature':'Customer Signature'}</div>
-      <div class="jc-sig-line">Bharni Gems Representative</div>
-    </div>
+${isVendor && o.followUps && o.followUps.length ? `
+<div class="jc-section">Vendor Follow-up History</div>
+${o.followUps.map(f=>`<div class="fu-entry">
+  <div class="fu-ts">${f.ts}</div>
+  <div class="fu-msg">${f.update}</div>
+  ${f.response?`<div class="fu-resp">Response: ${f.response}</div>`:''}
+</div>`).join('')}` : ''}
 
-    <div class="jc-footer">
-      <span>Generated: ${tsNow()}</span>
-      <span>Bharni Gems · Bengaluru</span>
-      <span>${isVendor?'Vendor Copy':'Customer Copy'}</span>
-    </div>
-  </div>`;
+<div class="sig-row">
+  <div class="sig-line">${isVendor?'Vendor Signature':'Customer Signature'}</div>
+  <div class="sig-line">Bharni Gems Representative</div>
+</div>
 
-  document.getElementById('printFrame').innerHTML = html;
-  window.print();
-  // Restore after print
-  setTimeout(()=>{ document.getElementById('printFrame').innerHTML=''; }, 1000);
+<div class="footer">
+  <span>Generated: ${tsNow()}</span>
+  <span>Bharni Gems · Bengaluru</span>
+  <span>${isVendor?'Vendor Copy':'Customer Copy'}</span>
+</div>
+
+<br><br>
+<button onclick="window.print()" style="display:block;margin:0 auto;padding:10px 32px;background:#b8963c;color:#fff;border:none;font-family:monospace;font-size:11px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;border-radius:3px">Print / Save as PDF</button>
+
+</body>
+</html>`;
+
+  const w = window.open('', '_blank');
+  if (!w) { showToast('Allow pop-ups for this site to open job cards'); return; }
+  w.document.write(html);
+  w.document.close();
 }
 
 // ══════════════════════════════════════════════
