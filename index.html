@@ -1083,55 +1083,58 @@ function setSyncStatus(state, label) {
   lbl.textContent = label;
 }
 
-// ── Strip images from pieces before Firestore write (keeps docs under 1MB) ──
-function stripImages(order) {
-  const o = {...order, pieces: (order.pieces||[]).map(p => {
-    const {img, ...rest} = p; return rest;
-  })};
-  delete o.images; // order-level images also stripped
-  return o;
+// ── IMAGE COMPRESSION ──
+// Compresses any image to max 800px wide, JPEG 60% — typically 15-40KB
+function compressImage(dataUrl, maxW=800, quality=0.6) {
+  return new Promise(resolve => {
+    const img = new Image();
+    img.onload = () => {
+      const scale = Math.min(1, maxW / img.width);
+      const w = Math.round(img.width * scale);
+      const h = Math.round(img.height * scale);
+      const canvas = document.createElement('canvas');
+      canvas.width = w; canvas.height = h;
+      canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+      resolve(canvas.toDataURL('image/jpeg', quality));
+    };
+    img.onerror = () => resolve(dataUrl); // fallback: use original if compression fails
+    img.src = dataUrl;
+  });
 }
 
-// ── Restore images from localStorage cache into order ──
+// ── restoreImages: images now live IN the order doc, just ensure fields exist ──
 function restoreImages(order) {
-  const cache = JSON.parse(localStorage.getItem('bg_imgs_'+order.id)||'null');
-  if (cache) {
-    order.images = cache.images || [];
-    (order.pieces||[]).forEach((p,i) => { p.img = cache.pieces?.[i] || ''; });
-  } else {
-    order.images = order.images || [];
-    (order.pieces||[]).forEach(p => { p.img = p.img || ''; });
-  }
+  order.images = order.images || [];
+  (order.pieces||[]).forEach(p => { p.img = p.img || ''; });
   return order;
 }
 
-// ── Cache images locally when saving ──
-function cacheImages(order) {
-  const cache = {
-    images: order.images || [],
-    pieces: (order.pieces||[]).map(p => p.img||'')
-  };
-  if (cache.images.length || cache.pieces.some(Boolean)) {
-    localStorage.setItem('bg_imgs_'+order.id, JSON.stringify(cache));
-  }
-}
-
-// ── SAVE functions ──
+// ── SAVE — images now included in Firestore document (compressed, ~15-40KB each) ──
 async function save(orderData) {
-  // Always write to localStorage as backup cache
   localStorage.setItem('bg_orders_v2', JSON.stringify(orders));
-  // If no specific order passed, or Firebase not ready, stop here
   if (!fbReady || !db || !orderData) return;
   try {
     setSyncStatus('syncing', 'saving…');
-    cacheImages(orderData);
-    const doc = stripImages(orderData);
-    await db.collection('orders').doc(doc.id).set(doc);
+    // Write full order including compressed images
+    await db.collection('orders').doc(orderData.id).set(orderData);
     setSyncStatus('synced', 'synced');
   } catch(e) {
     console.error('Firestore write error:', e);
     setSyncStatus('error', 'sync err');
-    showToast('Saved locally — sync failed: ' + e.message);
+    // If doc too large, try without order-level images as fallback
+    if (e.code === 'invalid-argument' || e.message?.includes('exceeds')) {
+      try {
+        const slim = {...orderData, images: [], pieces: (orderData.pieces||[]).map(p=>({...p,img:''}))};
+        await db.collection('orders').doc(orderData.id).set(slim);
+        setSyncStatus('synced', 'synced (no imgs)');
+        showToast('Saved — images too large to sync, stored locally only');
+      } catch(e2) {
+        setSyncStatus('error', 'sync err');
+        showToast('Saved locally — sync failed');
+      }
+    } else {
+      showToast('Saved locally — sync failed: ' + e.message);
+    }
   }
 }
 
@@ -1160,7 +1163,6 @@ async function deleteOrderFromFirestore(id) {
   if (!fbReady) return;
   try {
     await db.collection('orders').doc(id).delete();
-    localStorage.removeItem('bg_imgs_'+id);
   } catch(e) { console.error('Delete error:', e); }
 }
 
@@ -1231,8 +1233,10 @@ function connectFirebase(cfg) {
         document.getElementById('loginScreen').style.display = 'none';
         document.querySelector('.login-btn').textContent = 'Sign In';
         document.getElementById('loginErr').textContent = '';
-        // Wipe any stale localStorage orders — Firestore snapshot will repopulate
+        // Wipe stale localStorage orders — Firestore snapshot will repopulate
         localStorage.removeItem('bg_orders_v2');
+        // Also clean up old per-order image caches (no longer needed)
+        Object.keys(localStorage).filter(k=>k.startsWith('bg_imgs_')).forEach(k=>localStorage.removeItem(k));
         orders = [];
         applyRoleUI();
         startListeners();
@@ -1313,7 +1317,7 @@ async function uploadAllToFirestore() {
     const batch = db.batch();
     orders.forEach(o => {
       const ref = db.collection('orders').doc(o.id);
-      batch.set(ref, stripImages(o));
+      batch.set(ref, o);
     });
     await batch.commit();
     await db.collection('meta').doc('vendors').set({ list: standaloneVendors });
@@ -2201,10 +2205,11 @@ function handlePieceImg(e, i){
   const file = e.target.files[0];
   if(!file) return;
   const r = new FileReader();
-  r.onload = ev => {
+  r.onload = async ev => {
+    const compressed = await compressImage(ev.target.result);
     const cur = getPieces();
-    curPieceImgs[i] = ev.target.result;
-    cur[i].img = ev.target.result;
+    curPieceImgs[i] = compressed;
+    cur[i].img = compressed;
     renderPieces(cur);
   };
   r.readAsDataURL(file);
@@ -2219,8 +2224,12 @@ function rmPieceImg(i){
 
 function handleImgs(e){
   Array.from(e.target.files).forEach(f=>{
-    const r=new FileReader();
-    r.onload=ev=>{curImgs.push(ev.target.result);renderImgPrev();};
+    const r = new FileReader();
+    r.onload = async ev => {
+      const compressed = await compressImage(ev.target.result);
+      curImgs.push(compressed);
+      renderImgPrev();
+    };
     r.readAsDataURL(f);
   });
 }
