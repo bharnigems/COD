@@ -247,7 +247,7 @@ body{font-family:'DM Mono',monospace;color:var(--txt);display:flex;flex-directio
 .filter-tag button{background:none;border:none;color:var(--gold-d);cursor:pointer;font-size:12px;line-height:1}
 
 /* ── LOGIN SCREEN ── */
-.login-screen{position:fixed;inset:0;background:var(--bg);z-index:600;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:28px}
+.login-screen{position:fixed;inset:0;background:var(--bg);z-index:600;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:28px;overflow:hidden}
 .login-card{width:100%;max-width:360px}
 .login-brand{font-family:'Cormorant Garamond',serif;font-size:28px;font-weight:300;letter-spacing:8px;color:var(--gold);text-transform:uppercase;text-align:center;margin-bottom:4px}
 .login-brand-sub{font-size:8px;letter-spacing:3px;color:var(--dim);text-align:center;margin-bottom:40px}
@@ -406,6 +406,9 @@ body{font-family:'DM Mono',monospace;color:var(--txt);display:flex;flex-directio
   </div>
 </div>
 
+<!-- APP SHELL — hidden until authenticated -->
+<div id="appShell" style="display:none">
+
 <!-- HEADER -->
 <div class="hdr">
   <div class="hdr-brand">
@@ -534,6 +537,8 @@ body{font-family:'DM Mono',monospace;color:var(--txt);display:flex;flex-directio
     <span class="ico">⚒</span><span class="lbl">Karigar</span>
   </button>
 </div>
+
+</div><!-- /appShell -->
 
 <!-- ═══════════════════════════════════════════════════
      ADD / EDIT MODAL
@@ -1231,6 +1236,7 @@ function connectFirebase(cfg) {
           currentRole = 'salesman';
         }
         document.getElementById('loginScreen').style.display = 'none';
+        document.getElementById('appShell').style.display = 'block';
         document.querySelector('.login-btn').textContent = 'Sign In';
         document.getElementById('loginErr').textContent = '';
         // Wipe stale localStorage orders — Firestore snapshot will repopulate
@@ -1248,6 +1254,7 @@ function connectFirebase(cfg) {
         if (unsubVendors)  { try { unsubVendors();  } catch(e){} unsubVendors  = null; }
         if (unsubCustomers){ try { unsubCustomers();} catch(e){} unsubCustomers = null; }
         document.getElementById('loginScreen').style.display = 'flex';
+        document.getElementById('appShell').style.display = 'none';
         document.querySelector('.login-btn').textContent = 'Sign In';
       }
     });
@@ -1304,6 +1311,7 @@ function skipFirebase() {
   setSyncStatus('offline', 'local only');
   // In local mode bypass login
   document.getElementById('loginScreen').style.display = 'none';
+  document.getElementById('appShell').style.display = 'block';
   currentRole = 'admin';
   applyRoleUI();
   renderDash();
