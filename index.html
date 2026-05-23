@@ -2377,134 +2377,221 @@ function printJobCard(type, id){
   const isVendor = type==='vendor';
   const pcs = totalPcs(o), gwt = orderGrossWt(o), dwt = orderDiamondWt(o);
 
-  const html = `<!DOCTYPE html>
-<html>
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>${isVendor?'Vendor':'Customer'} Job Card · ${o.id}</title>
-<style>
-  *{box-sizing:border-box;margin:0;padding:0}
-  body{font-family:Georgia,'Times New Roman',serif;background:#fff;color:#111;padding:32px;max-width:720px;margin:0 auto}
-  .jc-header{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:2px solid #b8963c;padding-bottom:16px;margin-bottom:20px}
-  .jc-brand{font-size:24px;letter-spacing:6px;color:#b8963c;text-transform:uppercase;font-weight:300}
-  .jc-brand-sub{font-size:9px;letter-spacing:3px;color:#888;margin-top:2px;font-family:monospace}
-  .jc-type{font-size:10px;letter-spacing:3px;text-transform:uppercase;color:#888;text-align:right;font-family:monospace}
-  .jc-orderno{font-size:16px;color:#b8963c;font-weight:600;margin-top:4px}
-  .jc-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px 24px;margin-bottom:20px}
-  .jc-field{display:flex;flex-direction:column;gap:3px}
-  .jc-lbl{font-size:8px;letter-spacing:2px;text-transform:uppercase;color:#999;font-family:monospace}
-  .jc-val{font-size:13px;color:#111}
-  .jc-section{font-size:8px;letter-spacing:2.5px;text-transform:uppercase;color:#b8963c;margin:18px 0 10px;font-family:monospace;border-bottom:1px solid #eee;padding-bottom:5px}
-  table{width:100%;border-collapse:collapse;margin-bottom:20px}
-  th{font-size:8px;letter-spacing:1.5px;text-transform:uppercase;border-bottom:1px solid #ccc;padding:7px 6px;text-align:left;font-family:monospace;color:#666;font-weight:normal}
-  td{padding:8px 6px;border-bottom:1px solid #f0f0f0;font-size:12px;vertical-align:middle}
-  tfoot td{border-top:2px solid #b8963c;border-bottom:none;font-weight:600;font-size:13px;color:#b8963c}
-  .piece-img{width:46px;height:46px;object-fit:cover;border:1px solid #ddd;border-radius:2px}
-  .piece-ph{width:46px;height:46px;background:#f5f5f5;border:1px solid #ddd;border-radius:2px;display:inline-flex;align-items:center;justify-content:center;color:#ccc;font-size:20px}
-  .badge{display:inline-block;padding:2px 8px;border-radius:2px;font-size:9px;letter-spacing:1px;text-transform:uppercase;font-family:monospace}
-  .badge-urgent{background:#fff0f0;color:#c44;border:1px solid #fcc}
-  .badge-normal{background:#f0faf5;color:#3a7;border:1px solid #cee}
-  .fu-entry{margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid #eee}
-  .fu-ts{font-size:8px;color:#aaa;letter-spacing:1px;margin-bottom:4px;font-family:monospace}
-  .fu-msg{font-size:12px;color:#333}
-  .fu-resp{font-size:11px;color:#888;margin-top:4px;font-style:italic}
-  .sig-row{display:flex;gap:48px;margin-top:40px}
-  .sig-line{flex:1;border-top:1px solid #bbb;padding-top:8px;font-size:8px;letter-spacing:1.5px;color:#aaa;text-transform:uppercase;font-family:monospace}
-  .footer{display:flex;justify-content:space-between;margin-top:24px;padding-top:12px;border-top:1px solid #ddd;font-size:8px;letter-spacing:1.5px;color:#aaa;text-transform:uppercase;font-family:monospace}
-  .print-btn{display:block;margin:24px auto 0;padding:10px 32px;background:#b8963c;color:#fff;border:none;font-family:monospace;font-size:11px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;border-radius:3px}
-  @media print{body{padding:20px}.print-btn{display:none!important}}
-</style>
-</head>
-<body>
+  // ── SHARED CSS ──
+  const css = `
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:-apple-system,'Helvetica Neue',Arial,sans-serif;background:#fff;color:#1a1a1a;padding:40px;max-width:680px;margin:0 auto;font-size:13px;line-height:1.5}
+    .header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:28px;padding-bottom:20px;border-bottom:2px solid #1a1a1a}
+    .brand{font-size:20px;font-weight:700;letter-spacing:4px;text-transform:uppercase;color:#1a1a1a}
+    .card-label{font-size:9px;font-weight:600;letter-spacing:3px;text-transform:uppercase;color:#888;text-align:right;margin-bottom:4px}
+    .order-id{font-size:22px;font-weight:300;color:#1a1a1a;text-align:right;letter-spacing:1px}
+    .meta-row{display:flex;gap:6px;align-items:center;justify-content:flex-end;margin-top:4px}
+    .meta-chip{font-size:9px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;padding:3px 8px;border-radius:2px}
+    .chip-urgent{background:#1a1a1a;color:#fff}
+    .chip-normal{background:#f0f0f0;color:#555}
+    .chip-lgd{background:#e8f4fd;color:#1a6fa8;border:1px solid #bee3f8}
+    .chip-natural{background:#fdf8e8;color:#a07c1a;border:1px solid #f5e89a}
+    .section{margin-bottom:24px}
+    .section-title{font-size:8px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:#888;margin-bottom:12px;padding-bottom:6px;border-bottom:1px solid #e8e8e8}
+    .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+    .grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
+    .field{display:flex;flex-direction:column;gap:3px}
+    .field-label{font-size:8px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:#aaa}
+    .field-value{font-size:13px;color:#1a1a1a;font-weight:400}
+    .field-value.highlight{font-size:15px;font-weight:600;color:#1a1a1a}
+    table{width:100%;border-collapse:collapse;margin-top:4px}
+    thead tr{border-bottom:2px solid #1a1a1a}
+    th{font-size:8px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#888;padding:8px 8px 8px 0;text-align:left}
+    th:last-child,td:last-child{text-align:right;padding-right:0}
+    td{padding:10px 8px 10px 0;border-bottom:1px solid #f0f0f0;font-size:12px;color:#1a1a1a;vertical-align:middle}
+    .piece-img{width:44px;height:44px;object-fit:cover;border-radius:3px;border:1px solid #e8e8e8}
+    .piece-ph{width:44px;height:44px;background:#f5f5f5;border-radius:3px;display:inline-flex;align-items:center;justify-content:center;color:#ccc;font-size:14px;font-weight:300}
+    tfoot td{border-top:2px solid #1a1a1a;border-bottom:none;font-size:12px;font-weight:700;padding-top:10px;color:#1a1a1a}
+    .totals-row{display:flex;gap:0;margin-top:16px;border:1px solid #e8e8e8;border-radius:4px;overflow:hidden}
+    .total-cell{flex:1;padding:12px 16px;text-align:center;border-right:1px solid #e8e8e8}
+    .total-cell:last-child{border-right:none}
+    .total-num{font-size:20px;font-weight:300;color:#1a1a1a;letter-spacing:-0.5px}
+    .total-lbl{font-size:8px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:#aaa;margin-top:2px}
+    .notes-box{background:#f8f8f8;border-radius:4px;padding:14px;font-size:12px;color:#444;line-height:1.7}
+    .fu-item{padding:10px 0;border-bottom:1px solid #f0f0f0}
+    .fu-item:last-child{border-bottom:none}
+    .fu-ts{font-size:9px;color:#aaa;letter-spacing:1px;margin-bottom:4px;font-weight:500}
+    .fu-msg{font-size:12px;color:#333;margin-bottom:3px}
+    .fu-resp{font-size:12px;color:#666;padding-left:12px;border-left:2px solid #e0e0e0;margin-top:5px}
+    .footer{display:flex;justify-content:space-between;align-items:center;margin-top:32px;padding-top:14px;border-top:1px solid #e8e8e8;font-size:9px;color:#aaa;letter-spacing:1.5px;text-transform:uppercase;font-weight:500}
+    .print-btn{display:block;margin:28px auto 0;padding:11px 36px;background:#1a1a1a;color:#fff;border:none;font-size:10px;font-weight:700;letter-spacing:3px;text-transform:uppercase;cursor:pointer;border-radius:3px}
+    .print-btn:hover{background:#333}
+    @media print{.print-btn{display:none!important}body{padding:24px}}
+  `;
 
-<div class="jc-header">
-  <div>
-    <div class="jc-brand">Bharni Gems</div>
-    <div class="jc-brand-sub">B2B Diamond Jewellery · Bengaluru</div>
+  // ── CUSTOMER JOB CARD ──
+  const customerCard = `<!DOCTYPE html><html><head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Job Card · ${o.id}</title>
+  <style>${css}</style></head><body>
+
+  <div class="header">
+    <div>
+      <div class="brand">Bharni Gems</div>
+    </div>
+    <div>
+      <div class="card-label">Job Card</div>
+      <div class="order-id">${o.id}</div>
+      <div class="meta-row">
+        <span class="meta-chip ${o.orderType==='urgent'?'chip-urgent':'chip-normal'}">${o.orderType==='urgent'?'⚡ Urgent':'Normal'}</span>
+      </div>
+    </div>
   </div>
-  <div style="text-align:right">
-    <div class="jc-type">${isVendor ? 'Vendor Job Card' : 'Customer Job Card'}</div>
-    <div class="jc-orderno">${o.id}</div>
-    <div style="font-size:10px;color:#888;margin-top:4px;font-family:monospace">PO: ${o.po||'—'}</div>
-    ${!isVendor && o.invoice ? `<div style="font-size:10px;color:#888;font-family:monospace">INV: ${o.invoice}</div>` : ''}
+
+  <div class="section">
+    <div class="section-title">Customer Details</div>
+    <div class="grid-2">
+      <div class="field"><div class="field-label">Customer</div><div class="field-value highlight">${o.name}</div></div>
+      <div class="field"><div class="field-label">Location</div><div class="field-value">${o.loc||'—'}</div></div>
+      <div class="field"><div class="field-label">Contact</div><div class="field-value">${o.contact||'—'}</div></div>
+      <div class="field"><div class="field-label">Category</div><div class="field-value">${o.category||'—'}</div></div>
+    </div>
   </div>
-</div>
 
-<div class="jc-grid">
-  <div class="jc-field"><div class="jc-lbl">Customer</div><div class="jc-val" style="color:#b8963c;font-size:15px">${o.name}</div></div>
-  <div class="jc-field"><div class="jc-lbl">Location</div><div class="jc-val">${o.loc||'—'}</div></div>
-  <div class="jc-field"><div class="jc-lbl">Contact</div><div class="jc-val">${o.contact||'—'}</div></div>
-  ${isVendor ? `<div class="jc-field"><div class="jc-lbl">Vendor / Karigar</div><div class="jc-val">${o.vendor||'—'}</div></div>` : ''}
-  <div class="jc-field"><div class="jc-lbl">Category</div><div class="jc-val">${o.category||'—'}</div></div>
-  <div class="jc-field"><div class="jc-lbl">Order Type</div><div class="jc-val"><span class="badge ${o.orderType==='urgent'?'badge-urgent':'badge-normal'}">${o.orderType==='urgent'?'⚡ Urgent':'📦 Normal'}</span></div></div>
-  <div class="jc-field"><div class="jc-lbl">New Design</div><div class="jc-val">${o.newDesign==='yes'?'Yes':'No'}</div></div>
-  <div class="jc-field"><div class="jc-lbl">Order Date</div><div class="jc-val">${formatDate(o.odate)}</div></div>
-  ${isVendor ? `<div class="jc-field"><div class="jc-lbl">Dispatch by</div><div class="jc-val">${formatDate(o.shipdate)}</div></div>` : ''}
-  <div class="jc-field"><div class="jc-lbl">Expected Delivery</div><div class="jc-val">${formatDate(o.ddate)}</div></div>
-  <div class="jc-field"><div class="jc-lbl">Status</div><div class="jc-val">${o.status}</div></div>
-</div>
+  <div class="section">
+    <div class="section-title">Order Details</div>
+    <div class="grid-3">
+      <div class="field"><div class="field-label">Order Date</div><div class="field-value">${formatDate(o.odate)}</div></div>
+      <div class="field"><div class="field-label">Expected Delivery</div><div class="field-value">${formatDate(o.ddate)}</div></div>
+      <div class="field"><div class="field-label">Status</div><div class="field-value">${o.status}</div></div>
+    </div>
+  </div>
 
-<div class="jc-section">Order Pieces</div>
-<table>
-  <thead><tr>
-    <th style="width:54px">Photo</th>
-    <th>Style No.</th>
-    <th>Gross Wt (g)</th>
-    <th>Dia Wt (ct)</th>
-    <th>Size</th>
-    <th>Purity</th>
-    <th>Diamond</th>
-  </tr></thead>
-  <tbody>
-    ${o.pieces.map(p=>`<tr>
-      <td>${p.img
-        ? `<img class="piece-img" src="${p.img}">`
-        : `<div class="piece-ph">◈</div>`}</td>
-      <td>${p.styleNo||p.item||'—'}</td>
-      <td>${p.gwt||'—'}</td>
-      <td>${p.dwt||'—'}</td>
-      <td>${p.size||'—'}</td>
-      <td>${p.purity||'—'}</td>
-      <td>${p.diaType||'—'}</td>
-    </tr>`).join('')}
-  </tbody>
-  <tfoot><tr>
-    <td></td>
-    <td>Total · ${pcs} pcs</td>
-    <td>${gwt.toFixed(2)} g</td>
-    <td>${dwt.toFixed(2)} ct</td>
-    <td colspan="3"></td>
-  </tr></tfoot>
-</table>
+  <div class="section">
+    <div class="section-title">Pieces</div>
+    <table>
+      <thead><tr>
+        <th style="width:52px">Photo</th>
+        <th>Style No.</th>
+        <th>Gross Wt</th>
+        <th>Dia Wt</th>
+        <th>Size</th>
+        <th>Purity</th>
+        <th>Diamond</th>
+      </tr></thead>
+      <tbody>
+        ${o.pieces.map(p=>`<tr>
+          <td>${p.img?`<img class="piece-img" src="${p.img}">`:`<div class="piece-ph">◈</div>`}</td>
+          <td style="font-weight:500">${p.styleNo||p.item||'—'}</td>
+          <td>${p.gwt?p.gwt+'g':'—'}</td>
+          <td>${p.dwt?p.dwt+'ct':'—'}</td>
+          <td>${p.size||'—'}</td>
+          <td>${p.purity||'—'}</td>
+          <td>${p.diaType?`<span class="meta-chip ${p.diaType==='LGD'?'chip-lgd':'chip-natural'}" style="font-size:8px;padding:2px 6px">${p.diaType}</span>`:'—'}</td>
+        </tr>`).join('')}
+      </tbody>
+    </table>
+    <div class="totals-row">
+      <div class="total-cell"><div class="total-num">${pcs}</div><div class="total-lbl">Pieces</div></div>
+      <div class="total-cell"><div class="total-num">${gwt.toFixed(2)}<span style="font-size:12px">g</span></div><div class="total-lbl">Gross Wt</div></div>
+      <div class="total-cell"><div class="total-num">${dwt.toFixed(2)}<span style="font-size:12px">ct</span></div><div class="total-lbl">Diamond Wt</div></div>
+    </div>
+  </div>
 
-${o.notes ? `<div class="jc-section">Notes / Instructions</div>
-<div style="font-size:12px;color:#444;line-height:1.8;margin-bottom:20px">${o.notes}</div>` : ''}
+  ${o.notes?`<div class="section"><div class="section-title">Notes</div><div class="notes-box">${o.notes}</div></div>`:''}
 
-${isVendor && o.followUps && o.followUps.length ? `
-<div class="jc-section">Vendor Follow-up History</div>
-${o.followUps.map(f=>`<div class="fu-entry">
-  <div class="fu-ts">${f.ts}</div>
-  <div class="fu-msg">${f.update}</div>
-  ${f.response?`<div class="fu-resp">Response: ${f.response}</div>`:''}
-</div>`).join('')}` : ''}
+  <div class="footer">
+    <span>${tsNow()}</span>
+    <span>Customer Copy</span>
+  </div>
 
-<div class="sig-row">
-  <div class="sig-line">${isVendor?'Vendor Signature':'Customer Signature'}</div>
-  <div class="sig-line">Bharni Gems Representative</div>
-</div>
+  <button class="print-btn" onclick="window.print()">Save as PDF</button>
+  </body></html>`;
 
-<div class="footer">
-  <span>Generated: ${tsNow()}</span>
-  <span>Bharni Gems · Bengaluru</span>
-  <span>${isVendor?'Vendor Copy':'Customer Copy'}</span>
-</div>
+  // ── VENDOR JOB CARD ──
+  const vendorCard = `<!DOCTYPE html><html><head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Vendor Job Card · ${o.id}</title>
+  <style>${css}</style></head><body>
 
-<br>
-<button class="print-btn" onclick="window.print()">Print / Save as PDF</button>
-</body>
-</html>`;
+  <div class="header">
+    <div>
+      <div class="brand">Bharni Gems</div>
+    </div>
+    <div>
+      <div class="card-label">Vendor Job Card</div>
+      <div class="order-id">${o.id}</div>
+      <div class="meta-row">
+        <span class="meta-chip ${o.orderType==='urgent'?'chip-urgent':'chip-normal'}">${o.orderType==='urgent'?'⚡ Urgent':'Normal'}</span>
+        ${o.newDesign==='yes'?'<span class="meta-chip chip-lgd" style="font-size:8px;padding:2px 6px">New Design</span>':''}
+      </div>
+    </div>
+  </div>
 
+  <div class="section">
+    <div class="section-title">Vendor Details</div>
+    <div class="grid-2">
+      <div class="field"><div class="field-label">Vendor / Karigar</div><div class="field-value highlight">${o.vendor||'—'}</div></div>
+      <div class="field"><div class="field-label">Category</div><div class="field-value">${o.category||'—'}</div></div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">Schedule</div>
+    <div class="grid-3">
+      <div class="field"><div class="field-label">Order Date</div><div class="field-value">${formatDate(o.odate)}</div></div>
+      <div class="field"><div class="field-label">Dispatch by</div><div class="field-value" style="font-weight:600;color:#1a1a1a">${formatDate(o.shipdate)}</div></div>
+      <div class="field"><div class="field-label">PO Number</div><div class="field-value" style="font-weight:600">${o.po||'—'}</div></div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">Pieces to Manufacture</div>
+    <table>
+      <thead><tr>
+        <th style="width:52px">Photo</th>
+        <th>Style No.</th>
+        <th>Gross Wt</th>
+        <th>Dia Wt</th>
+        <th>Size</th>
+        <th>Purity</th>
+        <th>Diamond</th>
+      </tr></thead>
+      <tbody>
+        ${o.pieces.map(p=>`<tr>
+          <td>${p.img?`<img class="piece-img" src="${p.img}">`:`<div class="piece-ph">◈</div>`}</td>
+          <td style="font-weight:500">${p.styleNo||p.item||'—'}</td>
+          <td>${p.gwt?p.gwt+'g':'—'}</td>
+          <td>${p.dwt?p.dwt+'ct':'—'}</td>
+          <td>${p.size||'—'}</td>
+          <td>${p.purity||'—'}</td>
+          <td>${p.diaType?`<span class="meta-chip ${p.diaType==='LGD'?'chip-lgd':'chip-natural'}" style="font-size:8px;padding:2px 6px">${p.diaType}</span>`:'—'}</td>
+        </tr>`).join('')}
+      </tbody>
+    </table>
+    <div class="totals-row">
+      <div class="total-cell"><div class="total-num">${pcs}</div><div class="total-lbl">Pieces</div></div>
+      <div class="total-cell"><div class="total-num">${gwt.toFixed(2)}<span style="font-size:12px">g</span></div><div class="total-lbl">Gross Wt</div></div>
+      <div class="total-cell"><div class="total-num">${dwt.toFixed(2)}<span style="font-size:12px">ct</span></div><div class="total-lbl">Diamond Wt</div></div>
+    </div>
+  </div>
+
+  ${o.notes?`<div class="section"><div class="section-title">Instructions</div><div class="notes-box">${o.notes}</div></div>`:''}
+
+  ${o.followUps&&o.followUps.length?`
+  <div class="section">
+    <div class="section-title">Follow-up Log</div>
+    ${o.followUps.map(f=>`<div class="fu-item">
+      <div class="fu-ts">${f.ts}</div>
+      <div class="fu-msg">${f.update}</div>
+      ${f.response?`<div class="fu-resp">${f.response}</div>`:''}
+    </div>`).join('')}
+  </div>`:''}
+
+  <div class="footer">
+    <span>${tsNow()}</span>
+    <span>Vendor Copy</span>
+  </div>
+
+  <button class="print-btn" onclick="window.print()">Save as PDF</button>
+  </body></html>`;
+
+  const html = isVendor ? vendorCard : customerCard;
   const blob = new Blob([html], {type:'text/html'});
   const url  = URL.createObjectURL(blob);
   const w    = window.open(url, '_blank');
