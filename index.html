@@ -2383,37 +2383,37 @@ function printJobCard(type, id){
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>${isVendor?'Vendor':'Customer'} Job Card · ${o.id}</title>
-<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300&family=DM+Mono:wght@300;400&display=swap" rel="stylesheet">
 <style>
   *{box-sizing:border-box;margin:0;padding:0}
-  body{font-family:'Cormorant Garamond',Georgia,serif;background:#fff;color:#111;padding:32px;max-width:720px;margin:0 auto}
+  body{font-family:Georgia,'Times New Roman',serif;background:#fff;color:#111;padding:32px;max-width:720px;margin:0 auto}
   .jc-header{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:2px solid #b8963c;padding-bottom:16px;margin-bottom:20px}
   .jc-brand{font-size:24px;letter-spacing:6px;color:#b8963c;text-transform:uppercase;font-weight:300}
-  .jc-brand-sub{font-size:9px;letter-spacing:3px;color:#888;margin-top:2px;font-family:'DM Mono',monospace}
-  .jc-type{font-size:10px;letter-spacing:3px;text-transform:uppercase;color:#888;text-align:right;font-family:'DM Mono',monospace}
+  .jc-brand-sub{font-size:9px;letter-spacing:3px;color:#888;margin-top:2px;font-family:monospace}
+  .jc-type{font-size:10px;letter-spacing:3px;text-transform:uppercase;color:#888;text-align:right;font-family:monospace}
   .jc-orderno{font-size:16px;color:#b8963c;font-weight:600;margin-top:4px}
   .jc-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px 24px;margin-bottom:20px}
   .jc-field{display:flex;flex-direction:column;gap:3px}
-  .jc-lbl{font-size:8px;letter-spacing:2px;text-transform:uppercase;color:#999;font-family:'DM Mono',monospace}
+  .jc-lbl{font-size:8px;letter-spacing:2px;text-transform:uppercase;color:#999;font-family:monospace}
   .jc-val{font-size:13px;color:#111}
-  .jc-section{font-size:8px;letter-spacing:2.5px;text-transform:uppercase;color:#b8963c;margin:18px 0 10px;font-family:'DM Mono',monospace;border-bottom:1px solid #eee;padding-bottom:5px}
+  .jc-section{font-size:8px;letter-spacing:2.5px;text-transform:uppercase;color:#b8963c;margin:18px 0 10px;font-family:monospace;border-bottom:1px solid #eee;padding-bottom:5px}
   table{width:100%;border-collapse:collapse;margin-bottom:20px}
-  th{font-size:8px;letter-spacing:1.5px;text-transform:uppercase;border-bottom:1px solid #ccc;padding:7px 6px;text-align:left;font-family:'DM Mono',monospace;color:#666;font-weight:normal}
+  th{font-size:8px;letter-spacing:1.5px;text-transform:uppercase;border-bottom:1px solid #ccc;padding:7px 6px;text-align:left;font-family:monospace;color:#666;font-weight:normal}
   td{padding:8px 6px;border-bottom:1px solid #f0f0f0;font-size:12px;vertical-align:middle}
   tfoot td{border-top:2px solid #b8963c;border-bottom:none;font-weight:600;font-size:13px;color:#b8963c}
   .piece-img{width:46px;height:46px;object-fit:cover;border:1px solid #ddd;border-radius:2px}
-  .piece-ph{width:46px;height:46px;background:#f5f5f5;border:1px solid #ddd;border-radius:2px;display:flex;align-items:center;justify-content:center;color:#ccc;font-size:20px}
-  .badge{display:inline-block;padding:2px 8px;border-radius:2px;font-size:9px;letter-spacing:1px;text-transform:uppercase;font-family:'DM Mono',monospace}
+  .piece-ph{width:46px;height:46px;background:#f5f5f5;border:1px solid #ddd;border-radius:2px;display:inline-flex;align-items:center;justify-content:center;color:#ccc;font-size:20px}
+  .badge{display:inline-block;padding:2px 8px;border-radius:2px;font-size:9px;letter-spacing:1px;text-transform:uppercase;font-family:monospace}
   .badge-urgent{background:#fff0f0;color:#c44;border:1px solid #fcc}
   .badge-normal{background:#f0faf5;color:#3a7;border:1px solid #cee}
   .fu-entry{margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid #eee}
-  .fu-ts{font-size:8px;color:#aaa;letter-spacing:1px;margin-bottom:4px;font-family:'DM Mono',monospace}
+  .fu-ts{font-size:8px;color:#aaa;letter-spacing:1px;margin-bottom:4px;font-family:monospace}
   .fu-msg{font-size:12px;color:#333}
   .fu-resp{font-size:11px;color:#888;margin-top:4px;font-style:italic}
   .sig-row{display:flex;gap:48px;margin-top:40px}
-  .sig-line{flex:1;border-top:1px solid #bbb;padding-top:8px;font-size:8px;letter-spacing:1.5px;color:#aaa;text-transform:uppercase;font-family:'DM Mono',monospace}
-  .footer{display:flex;justify-content:space-between;margin-top:24px;padding-top:12px;border-top:1px solid #ddd;font-size:8px;letter-spacing:1.5px;color:#aaa;text-transform:uppercase;font-family:'DM Mono',monospace}
-  @media print{body{padding:20px}button{display:none!important}}
+  .sig-line{flex:1;border-top:1px solid #bbb;padding-top:8px;font-size:8px;letter-spacing:1.5px;color:#aaa;text-transform:uppercase;font-family:monospace}
+  .footer{display:flex;justify-content:space-between;margin-top:24px;padding-top:12px;border-top:1px solid #ddd;font-size:8px;letter-spacing:1.5px;color:#aaa;text-transform:uppercase;font-family:monospace}
+  .print-btn{display:block;margin:24px auto 0;padding:10px 32px;background:#b8963c;color:#fff;border:none;font-family:monospace;font-size:11px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;border-radius:3px}
+  @media print{body{padding:20px}.print-btn{display:none!important}}
 </style>
 </head>
 <body>
@@ -2500,16 +2500,16 @@ ${o.followUps.map(f=>`<div class="fu-entry">
   <span>${isVendor?'Vendor Copy':'Customer Copy'}</span>
 </div>
 
-<br><br>
-<button onclick="window.print()" style="display:block;margin:0 auto;padding:10px 32px;background:#b8963c;color:#fff;border:none;font-family:monospace;font-size:11px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;border-radius:3px">Print / Save as PDF</button>
-
+<br>
+<button class="print-btn" onclick="window.print()">Print / Save as PDF</button>
 </body>
 </html>`;
 
-  const w = window.open('', '_blank');
-  if (!w) { showToast('Allow pop-ups for this site to open job cards'); return; }
-  w.document.write(html);
-  w.document.close();
+  const blob = new Blob([html], {type:'text/html'});
+  const url  = URL.createObjectURL(blob);
+  const w    = window.open(url, '_blank');
+  if (!w) { showToast('Allow pop-ups for this site to open job cards'); }
+  setTimeout(() => URL.revokeObjectURL(url), 10000);
 }
 
 // ══════════════════════════════════════════════
