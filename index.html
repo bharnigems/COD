@@ -471,7 +471,8 @@ body{font-family:'DM Mono',monospace;color:var(--txt);display:flex;flex-directio
     <input class="login-inp" id="login_pwd" type="password" placeholder="••••••••" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()">
     <button class="login-btn" onclick="doLogin()">Sign In</button>
     <div class="login-err" id="loginErr"></div>
-    <div class="login-ver">v9 · Secured by Firebase Auth</div>
+    <div id="loginConnStatus" style="font-size:8px;color:var(--dim);text-align:center;margin-top:10px;letter-spacing:1.5px">Connecting to Firebase…</div>
+    <div class="login-ver">Bharni Gems · Secured</div>
   </div>
 </div>
 
@@ -1137,16 +1138,16 @@ async function doLogin() {
   const errEl = document.getElementById('loginErr');
   errEl.textContent = '';
   if (!email || !pwd) { errEl.textContent = 'Email and password required'; return; }
-  if (!auth || !fbReady) {
-    errEl.textContent = 'Connecting to Firebase… please wait a moment and try again.';
-    // Retry connecting
-    const cfg = JSON.parse(localStorage.getItem('bg_fb_config')||'null') || DEFAULT_FB_CONFIG;
-    await connectFirebase(cfg);
+  if (!auth) {
+    errEl.textContent = 'Still connecting to Firebase… please wait a moment then try again.';
+    setSyncStatus('syncing', 'reconnecting…');
+    setTimeout(doLogin, 2000); // retry after 2s
     return;
   }
   try {
     document.querySelector('.login-btn').textContent = 'Signing in…';
     await auth.signInWithEmailAndPassword(email, pwd);
+    // onAuthStateChanged handles the rest
   } catch(e) {
     document.querySelector('.login-btn').textContent = 'Sign In';
     errEl.textContent = friendlyAuthError(e.code);
@@ -1289,8 +1290,16 @@ document.addEventListener('click', function(e) {
 function setSyncStatus(state, label) {
   const dot = document.getElementById('syncDot');
   const lbl = document.getElementById('syncLabel');
-  dot.className = 'sync-dot ' + state;
-  lbl.textContent = label;
+  if (dot) { dot.className = 'sync-dot ' + state; }
+  if (lbl) { lbl.textContent = label; }
+  // Also update login screen status
+  const cs = document.getElementById('loginConnStatus');
+  if (cs) {
+    if (state === 'syncing') cs.textContent = '⏳ ' + label;
+    else if (state === 'synced') cs.textContent = '✓ Connected — ready to sign in';
+    else if (state === 'error') cs.textContent = '✗ Connection error — check internet and reload';
+    else cs.textContent = label;
+  }
 }
 
 // ── IMAGE COMPRESSION ──
@@ -1393,30 +1402,37 @@ function initFirebase() {
   if (!cfg.apiKey || !cfg.projectId) { showToast('API Key and Project ID are required'); return; }
   localStorage.setItem('bg_fb_config', JSON.stringify(cfg));
   document.getElementById('fbOverlay').style.display = 'none';
-  connectFirebase(cfg);
+  // If already initialised with same project, just ensure auth is set
+  if (firebase.apps.length) {
+    db   = firebase.firestore();
+    auth = firebase.auth();
+    fbReady = true;
+    showToast('Firebase already connected');
+  } else {
+    connectFirebase(cfg);
+  }
 }
 
 async function connectFirebase(cfg) {
   if (typeof firebase === 'undefined') {
-    setSyncStatus('error', 'load error');
-    showToast('Firebase SDK failed to load — check your internet and reload.');
+    setSyncStatus('error', 'SDK error');
+    document.getElementById('loginErr').textContent = 'Firebase failed to load. Check internet and reload.';
     return;
   }
   try {
-    // Delete all existing apps first, awaiting each
-    if (firebase.apps.length) {
-      for (const app of [...firebase.apps]) {
-        try { await app.delete(); } catch(e) {}
-      }
+    // Only initialise once — reuse existing app if already initialised
+    if (!firebase.apps.length) {
+      firebase.initializeApp(cfg);
     }
-    firebase.initializeApp(cfg);
     db   = firebase.firestore();
     auth = firebase.auth();
-
     db.enablePersistence().catch(() => {});
-
     fbReady = true;
     setSyncStatus('syncing', 'connecting…');
+
+    // Signal login screen that Firebase auth is ready
+    const cs = document.getElementById('loginConnStatus');
+    if (cs) cs.textContent = '✓ Connected — ready to sign in';
 
     auth.onAuthStateChanged(async user => {
       if (user) {
@@ -1439,9 +1455,7 @@ async function connectFirebase(cfg) {
           console.warn('Role lookup failed:', e);
           currentRole = 'salesman';
         }
-        // Cache users list for vendorHasLogin checks
         window._cachedUsers = usersList;
-
         document.getElementById('loginScreen').style.display = 'none';
         document.getElementById('appShell').style.display = 'block';
         document.querySelector('.login-btn').textContent = 'Sign In';
@@ -1465,11 +1479,10 @@ async function connectFirebase(cfg) {
         document.querySelector('.login-btn').textContent = 'Sign In';
       }
     });
-
   } catch(e) {
     console.error('Firebase connect error:', e);
-    setSyncStatus('error', 'connect err');
-    showToast('Firebase error: ' + e.message);
+    setSyncStatus('error', 'error');
+    document.getElementById('loginErr').textContent = 'Firebase error: ' + e.message;
   }
 }
 
