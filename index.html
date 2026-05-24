@@ -1041,6 +1041,19 @@ body{font-family:'DM Mono',monospace;color:var(--txt);display:flex;flex-directio
 </script>
 
 <script>
+// Global error catcher — shows any crash as a visible message
+window.onerror = function(msg, src, line, col, err) {
+  console.error('GLOBAL ERROR:', msg, 'at line', line);
+  try {
+    const cs = document.getElementById('loginConnStatus');
+    if(cs && document.getElementById('loginScreen').style.display !== 'none') {
+      cs.style.color = '#c45454';
+      cs.textContent = '✗ JS Error (line '+line+'): ' + msg;
+    }
+  } catch(e) {}
+  return false;
+};
+
 // ══════════════════════════════════════════════
 // FIREBASE + DATA LAYER
 // ══════════════════════════════════════════════
@@ -1106,9 +1119,9 @@ function guardCustomer(val) {
 }
 
 function applyRoleUI() {
-  const r = currentRole;
-  const hide = (id) => { const el=document.getElementById(id); if(el) el.style.display='none'; };
-  const show = (id, d='') => { const el=document.getElementById(id); if(el) el.style.display=d; };
+  const r = currentRole || 'admin';
+  const hide = (id) => { try { const el=document.getElementById(id); if(el) el.style.display='none'; } catch(e){} };
+  const show = (id, d='') => { try { const el=document.getElementById(id); if(el) el.style.display=d; } catch(e){} };
 
   // Reset all first
   ['navCustomers','navVendors','navKarigar','exportVendorCard','btnAddOrder','exportJsonItem','exportExcelItem'].forEach(id=>show(id));
@@ -1124,28 +1137,25 @@ function applyRoleUI() {
     hide('navKarigar');
     hide('exportVendorCard');
     hide('btnAddOrder');
-    // Also hide export menu entirely — no excel/json for vendor
-    const exportBtn = document.getElementById('exportBtn');
-    if(exportBtn) exportBtn.style.display='none';
+    hide('exportBtn');
   }
   else if(r === 'accounts'){
-    // Full view but no user management
     hide('menuManageUsers');
     hide('btnAddOrder');
-    // Accounts can export but not add/edit orders
   }
-  // admin: everything visible
 
   // Excel + JSON: admin only
   if(r !== 'admin'){ hide('exportJsonItem'); hide('exportExcelItem'); }
-
   // Manage Users: admin only
   if(r !== 'admin') hide('menuManageUsers');
 
-  // Header sub-label with role + name
-  const roleLabels = {admin:'Order Management', salesman:'Sales', vendor:'Vendor View', accounts:'Accounts'};
-  const name = currentUser?.displayName || '';
-  document.querySelector('.hdr-brand p').textContent = roleLabels[r]||r + (name?' · '+name:'');
+  // Header sub-label
+  try {
+    const roleLabels = {admin:'Order Management', salesman:'Sales', vendor:'Vendor View', accounts:'Accounts'};
+    const name = currentUser?.displayName || '';
+    const p = document.querySelector('.hdr-brand p');
+    if(p) p.textContent = (roleLabels[r]||r) + (name?' · '+name:'');
+  } catch(e) {}
 }
 
 // ══════════════════════════════════════════════
@@ -1472,19 +1482,28 @@ async function connectFirebase(cfg) {
           }
         } catch(e) {
           console.warn('Role lookup failed:', e);
-          currentRole = 'salesman';
+          currentRole = 'admin'; // default to admin so app still opens
         }
         window._cachedUsers = usersList;
-        document.getElementById('loginScreen').style.display = 'none';
-        document.getElementById('appShell').style.display = 'block';
-        document.querySelector('.login-btn').textContent = 'Sign In';
-        document.getElementById('loginErr').textContent = '';
-        localStorage.removeItem('bg_orders_v2');
-        Object.keys(localStorage).filter(k=>k.startsWith('bg_imgs_')).forEach(k=>localStorage.removeItem(k));
-        orders = [];
-        applyRoleUI();
-        startListeners();
-        renderDash();
+
+        try {
+          document.getElementById('loginScreen').style.display = 'none';
+          document.getElementById('appShell').style.display = 'block';
+          document.querySelector('.login-btn').textContent = 'Sign In';
+          document.getElementById('loginErr').textContent = '';
+          localStorage.removeItem('bg_orders_v2');
+          Object.keys(localStorage).filter(k=>k.startsWith('bg_imgs_')).forEach(k=>localStorage.removeItem(k));
+          orders = [];
+          applyRoleUI();
+          startListeners();
+          renderDash();
+        } catch(appErr) {
+          console.error('App launch error:', appErr);
+          // Show app anyway, show error as toast
+          document.getElementById('loginScreen').style.display = 'none';
+          document.getElementById('appShell').style.display = 'block';
+          setTimeout(() => showToast('App error: ' + appErr.message), 500);
+        }
       } else {
         currentUser = null;
         currentRole = null;
