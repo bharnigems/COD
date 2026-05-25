@@ -249,7 +249,7 @@ body{font-family:'DM Mono',monospace;color:var(--txt);background:var(--bg);heigh
 /* ── LOGIN SCREEN ── */
 .login-screen{position:fixed;inset:0;background:var(--bg);z-index:600;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:28px;overflow:hidden}
 .login-card{width:100%;max-width:360px}
-.login-brand{font-family:'Inkburrow','Cormorant Garamond',serif;font-size:42px;font-weight:normal;letter-spacing:0;line-height:10;letter-spacing:8px;color:var(--gold);text-transform:uppercase;text-align:center;margin-bottom:4px}
+.login-brand{font-family:'Inkburrow','Cormorant Garamond',serif;font-size:42px;font-weight:normal;letter-spacing:0;line-height:10;letter-spacing:8px;color:var(--gold);text-align:center;margin-bottom:4px}
 .login-brand-sub{font-size:8px;letter-spacing:3px;color:var(--dim);text-align:center;margin-bottom:40px}
 .login-label{font-size:8px;letter-spacing:2px;text-transform:uppercase;color:var(--dim);margin-bottom:5px;display:block}
 .login-inp{background:var(--s1);border:1px solid var(--b);color:var(--txt);padding:13px 14px;font-family:'DM Mono',monospace;font-size:13px;outline:none;border-radius:var(--r);width:100%;margin-bottom:14px;transition:border-color .2s}
@@ -502,7 +502,7 @@ body{font-family:'DM Mono',monospace;color:var(--txt);background:var(--bg);heigh
     <div class="login-err" id="loginErr"></div>
     <div id="loginConnStatus" style="font-size:8px;color:var(--dim);text-align:center;margin-top:10px;letter-spacing:1px">⏳ Connecting to Firebase…</div>
     <button onclick="location.reload()" style="background:none;border:1px solid var(--b);color:var(--dim);padding:8px 20px;font-family:'DM Mono',monospace;font-size:8px;letter-spacing:2px;cursor:pointer;border-radius:var(--r);margin-top:10px;width:100%">↺ Reload Page</button>
-    <div class="login-ver" style="font-family:'Inkburrow','Cormorant Garamond',serif;font-size:16px;letter-spacing:0;font-weight:normal">Bharni Gems · v32</div>
+    <div class="login-ver">Bharni Gems · v33</div>
   </div>
 </div>
 
@@ -717,11 +717,16 @@ body{font-family:'DM Mono',monospace;color:var(--txt);background:var(--bg);heigh
             <option>Nosepin</option>
             <option>Earrings</option>
             <option>Necklace</option>
+            <option>Traditional Necklace</option>
+            <option>Haram</option>
             <option>Pendant</option>
             <option>Bracelet</option>
             <option>Ring</option>
+            <option>Couple Rings</option>
             <option>Bangles</option>
-            <option>Mixed</option>
+            <option>Vaddiyanam</option>
+            <option>Tanmaniya</option>
+            <option>Others</option>
           </select>
         </div>
         <div class="fl">
@@ -2804,7 +2809,10 @@ function _srchItems(type) {
     ]);
     return [...names].sort().map(n=>{
       const c = standaloneCustomers.find(x=>x.name===n) || orders.find(o=>o.name===n);
-      return { name:n, sub: [c?.loc, c?.contact].filter(Boolean).join(' · ') };
+      const cloc = c ? (c.loc||'') : '';
+      const ccontact = c ? (c.contact||'') : '';
+      const sub = [cloc, ccontact].filter(Boolean).join(' · ');
+      return { name:n, sub: sub };
     });
   } else {
     const names = new Set([
@@ -2813,7 +2821,10 @@ function _srchItems(type) {
     ]);
     return [...names].sort().map(n=>{
       const v = standaloneVendors.find(x=>x.name===n) || orders.find(o=>o.vendor===n);
-      return { name:n, sub: [v?.loc, v?.contact].filter(Boolean).join(' · ') };
+      const vloc = v ? (v.loc||'') : '';
+      const vcontact = v ? (v.contact||'') : '';
+      const sub = [vloc, vcontact].filter(Boolean).join(' · ');
+      return { name:n, sub: sub };
     });
   }
 }
@@ -2839,14 +2850,17 @@ function srchRenderList(type, q) {
 }
 
 function srchOpen(type) {
+  // Always rebuild items fresh in case Firestore data loaded after last open
   _srchState[type].items = _srchItems(type);
   const inp = document.getElementById('f_'+type+'_search');
-  const q = _srchState[type].selected ? '' : inp.value;
+  const q = _srchState[type].selected ? '' : (inp ? inp.value : '');
   srchRenderList(type, q);
-  document.getElementById('srch_'+type+'_list').classList.add('open');
+  var listEl = document.getElementById('srch_'+type+'_list');
+  if (listEl) listEl.classList.add('open');
   // Close other
-  const other = type==='customer'?'vendor':'customer';
-  document.getElementById('srch_'+other+'_list').classList.remove('open');
+  var other = type==='customer'?'vendor':'customer';
+  var otherList = document.getElementById('srch_'+other+'_list');
+  if (otherList) otherList.classList.remove('open');
 }
 
 function srchFilter(type) {
@@ -3342,7 +3356,7 @@ function printJobCard(type, id){
     '*{box-sizing:border-box;margin:0;padding:0}',
     'body{font-family:-apple-system,"Helvetica Neue",Arial,sans-serif;background:#fff;color:#1a1a1a;padding:40px;max-width:680px;margin:0 auto;font-size:13px;line-height:1.5}',
     '.hdr{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:28px;padding-bottom:20px;border-bottom:2px solid #1a1a1a}',
-    '.brand{font-size:20px;font-weight:700;letter-spacing:4px;text-transform:uppercase}',
+    '.brand{font-size:20px;font-weight:700;letter-spacing:2px;text-transform:none}',
     '.card-lbl{font-size:9px;font-weight:600;letter-spacing:3px;text-transform:uppercase;color:#888;text-align:right;margin-bottom:4px}',
     '.oid{font-size:22px;font-weight:300;text-align:right;letter-spacing:1px}',
     '.chips{display:flex;gap:6px;justify-content:flex-end;margin-top:5px;flex-wrap:wrap}',
