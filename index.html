@@ -1078,8 +1078,8 @@ body{font-family:'DM Mono',monospace;color:var(--txt);background:var(--bg);heigh
     var cdn = cdns[cdnIdx++];
     setStatus('⏳ Loading Firebase…');
     tryLoadAll(cdn, 0, function() {
-      setStatus('✓ Connected — ready to sign in');
       if (typeof appStart === 'function') appStart();
+      // "Connected" status is set inside connectFirebase once auth is ready
     }, function() {
       tryNextCDN();
     });
@@ -1263,16 +1263,27 @@ async function doLogin() {
   const errEl = document.getElementById('loginErr');
   errEl.textContent = '';
   if (!email || !pwd) { errEl.textContent = 'Email and password required'; return; }
-  if (!auth) {
-    errEl.textContent = 'Still connecting to Firebase… please wait a moment then try again.';
-    setSyncStatus('syncing', 'reconnecting…');
-    setTimeout(doLogin, 2000); // retry after 2s
+  if (!auth || !fbReady) {
+    // Auth not ready yet — wait and retry automatically
+    document.querySelector('.login-btn').textContent = 'Connecting…';
+    const waitForAuth = setInterval(async () => {
+      if (auth && fbReady) {
+        clearInterval(waitForAuth);
+        document.querySelector('.login-btn').textContent = 'Sign In';
+        doLogin();
+      }
+    }, 300);
+    // Give up after 15 seconds
+    setTimeout(() => {
+      clearInterval(waitForAuth);
+      document.querySelector('.login-btn').textContent = 'Sign In';
+      errEl.textContent = 'Firebase not ready — try reloading the page.';
+    }, 15000);
     return;
   }
   try {
     document.querySelector('.login-btn').textContent = 'Signing in…';
     await auth.signInWithEmailAndPassword(email, pwd);
-    // onAuthStateChanged handles the rest
   } catch(e) {
     document.querySelector('.login-btn').textContent = 'Sign In';
     errEl.textContent = friendlyAuthError(e.code);
