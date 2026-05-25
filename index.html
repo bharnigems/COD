@@ -501,7 +501,7 @@ body{font-family:'DM Mono',monospace;color:var(--txt);background:var(--bg);heigh
     <div class="login-err" id="loginErr"></div>
     <div id="loginConnStatus" style="font-size:8px;color:var(--dim);text-align:center;margin-top:10px;letter-spacing:1px">⏳ Connecting to Firebase…</div>
     <button onclick="location.reload()" style="background:none;border:1px solid var(--b);color:var(--dim);padding:8px 20px;font-family:'DM Mono',monospace;font-size:8px;letter-spacing:2px;cursor:pointer;border-radius:var(--r);margin-top:10px;width:100%">↺ Reload Page</button>
-    <div class="login-ver">Bharni Gems · v33</div>
+    <div class="login-ver">Bharni Gems · v47</div>
   </div>
 </div>
 
@@ -688,12 +688,484 @@ body{font-family:'DM Mono',monospace;color:var(--txt);background:var(--bg);heigh
           <label class="flbl">Customer *
             <span style="color:var(--gold-d);cursor:pointer;margin-left:8px;font-size:9px" onclick="openAddCustomer()">[+ Add New]</span>
           </label>
-          <div class="srch-wrap">
-            <input class="srch-inp" id="f_name_search" autocomplete="off" placeholder="Search customer…" oninput="srchFilter('customer')" onfocus="srchOpen('customer')" onkeydown="srchKey(event,'customer')">
-            <button class="srch-clear" id="f_name_clear" onclick="srchClear('customer')">×</button>
-            <div class="srch-list" id="srch_customer_list"></div>
-          </div>
-          <input type="hidden" id="f_name">
+          <select class="sel inp" id="f_name" onchange="onCustomerSelect()" style="width:100%">
+<option value="">— Select Customer —</option>
+<option value="AAshirwad Jewellers">AAshirwad Jewellers</option>
+<option value="Aai Mata Jewellers (Suchitra)">Aai Mata Jewellers (Suchitra)</option>
+<option value="Aakruthi Jewellery">Aakruthi Jewellery</option>
+<option value="Abhi Jewellers">Abhi Jewellers</option>
+<option value="Abirami Jewellers">Abirami Jewellers</option>
+<option value="Adithya Jewellers">Adithya Jewellers</option>
+<option value="Aditya Singh">Aditya Singh</option>
+<option value="Agarwal Jewellers">Agarwal Jewellers</option>
+<option value="Alankrith Jewellers">Alankrith Jewellers</option>
+<option value="Ambica Jewellers">Ambica Jewellers</option>
+<option value="Amrit Jewellers (Guntur)">Amrit Jewellers (Guntur)</option>
+<option value="Anand Jewellers">Anand Jewellers</option>
+<option value="Anand Jewellers (Bengaluru)">Anand Jewellers (Bengaluru)</option>
+<option value="Anand Traders (Nanded)">Anand Traders (Nanded)</option>
+<option value="Ananth Diamonds">Ananth Diamonds</option>
+<option value="Ansar Jewellers">Ansar Jewellers</option>
+<option value="Anthargangi Amarappa Jewellers">Anthargangi Amarappa Jewellers</option>
+<option value="Anu Jewellers">Anu Jewellers</option>
+<option value="Anuradha Jain">Anuradha Jain</option>
+<option value="Archana Jewellers">Archana Jewellers</option>
+<option value="Ashapura Jewellers">Ashapura Jewellers</option>
+<option value="Ashok Jewellers">Ashok Jewellers</option>
+<option value="Ashtalakshmi Jewellers">Ashtalakshmi Jewellers</option>
+<option value="Astalakshmi Jewellers">Astalakshmi Jewellers</option>
+<option value="Azam Jewellers Pvt. Ltd.">Azam Jewellers Pvt. Ltd.</option>
+<option value="B.G.R.Jewellers (Kakinada)">B.G.R.Jewellers (Kakinada)</option>
+<option value="B.Narasimhaiah &amp; Sons">B.Narasimhaiah &amp; Sons</option>
+<option value="B.Narasimhaiah Grand Sons">B.Narasimhaiah Grand Sons</option>
+<option value="B.S.K.Agencies">B.S.K.Agencies</option>
+<option value="B.Venkata Subbaiah Setty &amp; B.Sree Rama Murthy">B.Venkata Subbaiah Setty &amp; B.Sree Rama Murthy</option>
+<option value="BMR Aabharan Jewellery">BMR Aabharan Jewellery</option>
+<option value="BMR Gold and Diamonds">BMR Gold and Diamonds</option>
+<option value="Babji Jewellers">Babji Jewellers</option>
+<option value="Bagmar Jewellers (Bolarum)">Bagmar Jewellers (Bolarum)</option>
+<option value="Bajrang Jewellers">Bajrang Jewellers</option>
+<option value="Balaji Gold">Balaji Gold</option>
+<option value="Balaji Jewellers (Nacharam)">Balaji Jewellers (Nacharam)</option>
+<option value="Balaji Jewellers (Pragathi Nagar)">Balaji Jewellers (Pragathi Nagar)</option>
+<option value="Balaji Jewellers (Vanasthalipuram)">Balaji Jewellers (Vanasthalipuram)</option>
+<option value="Balaji Mahaveer Jewellers">Balaji Mahaveer Jewellers</option>
+<option value="Bangaru Balappa Jewellers">Bangaru Balappa Jewellers</option>
+<option value="Basith Jewellers">Basith Jewellers</option>
+<option value="Best Jewellers">Best Jewellers</option>
+<option value="Bhavani Jewellers (Hayath Nagar)">Bhavani Jewellers (Hayath Nagar)</option>
+<option value="Bhuvisree Jewellers">Bhuvisree Jewellers</option>
+<option value="Bilakanti Nagisetty &amp; Sons Jewellers">Bilakanti Nagisetty &amp; Sons Jewellers</option>
+<option value="Bombay Gold Shopee">Bombay Gold Shopee</option>
+<option value="Bombay Jewellers">Bombay Jewellers</option>
+<option value="Brindavan Gems &amp; Jewellers">Brindavan Gems &amp; Jewellers</option>
+<option value="Busetty Ramammunaiah Sree Ramulu Jewellers">Busetty Ramammunaiah Sree Ramulu Jewellers</option>
+<option value="Business to Customer">Business to Customer</option>
+<option value="Business to Customer (Bank Transfer)">Business to Customer (Bank Transfer)</option>
+<option value="Carla Diamonds LLP">Carla Diamonds LLP</option>
+<option value="Chetan Jewllers">Chetan Jewllers</option>
+<option value="Choudhary Jewellers &amp; Silver Palace (Shapur)">Choudhary Jewellers &amp; Silver Palace (Shapur)</option>
+<option value="Choudhary Jewellers (Malkajgiri)">Choudhary Jewellers (Malkajgiri)</option>
+<option value="Choudhary Jewellers. (Pragathi Nagar)">Choudhary Jewellers. (Pragathi Nagar)</option>
+<option value="D S Jewellers">D S Jewellers</option>
+<option value="D.V.R.Diamonds">D.V.R.Diamonds</option>
+<option value="DB Jewellers (Adilabad)">DB Jewellers (Adilabad)</option>
+<option value="Darsh Jewellers">Darsh Jewellers</option>
+<option value="Deepika Jain">Deepika Jain</option>
+<option value="Devi Jewellers">Devi Jewellers</option>
+<option value="Devi Jewellers (Bhimavaram)">Devi Jewellers (Bhimavaram)</option>
+<option value="Devi Jewellers (Tadepalligudem)">Devi Jewellers (Tadepalligudem)</option>
+<option value="Devishree Jewellers (Moosapet)">Devishree Jewellers (Moosapet)</option>
+<option value="Dhanlaxmi Jewellers (Bolarum)">Dhanlaxmi Jewellers (Bolarum)</option>
+<option value="Dhanlaxmi Jewellers (Hanamkonda)">Dhanlaxmi Jewellers (Hanamkonda)</option>
+<option value="Diano Jewels">Diano Jewels</option>
+<option value="Dinesh Jewellers, Bengaluru">Dinesh Jewellers, Bengaluru</option>
+<option value="GK Jewels (Nandyal)">GK Jewels (Nandyal)</option>
+<option value="GVK Jewellers">GVK Jewellers</option>
+<option value="Gajendra Jewellers">Gajendra Jewellers</option>
+<option value="Gajendra Jewellers Exclusive">Gajendra Jewellers Exclusive</option>
+<option value="Gamini Chakravarthi Jewellers">Gamini Chakravarthi Jewellers</option>
+<option value="Ganapathi Jewellers, Kattedan">Ganapathi Jewellers, Kattedan</option>
+<option value="Ganesh Jewellers">Ganesh Jewellers</option>
+<option value="Ganesh Jewellers (Chintal)">Ganesh Jewellers (Chintal)</option>
+<option value="Ganesh Jewellers (Secunderabad)">Ganesh Jewellers (Secunderabad)</option>
+<option value="Ganesh Jewellers (varthur,Bengaluru)">Ganesh Jewellers (varthur,Bengaluru)</option>
+<option value="Gautam  Jewellers">Gautam  Jewellers</option>
+<option value="Ghori Jewellers LLP">Ghori Jewellers LLP</option>
+<option value="Golden Jewellery">Golden Jewellery</option>
+<option value="Gowris Designer Jewellery">Gowris Designer Jewellery</option>
+<option value="Gowtham Porwar">Gowtham Porwar</option>
+<option value="Gupta Jewellers">Gupta Jewellers</option>
+<option value="Guru Ganesh Jewellers">Guru Ganesh Jewellers</option>
+<option value="Gurudev Jewellers (Lal Bazar)">Gurudev Jewellers (Lal Bazar)</option>
+<option value="HBJ Jewels Private Limited">HBJ Jewels Private Limited</option>
+<option value="Hari &amp; Sridhar Jewellers Pvt Ltd">Hari &amp; Sridhar Jewellers Pvt Ltd</option>
+<option value="Hari Om Jewellers">Hari Om Jewellers</option>
+<option value="Harsh Jain (Bharni Gems)">Harsh Jain (Bharni Gems)</option>
+<option value="Harsh Jewellers">Harsh Jewellers</option>
+<option value="Harsha Jewellers (Santoshnagar)">Harsha Jewellers (Santoshnagar)</option>
+<option value="Heera Bhai Jewellers">Heera Bhai Jewellers</option>
+<option value="Heera Jewellers">Heera Jewellers</option>
+<option value="Heera Jewellers (Medchal)">Heera Jewellers (Medchal)</option>
+<option value="Hirachand Hastimal Jain Jewellers">Hirachand Hastimal Jain Jewellers</option>
+<option value="Hyder Jewellers (Machilipatnam)">Hyder Jewellers (Machilipatnam)</option>
+<option value="In House Repairs">In House Repairs</option>
+<option value="Ishtara Gems and Jewellers">Ishtara Gems and Jewellers</option>
+<option value="Iswarya Jewellers">Iswarya Jewellers</option>
+<option value="J.P.Jewellers (Nanded)">J.P.Jewellers (Nanded)</option>
+<option value="J.P.Jewellery">J.P.Jewellery</option>
+<option value="J.Srinivas (Bharni Gems)">J.Srinivas (Bharni Gems)</option>
+<option value="JP Jewellery">JP Jewellery</option>
+<option value="JVR Retails Pvt. Ltd.">JVR Retails Pvt. Ltd.</option>
+<option value="Jaasrithaanvaya Enterprises LLP (Moar Fine)">Jaasrithaanvaya Enterprises LLP (Moar Fine)</option>
+<option value="Jagadamba Jewellers (Miyapur)">Jagadamba Jewellers (Miyapur)</option>
+<option value="Jagadamba Jewellers (Nacharam)">Jagadamba Jewellers (Nacharam)</option>
+<option value="Jagdish Jewellers">Jagdish Jewellers</option>
+<option value="Jai Ambica Sanghvi Jewellers">Jai Ambica Sanghvi Jewellers</option>
+<option value="Jai Bhavani Jewellers (Zaheerabad)">Jai Bhavani Jewellers (Zaheerabad)</option>
+<option value="Jai Devi Jewellers">Jai Devi Jewellers</option>
+<option value="Jai Jagadamba Jewellers (Narasapur)">Jai Jagadamba Jewellers (Narasapur)</option>
+<option value="Jai Rajendra Gold Palace Pvt. Ltd.">Jai Rajendra Gold Palace Pvt. Ltd.</option>
+<option value="Jai Rajendra Jewel Palace (Miyapur)">Jai Rajendra Jewel Palace (Miyapur)</option>
+<option value="Jai Rajendra Jewel Palace Private Limited">Jai Rajendra Jewel Palace Private Limited</option>
+<option value="Jai Rishab Gold">Jai Rishab Gold</option>
+<option value="Jai Sanjay Jewellers">Jai Sanjay Jewellers</option>
+<option value="Jai Sri Appana Jewellers">Jai Sri Appana Jewellers</option>
+<option value="Jai Tejes Gold &amp; Silver">Jai Tejes Gold &amp; Silver</option>
+<option value="Jai Vardhaman Jewellers">Jai Vardhaman Jewellers</option>
+<option value="Jain Gold">Jain Gold</option>
+<option value="Jain Jewellers (Kakinada)">Jain Jewellers (Kakinada)</option>
+<option value="Jaishri Jewellers">Jaishri Jewellers</option>
+<option value="Jay Gold">Jay Gold</option>
+<option value="Jeevaji Gold">Jeevaji Gold</option>
+<option value="Jeevanlal Jewellers">Jeevanlal Jewellers</option>
+<option value="Jetty jewellers">Jetty jewellers</option>
+<option value="Jyothi Jewellers (Kukatpally)">Jyothi Jewellers (Kukatpally)</option>
+<option value="K.Gangadhar Jewellers">K.Gangadhar Jewellers</option>
+<option value="K.K Jewellers">K.K Jewellers</option>
+<option value="K.K.S.Ratnam Jewellers">K.K.S.Ratnam Jewellers</option>
+<option value="K.P.Sanghvi">K.P.Sanghvi</option>
+<option value="KMS Jewellers (Kurnool)">KMS Jewellers (Kurnool)</option>
+<option value="Kamakshi Jewellers">Kamakshi Jewellers</option>
+<option value="Kamal Jewellers, (A S Rao Nagar)">Kamal Jewellers, (A S Rao Nagar)</option>
+<option value="Kamlesh Jain">Kamlesh Jain</option>
+<option value="Kanti Jewellers">Kanti Jewellers</option>
+<option value="Karmuri Gold &amp; Diamonds">Karmuri Gold &amp; Diamonds</option>
+<option value="Karmuri Permallu Jewellery Mart">Karmuri Permallu Jewellery Mart</option>
+<option value="Katkam Jewellers">Katkam Jewellers</option>
+<option value="Kavery Jewellers (Bengaluru)">Kavery Jewellers (Bengaluru)</option>
+<option value="Kavita Jewellers">Kavita Jewellers</option>
+<option value="Kavita Jewellers (Chintal)">Kavita Jewellers (Chintal)</option>
+<option value="Kavya Jewellers (Vanasthalipuram)">Kavya Jewellers (Vanasthalipuram)</option>
+<option value="Kesar jewels">Kesar jewels</option>
+<option value="Ketan Ji">Ketan Ji</option>
+<option value="Kishore Jain">Kishore Jain</option>
+<option value="Kishore Jewellers">Kishore Jewellers</option>
+<option value="Konkimalla Khazana Jewellers">Konkimalla Khazana Jewellers</option>
+<option value="Krishna Jewellers">Krishna Jewellers</option>
+<option value="LNS Jewellers">LNS Jewellers</option>
+<option value="LNS Vastralayam LLP">LNS Vastralayam LLP</option>
+<option value="Lahari Reddy Gold &amp; Diamond">Lahari Reddy Gold &amp; Diamond</option>
+<option value="Lakshmi Priya Jewellers">Lakshmi Priya Jewellers</option>
+<option value="Lakshmika Gold &amp; Diamonds LLP">Lakshmika Gold &amp; Diamonds LLP</option>
+<option value="Lalitha Jewellers">Lalitha Jewellers</option>
+<option value="Laxmi Balaji Jewellers">Laxmi Balaji Jewellers</option>
+<option value="Lord Prabhu Jewellers">Lord Prabhu Jewellers</option>
+<option value="Lori Fine Jewellery">Lori Fine Jewellery</option>
+<option value="Lotus Gems Jewellers">Lotus Gems Jewellers</option>
+<option value="M M Jewellers">M M Jewellers</option>
+<option value="M.K.N. Jewellery">M.K.N. Jewellery</option>
+<option value="M.P Jewellers">M.P Jewellers</option>
+<option value="M/S Sampatraj Kantilal Jain Jewellers">M/S Sampatraj Kantilal Jain Jewellers</option>
+<option value="M/S Sri Sri Laxmi Srinivasa Jewellery">M/S Sri Sri Laxmi Srinivasa Jewellery</option>
+<option value="M/s.Kamakshi Jewellery Mark">M/s.Kamakshi Jewellery Mark</option>
+<option value="MANIRATNA ORNAMENTS (INDIA) PVT. LTD.">MANIRATNA ORNAMENTS (INDIA) PVT. LTD.</option>
+<option value="MSK Jewels">MSK Jewels</option>
+<option value="Maa Ambica Jewellers (Medchal)">Maa Ambica Jewellers (Medchal)</option>
+<option value="Maa Bhavani Jewellers">Maa Bhavani Jewellers</option>
+<option value="Maa Jewellery">Maa Jewellery</option>
+<option value="Maa Shanti Jewellers">Maa Shanti Jewellers</option>
+<option value="Maha Lakshmi Jewellers (ECIL)">Maha Lakshmi Jewellers (ECIL)</option>
+<option value="Mahadev Jewellers">Mahadev Jewellers</option>
+<option value="Mahalaxmi Jewellers (Ashok Nagar)">Mahalaxmi Jewellers (Ashok Nagar)</option>
+<option value="Mahalaxmi Jewellers (Chintal)">Mahalaxmi Jewellers (Chintal)</option>
+<option value="Mahalaxmi Jewellers (Devanahall)">Mahalaxmi Jewellers (Devanahall)</option>
+<option value="Mahalaxmi Jewellers (Yousufguda)">Mahalaxmi Jewellers (Yousufguda)</option>
+<option value="Mahalaxmi Jewellers Private Ltd (Gulbarga)">Mahalaxmi Jewellers Private Ltd (Gulbarga)</option>
+<option value="Maharshi Gautam jewellers (Tirupati)">Maharshi Gautam jewellers (Tirupati)</option>
+<option value="Mahaveer Jewellers and Electronics">Mahaveer Jewellers and Electronics</option>
+<option value="Maheshwari Jewellers">Maheshwari Jewellers</option>
+<option value="Mailapur's Jewel Palace">Mailapur's Jewel Palace</option>
+<option value="Manchala Ashok Jewellers (Pot Market)">Manchala Ashok Jewellers (Pot Market)</option>
+<option value="Manepally Jewellers">Manepally Jewellers</option>
+<option value="Mangal Ganesh Jewellers">Mangal Ganesh Jewellers</option>
+<option value="Mangala Fine Jewellery">Mangala Fine Jewellery</option>
+<option value="Manju Jain">Manju Jain</option>
+<option value="Marudhar Jewellers">Marudhar Jewellers</option>
+<option value="Matha Vyshnavi Jewellers">Matha Vyshnavi Jewellers</option>
+<option value="Mathaji Jewelers (Boduppal)">Mathaji Jewelers (Boduppal)</option>
+<option value="Mathaji Jewellers (Manikonda)">Mathaji Jewellers (Manikonda)</option>
+<option value="Mattapalli Suryanarayana Sons">Mattapalli Suryanarayana Sons</option>
+<option value="Mck Jewellery">Mck Jewellery</option>
+<option value="Meenakshi Jewellers (HSR Layout)">Meenakshi Jewellers (HSR Layout)</option>
+<option value="Menaka Pearls &amp; Jewellers">Menaka Pearls &amp; Jewellers</option>
+<option value="Mr.P.Venkateshwar">Mr.P.Venkateshwar</option>
+<option value="Mukesh Jain (Bharni Gems)">Mukesh Jain (Bharni Gems)</option>
+<option value="Mukesh Jewellers">Mukesh Jewellers</option>
+<option value="Murali Jewellers (Bengaluru)">Murali Jewellers (Bengaluru)</option>
+<option value="NMS Sri Venkataramana Jewellers (Medchal)">NMS Sri Venkataramana Jewellers (Medchal)</option>
+<option value="NVR Enterprises">NVR Enterprises</option>
+<option value="Nakoda Jewellers (Chittoor)">Nakoda Jewellers (Chittoor)</option>
+<option value="Nakoda Jewellers (Nizampet)">Nakoda Jewellers (Nizampet)</option>
+<option value="Nakoda Jewellers(Saidabad)">Nakoda Jewellers(Saidabad)</option>
+<option value="Nalla Malli NVR Exclusive (Ongole)">Nalla Malli NVR Exclusive (Ongole)</option>
+<option value="Nallamali Padmanjali Gold House">Nallamali Padmanjali Gold House</option>
+<option value="Nallamalli's NVR Exclusive (Vijaywada)">Nallamalli's NVR Exclusive (Vijaywada)</option>
+<option value="Namishree Jewels Pvt.Ltd.">Namishree Jewels Pvt.Ltd.</option>
+<option value="Nanda Gokula Jewellery">Nanda Gokula Jewellery</option>
+<option value="Nandani Jewellers">Nandani Jewellers</option>
+<option value="Nandini &amp; Co">Nandini &amp; Co</option>
+<option value="Narender Jain">Narender Jain</option>
+<option value="Narender Jewellers (Madhapur)">Narender Jewellers (Madhapur)</option>
+<option value="Nataraj Jewellery Mart Private Limited">Nataraj Jewellery Mart Private Limited</option>
+<option value="Nathu and Sons Jewellers">Nathu and Sons Jewellers</option>
+<option value="Navkaar Jewellers (Tamilnadu)">Navkaar Jewellers (Tamilnadu)</option>
+<option value="Navkar Gold World">Navkar Gold World</option>
+<option value="Navkar Jewellers (Bengaluru)">Navkar Jewellers (Bengaluru)</option>
+<option value="Navkar Jewellers (Saidabad)">Navkar Jewellers (Saidabad)</option>
+<option value="Navkar Jewellers,A.S.Rao Nagar">Navkar Jewellers,A.S.Rao Nagar</option>
+<option value="Neha Jewellers">Neha Jewellers</option>
+<option value="New Amrit Jewellers Extension">New Amrit Jewellers Extension</option>
+<option value="New Ganesh Jewellers">New Ganesh Jewellers</option>
+<option value="New Mahadev Jewellers">New Mahadev Jewellers</option>
+<option value="Nisar and Sons Jewellers (Medak)">Nisar and Sons Jewellers (Medak)</option>
+<option value="Nithin Raj Vempati">Nithin Raj Vempati</option>
+<option value="OVC Jewellers &amp; Co">OVC Jewellers &amp; Co</option>
+<option value="Om Jewellers (Boduppal)">Om Jewellers (Boduppal)</option>
+<option value="Om Sainath Jewellers">Om Sainath Jewellers</option>
+<option value="Omkar(Bharni Gems)">Omkar(Bharni Gems)</option>
+<option value="Orra Fine Jewellery Private Limited">Orra Fine Jewellery Private Limited</option>
+<option value="P.Satyanarayan Gems &amp; Jewellery">P.Satyanarayan Gems &amp; Jewellery</option>
+<option value="P.Satyanarayan Sons Pvt. Ltd. (Mehdipatnam)">P.Satyanarayan Sons Pvt. Ltd. (Mehdipatnam)</option>
+<option value="P.Satyanarayan Sons Pvt. Ltd.(Charminar)">P.Satyanarayan Sons Pvt. Ltd.(Charminar)</option>
+<option value="P.Satyanarayan Sons Pvt. Ltd.(Gulzar Houz)">P.Satyanarayan Sons Pvt. Ltd.(Gulzar Houz)</option>
+<option value="P.Srinivas (Bharni Gems)">P.Srinivas (Bharni Gems)</option>
+<option value="PRS Jewellers">PRS Jewellers</option>
+<option value="Pabba Jewellers &amp; Co">Pabba Jewellers &amp; Co</option>
+<option value="Padma Jewellers (Pulivendula)">Padma Jewellers (Pulivendula)</option>
+<option value="Padmavathi Jewellers">Padmavathi Jewellers</option>
+<option value="Padmavati Jewellers (Tirupati)">Padmavati Jewellers (Tirupati)</option>
+<option value="Paras Gold Palace">Paras Gold Palace</option>
+<option value="Paras Jewellers LLP">Paras Jewellers LLP</option>
+<option value="Patnala Brother's Jewellery Mart">Patnala Brother's Jewellery Mart</option>
+<option value="Pattabhi Jewellers">Pattabhi Jewellers</option>
+<option value="Pavan Jewellers (Patancheru)">Pavan Jewellers (Patancheru)</option>
+<option value="Pawan Jewellers (H.S.R. Layout,Bengaluru)">Pawan Jewellers (H.S.R. Layout,Bengaluru)</option>
+<option value="Pawan Jewellers (Tumkur)">Pawan Jewellers (Tumkur)</option>
+<option value="Pinky Jain">Pinky Jain</option>
+<option value="Pooja Jain">Pooja Jain</option>
+<option value="Pooja Jewellers">Pooja Jewellers</option>
+<option value="Pooja Jewellers (Ameerpet)">Pooja Jewellers (Ameerpet)</option>
+<option value="Pooja Jewellers (Safilguda)">Pooja Jewellers (Safilguda)</option>
+<option value="Pooja jewellers (ECIL)">Pooja jewellers (ECIL)</option>
+<option value="Prakash Jewellers">Prakash Jewellers</option>
+<option value="Pratyusha Jewellery">Pratyusha Jewellery</option>
+<option value="Prem Jewellers">Prem Jewellers</option>
+<option value="Priyanka Jain">Priyanka Jain</option>
+<option value="Priyanka Jewellers">Priyanka Jewellers</option>
+<option value="Purohit Jewellers">Purohit Jewellers</option>
+<option value="Pushpa Jain">Pushpa Jain</option>
+<option value="R.R.Jewellers">R.R.Jewellers</option>
+<option value="R.S.Jewellers">R.S.Jewellers</option>
+<option value="Radhe Krishna Jewllers (Medchal)">Radhe Krishna Jewllers (Medchal)</option>
+<option value="Raj Jewellery Mall">Raj Jewellery Mall</option>
+<option value="Raj Ratan Jewellers">Raj Ratan Jewellers</option>
+<option value="Raja Jewellers">Raja Jewellers</option>
+<option value="Rajdeep Jewellers">Rajdeep Jewellers</option>
+<option value="Rajendera Gold">Rajendera Gold</option>
+<option value="Rajshree Jewellers (Manikonda)">Rajshree Jewellers (Manikonda)</option>
+<option value="Rajsree Jewellers">Rajsree Jewellers</option>
+<option value="Rakesh Jewellers (Malur)">Rakesh Jewellers (Malur)</option>
+<option value="Ramdev Jewellers (Sangareddy)">Ramdev Jewellers (Sangareddy)</option>
+<option value="Ramesh Gold">Ramesh Gold</option>
+<option value="Ramesh Jewellers">Ramesh Jewellers</option>
+<option value="Ramesh Jewellers (Malkajgiri)">Ramesh Jewellers (Malkajgiri)</option>
+<option value="Ramesh Jewellers (Tadepalligudem)">Ramesh Jewellers (Tadepalligudem)</option>
+<option value="Rameshwarji Roda Gems &amp; Jewellers">Rameshwarji Roda Gems &amp; Jewellers</option>
+<option value="Ramya Raghavi Jewellers">Ramya Raghavi Jewellers</option>
+<option value="Ratna Garba Jewellers">Ratna Garba Jewellers</option>
+<option value="Raveena (Valsad)">Raveena (Valsad)</option>
+<option value="Rayalaseema Bullion &amp; Commtrade Pvt.Ltd">Rayalaseema Bullion &amp; Commtrade Pvt.Ltd</option>
+<option value="Razzamahal Diamonds &amp; Gems">Razzamahal Diamonds &amp; Gems</option>
+<option value="Renuka Silver Merchents (Armoor)">Renuka Silver Merchents (Armoor)</option>
+<option value="Rishab Jewellers,Malkajgiri">Rishab Jewellers,Malkajgiri</option>
+<option value="Rohan Chandra Jewellers">Rohan Chandra Jewellers</option>
+<option value="Roopa Fine Jewels">Roopa Fine Jewels</option>
+<option value="Rupesh Bullion &amp; Jewellers">Rupesh Bullion &amp; Jewellers</option>
+<option value="S K Jewellers">S K Jewellers</option>
+<option value="S L N Swamy Jewellers">S L N Swamy Jewellers</option>
+<option value="S.K.R.Jewellers">S.K.R.Jewellers</option>
+<option value="S.L.N Swamy Jewellers">S.L.N Swamy Jewellers</option>
+<option value="S.R Jewellers (Gannavaram)">S.R Jewellers (Gannavaram)</option>
+<option value="SKR Jewellers (Kothagudem)">SKR Jewellers (Kothagudem)</option>
+<option value="Sahil Jain (Bharni Gems)">Sahil Jain (Bharni Gems)</option>
+<option value="Sai Jewellers">Sai Jewellers</option>
+<option value="Sai Santosh Jewellers (Suryapet)">Sai Santosh Jewellers (Suryapet)</option>
+<option value="Sai Sasi Jewellery &amp; Bullion">Sai Sasi Jewellery &amp; Bullion</option>
+<option value="Sai Seeta Jewellers">Sai Seeta Jewellers</option>
+<option value="Sanghvi Jewelers (Adoni)">Sanghvi Jewelers (Adoni)</option>
+<option value="Sanjay Jewellers">Sanjay Jewellers</option>
+<option value="Saradamba Jewellers">Saradamba Jewellers</option>
+<option value="Sarvani Jewellers">Sarvani Jewellers</option>
+<option value="Seervi Jewellers">Seervi Jewellers</option>
+<option value="Seeta Gold &amp; Diamond">Seeta Gold &amp; Diamond</option>
+<option value="Shahane Jewellers">Shahane Jewellers</option>
+<option value="Shanti Jewellers">Shanti Jewellers</option>
+<option value="Shanti Jewellers (Yelahanka)">Shanti Jewellers (Yelahanka)</option>
+<option value="Shiva Ramakrishna Jewellers (Siddipet)">Shiva Ramakrishna Jewellers (Siddipet)</option>
+<option value="Shivraj Laxmi Chand Jain Jewellers">Shivraj Laxmi Chand Jain Jewellers</option>
+<option value="Shree Dhanlaxmi Jewellers (Manikonda)">Shree Dhanlaxmi Jewellers (Manikonda)</option>
+<option value="Shree Ganapathi Jewellers (Banglore)">Shree Ganapathi Jewellers (Banglore)</option>
+<option value="Shree Ganapati Jewellers">Shree Ganapati Jewellers</option>
+<option value="Shree Ganesh Jewellers (Shamshabad)">Shree Ganesh Jewellers (Shamshabad)</option>
+<option value="Shree Jain Jewellers">Shree Jain Jewellers</option>
+<option value="Shree Laxmi Jewellers">Shree Laxmi Jewellers</option>
+<option value="Shree Nakoda Bhairav Gold &amp; Diamonds">Shree Nakoda Bhairav Gold &amp; Diamonds</option>
+<option value="Shree Rishab Jewellers (Kondapur)">Shree Rishab Jewellers (Kondapur)</option>
+<option value="Shree Srinivasa Jewellers (Lingampally)">Shree Srinivasa Jewellers (Lingampally)</option>
+<option value="Shri Sai Jewellers">Shri Sai Jewellers</option>
+<option value="Shri Swarna Jewellers (Bellary)">Shri Swarna Jewellers (Bellary)</option>
+<option value="Shubham Jewellers">Shubham Jewellers</option>
+<option value="Shubham Jewellers (Vanasthalipuram)">Shubham Jewellers (Vanasthalipuram)</option>
+<option value="Shubham Jewellers And Pearls">Shubham Jewellers And Pearls</option>
+<option value="Shubham Silver Palace">Shubham Silver Palace</option>
+<option value="Siri Pearls &amp; Jewellers (Hanamakonda)">Siri Pearls &amp; Jewellers (Hanamakonda)</option>
+<option value="Siri Pearls &amp; Jewellers (kukatpally)">Siri Pearls &amp; Jewellers (kukatpally)</option>
+<option value="Sirvi Jewellers (Suchitra)">Sirvi Jewellers (Suchitra)</option>
+<option value="Slava Diamond Jewellery">Slava Diamond Jewellery</option>
+<option value="Sohanlal Jewellers (Jeedimetla)">Sohanlal Jewellers (Jeedimetla)</option>
+<option value="Sonam Jain">Sonam Jain</option>
+<option value="SowGandhi Jewellers">SowGandhi Jewellers</option>
+<option value="Sree Aarti Jewellers">Sree Aarti Jewellers</option>
+<option value="Sree Chitranjali Gems &amp; Jewels">Sree Chitranjali Gems &amp; Jewels</option>
+<option value="Sree Durga Jewellers (Abids)">Sree Durga Jewellers (Abids)</option>
+<option value="Sree Gold">Sree Gold</option>
+<option value="Sree Gowri Shetty Jewellers">Sree Gowri Shetty Jewellers</option>
+<option value="Sree Lakshmi Amrutha Jewellers (Tuni)">Sree Lakshmi Amrutha Jewellers (Tuni)</option>
+<option value="Sree Ram Pullaiah Jewellers">Sree Ram Pullaiah Jewellers</option>
+<option value="Sree Sai Rajendra Jewellers.">Sree Sai Rajendra Jewellers.</option>
+<option value="Sree Satyanarayana Jewellers (Nallagandla)">Sree Satyanarayana Jewellers (Nallagandla)</option>
+<option value="Sree Vallam Kondu Jewellers">Sree Vallam Kondu Jewellers</option>
+<option value="Sreeya Jewellerys Gold and Diamonds">Sreeya Jewellerys Gold and Diamonds</option>
+<option value="Sri Baba Ramdev Jewellers (Nagaram)">Sri Baba Ramdev Jewellers (Nagaram)</option>
+<option value="Sri Balaji Jewellers (Bengaluru)">Sri Balaji Jewellers (Bengaluru)</option>
+<option value="Sri Balaji Jewellers (Hanamkonda)">Sri Balaji Jewellers (Hanamkonda)</option>
+<option value="Sri Balaji Jewellers (Jaggayyapet)">Sri Balaji Jewellers (Jaggayyapet)</option>
+<option value="Sri Balaji Jewellers (Uppal)">Sri Balaji Jewellers (Uppal)</option>
+<option value="Sri Balakrishna Jewellers (Kolar)">Sri Balakrishna Jewellers (Kolar)</option>
+<option value="Sri Bhakti Jewellers">Sri Bhakti Jewellers</option>
+<option value="Sri Bhavani Jewellers (Nacharam)">Sri Bhavani Jewellers (Nacharam)</option>
+<option value="Sri Bhavani Jewellers (Vanasthalipuram)">Sri Bhavani Jewellers (Vanasthalipuram)</option>
+<option value="Sri Bhavani Jewels &amp; Gems (I) Pvt. Ltd., (Himayth)">Sri Bhavani Jewels &amp; Gems (I) Pvt. Ltd., (Himayth)</option>
+<option value="Sri Bhavani Jewels &amp; Gems (I) Pvt. Ltd., (Nagole)">Sri Bhavani Jewels &amp; Gems (I) Pvt. Ltd., (Nagole)</option>
+<option value="Sri Bhavani Jewels &amp; Gems (I) Pvt. Ltd.,(Malakpet)">Sri Bhavani Jewels &amp; Gems (I) Pvt. Ltd.,(Malakpet)</option>
+<option value="Sri Chakra Jewellers">Sri Chakra Jewellers</option>
+<option value="Sri Dhanalakshmi Jewellers">Sri Dhanalakshmi Jewellers</option>
+<option value="Sri Durga Jewellers">Sri Durga Jewellers</option>
+<option value="Sri Ganesh Jewellers (Amberpet)">Sri Ganesh Jewellers (Amberpet)</option>
+<option value="Sri Ganesh Jewellers (Habsiguda)">Sri Ganesh Jewellers (Habsiguda)</option>
+<option value="Sri Ganesh Jewellers (Nacharam)">Sri Ganesh Jewellers (Nacharam)</option>
+<option value="Sri Ganesh Jewellers (Shapur Nagar)">Sri Ganesh Jewellers (Shapur Nagar)</option>
+<option value="Sri Girnar Shankeshwar Jewellers">Sri Girnar Shankeshwar Jewellers</option>
+<option value="Sri Guru Raghavendra Jewellers">Sri Guru Raghavendra Jewellers</option>
+<option value="Sri Jagdamba Jewellers">Sri Jagdamba Jewellers</option>
+<option value="Sri Jain Jewel Park">Sri Jain Jewel Park</option>
+<option value="Sri Jain Jewel Park (Hyderabad)">Sri Jain Jewel Park (Hyderabad)</option>
+<option value="Sri Kambagiri Swamy Jewellers">Sri Kambagiri Swamy Jewellers</option>
+<option value="Sri Kanaka Maha Laxmi Jewellers">Sri Kanaka Maha Laxmi Jewellers</option>
+<option value="Sri Keshariya Jewellers">Sri Keshariya Jewellers</option>
+<option value="Sri Krishna Jewellers. K (Chikkadpally)">Sri Krishna Jewellers. K (Chikkadpally)</option>
+<option value="Sri Lakshmi Balalji Jewellers (Suryapet)">Sri Lakshmi Balalji Jewellers (Suryapet)</option>
+<option value="Sri Lakshmi Jewellery Mart">Sri Lakshmi Jewellery Mart</option>
+<option value="Sri Lalitha Jewellers">Sri Lalitha Jewellers</option>
+<option value="Sri Lalitha Jewellers (Kakinada)">Sri Lalitha Jewellers (Kakinada)</option>
+<option value="Sri Laxmi Ganapathi Jewellers">Sri Laxmi Ganapathi Jewellers</option>
+<option value="Sri Laxmi Jewellery Mart">Sri Laxmi Jewellery Mart</option>
+<option value="Sri Madhuri Jewellers &amp; Silks">Sri Madhuri Jewellers &amp; Silks</option>
+<option value="Sri Mahaveer Jewellers (Kakinada)">Sri Mahaveer Jewellers (Kakinada)</option>
+<option value="Sri Mataji Jewellers (Beeramguda)">Sri Mataji Jewellers (Beeramguda)</option>
+<option value="Sri Nandini Jewellery (Vijayawada)">Sri Nandini Jewellery (Vijayawada)</option>
+<option value="Sri Nanditha Enterprises">Sri Nanditha Enterprises</option>
+<option value="Sri Nidhi Jewellers">Sri Nidhi Jewellers</option>
+<option value="Sri Padmavathi Jewellers">Sri Padmavathi Jewellers</option>
+<option value="Sri Panna Jewellers (Erragada)">Sri Panna Jewellers (Erragada)</option>
+<option value="Sri Panugonda Jewellers">Sri Panugonda Jewellers</option>
+<option value="Sri Pavan Jewellers (Tirupati)">Sri Pavan Jewellers (Tirupati)</option>
+<option value="Sri Raja Rani Jewellers">Sri Raja Rani Jewellers</option>
+<option value="Sri Rajamaruthi Jewellers">Sri Rajamaruthi Jewellers</option>
+<option value="Sri Ramadutha Jewellers">Sri Ramadutha Jewellers</option>
+<option value="Sri Ramdev Jewellers">Sri Ramdev Jewellers</option>
+<option value="Sri Sai Baba Jewellers">Sri Sai Baba Jewellers</option>
+<option value="Sri Sai Krupa Jewellers">Sri Sai Krupa Jewellers</option>
+<option value="Sri Sai Ram Jewellers">Sri Sai Ram Jewellers</option>
+<option value="Sri Santosh Jewellers">Sri Santosh Jewellers</option>
+<option value="Sri Satya Sai Jewellers (Bapatla)">Sri Satya Sai Jewellers (Bapatla)</option>
+<option value="Sri Srinivasa Jewellers (Kothapet)">Sri Srinivasa Jewellers (Kothapet)</option>
+<option value="Sri Srinivasa Jewellers (Medak)">Sri Srinivasa Jewellers (Medak)</option>
+<option value="Sri Subramanyeshwara Jewellery Shop">Sri Subramanyeshwara Jewellery Shop</option>
+<option value="Sri Surya Jewellers (Nellore)">Sri Surya Jewellers (Nellore)</option>
+<option value="Sri Swarna Jewellers (Tenali)">Sri Swarna Jewellers (Tenali)</option>
+<option value="Sri Trinadh Jewellery Mart">Sri Trinadh Jewellery Mart</option>
+<option value="Sri Trirunarayana Jewelery House">Sri Trirunarayana Jewelery House</option>
+<option value="Sri Vandana Jewellers (Bengaluru)">Sri Vandana Jewellers (Bengaluru)</option>
+<option value="Sri Vasavi Jewellers">Sri Vasavi Jewellers</option>
+<option value="Sri Vasavi Jewellers (Raichur)">Sri Vasavi Jewellers (Raichur)</option>
+<option value="Sri Venkata Ramana Jewellers (Kukatpally)">Sri Venkata Ramana Jewellers (Kukatpally)</option>
+<option value="Sri Venkata Ramana Jewellers (Mahbubnagar)">Sri Venkata Ramana Jewellers (Mahbubnagar)</option>
+<option value="Sri Venkatarama Jewellers">Sri Venkatarama Jewellers</option>
+<option value="Sri Venkataramana Jewellers (Shamshabad)">Sri Venkataramana Jewellers (Shamshabad)</option>
+<option value="Sri Venkateshwara Jewellery Mart">Sri Venkateshwara Jewellery Mart</option>
+<option value="Sri Venkateswara Jewellery (Khammam)">Sri Venkateswara Jewellery (Khammam)</option>
+<option value="Sri Venkatramana Jewellers (Shankarpalli)">Sri Venkatramana Jewellers (Shankarpalli)</option>
+<option value="Sri Vijaya Venkataramana Jewellery Mart">Sri Vijaya Venkataramana Jewellery Mart</option>
+<option value="Sri Vishnu Jewels (Bengaluru)">Sri Vishnu Jewels (Bengaluru)</option>
+<option value="Srikar Jewellers">Srikar Jewellers</option>
+<option value="Srinivasa Jewellers (Machilipatnam)">Srinivasa Jewellers (Machilipatnam)</option>
+<option value="Srinivasa Jewellers (Nalla Kunta)">Srinivasa Jewellers (Nalla Kunta)</option>
+<option value="Subhakar Yandrathi">Subhakar Yandrathi</option>
+<option value="Subhlaxmi Jewellers">Subhlaxmi Jewellers</option>
+<option value="Sullurpet Jewellers LLP">Sullurpet Jewellers LLP</option>
+<option value="Sunev Jewels And Gems Private Limited">Sunev Jewels And Gems Private Limited</option>
+<option value="Sunev Jewels and Gems Pvt. Ltd.(Hanamkonda)">Sunev Jewels and Gems Pvt. Ltd.(Hanamkonda)</option>
+<option value="Sunil Gold">Sunil Gold</option>
+<option value="Sunil Jewellers (Srikalahasti)">Sunil Jewellers (Srikalahasti)</option>
+<option value="Surya Laxmi Jewellers Pvt Ltd">Surya Laxmi Jewellers Pvt Ltd</option>
+<option value="Suvarna Jewellers">Suvarna Jewellers</option>
+<option value="Swapna Jewellers (Medchal)">Swapna Jewellers (Medchal)</option>
+<option value="Swarna Kavyam Gold and Diamonds">Swarna Kavyam Gold and Diamonds</option>
+<option value="Swarna Mahal Jewellers (Bengaluru)">Swarna Mahal Jewellers (Bengaluru)</option>
+<option value="Swarna Sri Jewellery (Wyra,Khammam)">Swarna Sri Jewellery (Wyra,Khammam)</option>
+<option value="Swarnkala Jewellers (Nanded)">Swarnkala Jewellers (Nanded)</option>
+<option value="Syed Sajid (Bharni Gems)">Syed Sajid (Bharni Gems)</option>
+<option value="Tanguturi Sadasivayya Jewellers">Tanguturi Sadasivayya Jewellers</option>
+<option value="Taruni Shree Jewellers">Taruni Shree Jewellers</option>
+<option value="Tejmal Ji Mehta">Tejmal Ji Mehta</option>
+<option value="The Jetty Jewellers">The Jetty Jewellers</option>
+<option value="Thumula Rishika">Thumula Rishika</option>
+<option value="Tulasi Jewellers (Boduppal)">Tulasi Jewellers (Boduppal)</option>
+<option value="Tulsi Jewellers">Tulsi Jewellers</option>
+<option value="Tulsi Jewellers (Hoskote)">Tulsi Jewellers (Hoskote)</option>
+<option value="Udathu Naga Venkata Suhas">Udathu Naga Venkata Suhas</option>
+<option value="Vaibhav Jewellers (Tadepalligudem)">Vaibhav Jewellers (Tadepalligudem)</option>
+<option value="Vaishnavi Jewellers (Banjara Hills)">Vaishnavi Jewellers (Banjara Hills)</option>
+<option value="Vaishnavi Jewellers (Nallakunta)">Vaishnavi Jewellers (Nallakunta)</option>
+<option value="Vaishnavi Jewellers (Ramanthapur)">Vaishnavi Jewellers (Ramanthapur)</option>
+<option value="Vanitha Jewellers, Bengaluru">Vanitha Jewellers, Bengaluru</option>
+<option value="Vardhaman Jewellers (Miyapur)">Vardhaman Jewellers (Miyapur)</option>
+<option value="Vardhaman Jewellers (Sanath Nagar)">Vardhaman Jewellers (Sanath Nagar)</option>
+<option value="Vardhaman Jewels (Bengaluru)">Vardhaman Jewels (Bengaluru)</option>
+<option value="Vasavi Gems &amp; Jewellers (Ramanthapur)">Vasavi Gems &amp; Jewellers (Ramanthapur)</option>
+<option value="Vasavi Jewellers (Mahbubnagar)">Vasavi Jewellers (Mahbubnagar)</option>
+<option value="Vasavi Jewellery Mart (Tadepalligudem)">Vasavi Jewellery Mart (Tadepalligudem)</option>
+<option value="Vemula Sarweswara Rao">Vemula Sarweswara Rao</option>
+<option value="Venkat Rama Jewellers">Venkat Rama Jewellers</option>
+<option value="Venus Jewellers Private Limited (Chikkadpally)">Venus Jewellers Private Limited (Chikkadpally)</option>
+<option value="Venus Jewellers Private Limited (Hanumkonda)">Venus Jewellers Private Limited (Hanumkonda)</option>
+<option value="Vibha Gold &amp; Diamonds (Guntur)">Vibha Gold &amp; Diamonds (Guntur)</option>
+<option value="Vibha Jewellers">Vibha Jewellers</option>
+<option value="Vijaya Lakshmi Jewellers">Vijaya Lakshmi Jewellers</option>
+<option value="Vijayalakshmi Gold Palace (Bengaluru)">Vijayalakshmi Gold Palace (Bengaluru)</option>
+<option value="Vikas Jewellers">Vikas Jewellers</option>
+<option value="Vimal Jain Jewellers">Vimal Jain Jewellers</option>
+<option value="Vinayaka Jewellers">Vinayaka Jewellers</option>
+<option value="Vishal Gold &amp; Silver">Vishal Gold &amp; Silver</option>
+<option value="Vishal Jain">Vishal Jain</option>
+<option value="Vishal Jewellers (Malkajgiri)">Vishal Jewellers (Malkajgiri)</option>
+<option value="Vishwakarma Jewellery (Bengaluru)">Vishwakarma Jewellery (Bengaluru)</option>
+<option value="Viswash Jewellers (Malkajgiri)">Viswash Jewellers (Malkajgiri)</option>
+<option value="Vyshnavi Jewellers">Vyshnavi Jewellers</option>
+<option value="Zevar By Sohail Jewellers">Zevar By Sohail Jewellers</option>
+          </select>
         </div>
         <div class="fl">
           <div class="fg half"><label class="flbl">Contact</label><input class="inp" id="f_contact" placeholder="+91…"></div>
@@ -703,12 +1175,69 @@ body{font-family:'DM Mono',monospace;color:var(--txt);background:var(--bg);heigh
           <label class="flbl">Vendor / Karigar *
             <span style="color:var(--gold-d);cursor:pointer;margin-left:8px;font-size:9px" onclick="openAddVendor()">[+ Add New]</span>
           </label>
-          <div class="srch-wrap">
-            <input class="srch-inp" id="f_vendor_search" autocomplete="off" placeholder="Search vendor…" oninput="srchFilter('vendor')" onfocus="srchOpen('vendor')" onkeydown="srchKey(event,'vendor')">
-            <button class="srch-clear" id="f_vendor_clear" onclick="srchClear('vendor')">×</button>
-            <div class="srch-list" id="srch_vendor_list"></div>
-          </div>
-          <input type="hidden" id="f_vendor">
+          <select class="sel inp" id="f_vendor" onchange="onVendorSelect()" style="width:100%">
+<option value="">— Select Vendor —</option>
+<option value="Aaradhyam Fine Jewels">Aaradhyam Fine Jewels</option>
+<option value="Aksaja Jewellery">Aksaja Jewellery</option>
+<option value="Ample Building Products">Ample Building Products</option>
+<option value="Anjali Labtech Limited">Anjali Labtech Limited</option>
+<option value="Asmaye Assaying &amp; Hallmarking Centre">Asmaye Assaying &amp; Hallmarking Centre</option>
+<option value="Asmi Jewellery India Pvt. Ltd.,">Asmi Jewellery India Pvt. Ltd.,</option>
+<option value="Avika Tradecom LLP">Avika Tradecom LLP</option>
+<option value="B.V.C Logidtics (Tamilnadu)">B.V.C Logidtics (Tamilnadu)</option>
+<option value="B.V.C. Logistics (Hyd)">B.V.C. Logistics (Hyd)</option>
+<option value="B.V.C. Logistics Pvt. Ltd. (Mumbai)">B.V.C. Logistics Pvt. Ltd. (Mumbai)</option>
+<option value="Banas Jewels LLP">Banas Jewels LLP</option>
+<option value="Closet Queen">Closet Queen</option>
+<option value="Consciouscarats Private Ltd">Consciouscarats Private Ltd</option>
+<option value="Eliva Jewels LLP">Eliva Jewels LLP</option>
+<option value="Gayatri Corporation">Gayatri Corporation</option>
+<option value="H.K.Jewels Pvt. Ltd.">H.K.Jewels Pvt. Ltd.</option>
+<option value="HLV Limited (Hotel Leela Mumbai)">HLV Limited (Hotel Leela Mumbai)</option>
+<option value="Harsh Jain">Harsh Jain</option>
+<option value="Harsha Cars Pvt. Ltd.">Harsha Cars Pvt. Ltd.</option>
+<option value="Indigo Jewellery">Indigo Jewellery</option>
+<option value="Info Edge (India) Ltd.">Info Edge (India) Ltd.</option>
+<option value="Int Care Intl Ltd">Int Care Intl Ltd</option>
+<option value="International Gemological Institute (Hyderabad)">International Gemological Institute (Hyderabad)</option>
+<option value="Jewel House">Jewel House</option>
+<option value="K U Hallmarking Centre">K U Hallmarking Centre</option>
+<option value="KP Sanghvi Jewels Pvt. Ltd.">KP Sanghvi Jewels Pvt. Ltd.</option>
+<option value="Kama Jewelry Private Limited">Kama Jewelry Private Limited</option>
+<option value="Kantilal Chhotalal">Kantilal Chhotalal</option>
+<option value="Kira Diam LLP">Kira Diam LLP</option>
+<option value="Krishna Diamonds">Krishna Diamonds</option>
+<option value="Laxmi Dia Jewels Pvt. Ltd.">Laxmi Dia Jewels Pvt. Ltd.</option>
+<option value="Laxmi Imperial Private Limited">Laxmi Imperial Private Limited</option>
+<option value="Lili Star Jewellery">Lili Star Jewellery</option>
+<option value="Madhushree Novelties">Madhushree Novelties</option>
+<option value="Mahalakshmi Hallmarking Centre ( Bengaluru)">Mahalakshmi Hallmarking Centre ( Bengaluru)</option>
+<option value="Manju Jiji">Manju Jiji</option>
+<option value="Manoj Ornaments Private Limited">Manoj Ornaments Private Limited</option>
+<option value="Midamas Jewels  LLP (Surat)">Midamas Jewels  LLP (Surat)</option>
+<option value="Midamas Jewels LLP">Midamas Jewels LLP</option>
+<option value="Midaz Goldiaque (Midaz Homecraft)">Midaz Goldiaque (Midaz Homecraft)</option>
+<option value="NCH Services Private Limited">NCH Services Private Limited</option>
+<option value="NCH Services Private Limited (3916873)">NCH Services Private Limited (3916873)</option>
+<option value="Neo Diamonds">Neo Diamonds</option>
+<option value="New Akshardham Hallmark Centre">New Akshardham Hallmark Centre</option>
+<option value="Nuance Jewel">Nuance Jewel</option>
+<option value="OM Jewels">OM Jewels</option>
+<option value="Priority Jewels Pvt Ltd">Priority Jewels Pvt Ltd</option>
+<option value="Prism Enterprises Pvt. Ltd.">Prism Enterprises Pvt. Ltd.</option>
+<option value="Romil Jewellery Private Limited">Romil Jewellery Private Limited</option>
+<option value="Rose Diamonds">Rose Diamonds</option>
+<option value="Sri Hyderabad Hallmarking Centre">Sri Hyderabad Hallmarking Centre</option>
+<option value="Supergems Jewellery Mfg.Pvt.Ltd">Supergems Jewellery Mfg.Pvt.Ltd</option>
+<option value="T Nagar Hallmark Centre">T Nagar Hallmark Centre</option>
+<option value="TJ Impex Fine Jewels LLP">TJ Impex Fine Jewels LLP</option>
+<option value="The Professional Courier C/O.Roja Enterprises">The Professional Courier C/O.Roja Enterprises</option>
+<option value="The Professional Couriers">The Professional Couriers</option>
+<option value="Times Solutions LLP, Mumbai">Times Solutions LLP, Mumbai</option>
+<option value="Uma Ornaments">Uma Ornaments</option>
+<option value="Uni Design Elite Jewellery Private Limited">Uni Design Elite Jewellery Private Limited</option>
+<option value="Variety Hallmark (400740)">Variety Hallmark (400740)</option>
+          </select>
         </div>
         <div class="fg"><label class="flbl">Item Category</label>
           <select class="sel inp" id="f_category">
@@ -3015,46 +3544,31 @@ document.addEventListener('scroll', function() {
 }, true);
 
 function populateCustomerDropdown(selectedName) {
-  // Reset the combobox
-  _srchState.customer.items = _srchItems('customer');
-  _srchState.customer.selected = selectedName || '';
-  const inp = document.getElementById('f_name_search');
+  var inp = document.getElementById('f_name');
   if (!inp) return;
   inp.value = selectedName || '';
-  inp.classList.toggle('has-val', !!selectedName);
-  document.getElementById('f_name').value = selectedName || '';
-  document.getElementById('f_name_clear').style.display = selectedName ? 'block' : 'none';
   if (selectedName) onCustomerSelect();
 }
 
 function populateVendorDropdown(selectedName) {
-  const vendorFg = document.getElementById('vendorFieldGroup');
-  const hideVendor = currentRole === 'salesman' || currentRole === 'vendor' || currentRole === 'accounts';
+  var vendorFg = document.getElementById('vendorFieldGroup');
+  var hideVendor = currentRole === 'salesman' || currentRole === 'vendor' || currentRole === 'accounts';
   if (vendorFg) vendorFg.style.display = hideVendor ? 'none' : '';
   if (hideVendor) return;
-  _srchState.vendor.items = _srchItems('vendor');
-  _srchState.vendor.selected = selectedName || '';
-  const inp = document.getElementById('f_vendor_search');
+  var inp = document.getElementById('f_vendor');
   if (!inp) return;
   inp.value = selectedName || '';
-  inp.classList.toggle('has-val', !!selectedName);
-  document.getElementById('f_vendor').value = selectedName || '';
-  document.getElementById('f_vendor_clear').style.display = selectedName ? 'block' : 'none';
   if (selectedName) onVendorSelect();
 }
 
+
+
 function onCustomerSelect(){
-  const name = document.getElementById('f_name').value;
-  // look up in standaloneCustomers first, then orders
-  const c = standaloneCustomers.find(x=>x.name===name)
-    || orders.find(o=>o.name===name);
-  if(c){
-    document.getElementById('f_contact').value = c.contact||'';
-    document.getElementById('f_loc').value = c.loc||'';
-  } else {
-    document.getElementById('f_contact').value = '';
-    document.getElementById('f_loc').value = '';
-  }
+  var name = document.getElementById('f_name').value;
+  if(!name){document.getElementById('f_contact').value='';document.getElementById('f_loc').value='';return;}
+  var c = (standaloneCustomers.length?standaloneCustomers:[]).find(function(x){return x.name===name;})
+       || orders.find(function(o){return o.name===name;});
+  if(c){document.getElementById('f_contact').value=c.contact||'';document.getElementById('f_loc').value=c.loc||'';}
 }
 
 function onVendorSelect(){
@@ -3161,10 +3675,6 @@ function clearForm(){
   document.getElementById('f_loc').style.color='var(--mid)';
   document.getElementById('f_name').value='';
   document.getElementById('f_vendor').value='';
-  // Reset search inputs
-  ['f_name_search','f_vendor_search'].forEach(id=>{const el=document.getElementById(id);if(el){el.value='';el.classList.remove('has-val');}});
-  ['f_name_clear','f_vendor_clear'].forEach(id=>{const el=document.getElementById(id);if(el)el.style.display='none';});
-  document.querySelectorAll('.srch-list').forEach(el=>el.classList.remove('open'));
   document.getElementById('f_status').value='Order Placed';
   document.getElementById('f_category').value='';
 }
