@@ -27,8 +27,8 @@
   --safe-bottom: env(safe-area-inset-bottom, 0px);
 }
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-html,body{height:100%;overflow:hidden;background:var(--bg)}
-body{font-family:'DM Mono',monospace;color:var(--txt);background:var(--bg);height:100%;overflow:hidden}
+html{height:100%;height:100dvh}
+body{font-family:'DM Mono',monospace;color:var(--txt);background:var(--bg);height:100%;height:100dvh;overflow:hidden;margin:0;padding:0}
 
 /* ── HEADER ── */
 .hdr{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;background:var(--s1);border-bottom:1px solid var(--b);flex-shrink:0;gap:10px}
@@ -41,7 +41,7 @@ body{font-family:'DM Mono',monospace;color:var(--txt);background:var(--bg);heigh
 .btn-gold:hover{background:var(--gold-l)}
 
 /* ── BOTTOM NAV ── */
-.bot-nav{position:fixed;bottom:0;left:0;right:0;display:flex;background:var(--s1);border-top:1px solid var(--b);z-index:200;padding-bottom:env(safe-area-inset-bottom,0px)}
+.bot-nav{position:fixed;bottom:0;left:0;right:0;width:100%;display:flex;background:var(--s1);border-top:1px solid var(--b);z-index:9999;padding-bottom:env(safe-area-inset-bottom,0px);box-shadow:0 -2px 12px rgba(0,0,0,.4)}
 .bnav-item{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:10px 4px;cursor:pointer;transition:all .2s;background:none;border:none;font-family:'DM Mono',monospace;border-top:2px solid transparent}
 .bnav-item .ico{font-size:18px;transition:transform .2s}
 .bnav-item .lbl{font-size:7px;letter-spacing:1.5px;text-transform:uppercase;color:var(--dim);transition:color .2s}
@@ -50,12 +50,12 @@ body{font-family:'DM Mono',monospace;color:var(--txt);background:var(--bg);heigh
 .bnav-item.active .lbl{color:var(--gold)}
 
 /* ── SCROLL AREA ── */
-.scroll{flex:1;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;padding-bottom:calc(68px + env(safe-area-inset-bottom,0px))}
+.scroll{flex:1;min-height:0;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch}
 ::-webkit-scrollbar{width:3px}
 ::-webkit-scrollbar-thumb{background:var(--b)}
 
 /* ── VIEWS ── */
-.view{display:none;padding:14px 14px 20px}
+.view{display:none;padding:14px 14px 90px}
 .view.active{display:block}
 
 /* ── STATS GRID ── */
@@ -478,7 +478,7 @@ body{font-family:'DM Mono',monospace;color:var(--txt);background:var(--bg);heigh
 </div>
 
 <!-- APP SHELL — hidden until authenticated -->
-<div id="appShell" style="display:none;flex-direction:column;height:100vh;height:100dvh;overflow:hidden">
+<div id="appShell" style="display:none;flex-direction:column;position:fixed;inset:0;overflow:hidden">
 
 <!-- HEADER -->
 <div class="hdr">
