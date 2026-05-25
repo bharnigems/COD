@@ -1692,8 +1692,8 @@ async function connectFirebase(cfg) {
         try { applyRoleUI(); } catch(e) { console.warn(e); }
         try { startListeners(); } catch(e) { console.warn(e); }
         try { renderDash(); } catch(e) { console.warn(e); }
-        // Decrypt search data after login
-        initSearchData().catch(function(e){ console.warn('initSearchData:', e); });
+        // Decrypt search data — await so dropdowns are ready before user can open form
+        try { await initSearchData(); } catch(e) { console.warn('initSearchData:', e); }
         if (isAdmin()) {
           try {
             await seedMasterDataIfNeeded();
@@ -2882,7 +2882,7 @@ function _srchClosePortal() {
 function _srchItems(type) {
   if (type === 'customer') {
     // Use decrypted names (loaded after login) + Firestore list + past orders
-    var baseNames = _decryptedCustomerNames || [];
+    var baseNames = _decryptedCustomerNames || (standaloneCustomers.length ? standaloneCustomers.map(function(c){return c.name;}) : []);
     var names = new Set([
       ...baseNames,
       ...standaloneCustomers.map(function(c){ return c.name; }),
@@ -2892,7 +2892,7 @@ function _srchItems(type) {
       return { name:n, sub:'' };
     });
   } else {
-    var baseVNames = _decryptedVendorNames || [];
+    var baseVNames = _decryptedVendorNames || (standaloneVendors.length ? standaloneVendors.map(function(v){return v.name;}) : []);
     var vendList = standaloneVendors.length ? standaloneVendors : [];
     var names = new Set([
       ...baseVNames,
@@ -3073,8 +3073,13 @@ function onVendorSelect(){
   // vendor location is stored in standaloneVendors but not surfaced in order form — nothing to autofill here yet
 }
 
-function openAdd(){
+async function openAdd(){
   if(currentRole === 'accounts' || currentRole === 'vendor'){ showToast('View only access'); return; }
+  // If search data not yet decrypted, wait for it
+  if (!_decryptedCustomerNames || !_decryptedVendorNames) {
+    showToast('Loading search data…');
+    try { await initSearchData(); } catch(e) {}
+  }
   editId=null; curImgs=[]; curOrderType='normal'; curPieceImgs={};
   document.getElementById('addModalTitle').textContent='New Order';
   clearForm();
@@ -3104,7 +3109,10 @@ function openAdd(){
   populateVendorDropdown();
 }
 
-function openEdit(id){
+async function openEdit(id){
+  if (!_decryptedCustomerNames || !_decryptedVendorNames) {
+    try { await initSearchData(); } catch(e) {}
+  }
   const o=orders.find(x=>x.id===id);
   if(!o) return;
   editId=id; curImgs=[...(o.images||[])]; curOrderType=o.orderType||'normal';
