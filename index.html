@@ -525,7 +525,7 @@ body{font-family:'DM Mono',monospace;color:var(--txt);background:var(--bg);heigh
       <div class="export-item" onclick="exportExcel();closeExportMenu()" id="exportExcelItem"><span class="ei">📊</span>Excel (All Sheets)</div>
       <div style="border-top:1px solid var(--b);margin:4px 0"></div>
       <div class="export-item" onclick="closeExportMenu();printJobCard('vendor')" id="exportVendorCard"><span class="ei">🏭</span>Job Card — Vendor</div>
-      <div class="export-item" onclick="closeExportMenu();printJobCard('customer')"><span class="ei">👤</span>Job Card — Customer</div>
+      <div class="export-item" onclick="closeExportMenu();printJobCard('customer')" id="exportCustomerCard"><span class="ei">👤</span>Job Card — Customer</div>
       <div style="border-top:1px solid var(--b);margin:4px 0"></div>
       <div class="export-item" onclick="closeExportMenu();showFbConfig()"><span class="ei">🔥</span>Firebase Settings</div>
       <div class="export-item" onclick="closeExportMenu();uploadAllToFirestore()"><span class="ei">☁</span>Push all data to Cloud</div>
@@ -1178,19 +1178,21 @@ function applyRoleUI() {
 
   if(r === 'salesman'){
     hide('navVendors');
-    hide('exportVendorCard');
+    hide('exportVendorCard');   // salesman cannot print vendor job card
+    show('exportCustomerCard'); // salesman CAN print customer job card
   }
   else if(r === 'vendor'){
     hide('navCustomers');
     hide('navVendors');
     hide('navKarigar');
-    hide('exportVendorCard');
+    show('exportVendorCard');   // vendor CAN print vendor job card
+    hide('exportCustomerCard'); // vendor cannot see customer job card
     hide('btnAddOrder');
     hide('exportBtn');
   }
   else if(r === 'accounts'){
     hide('menuManageUsers');
-    hide('btnAddOrder');
+    // accounts can add/edit orders but cannot delete
   }
 
   // Excel + JSON: admin only
@@ -2979,7 +2981,7 @@ function onVendorSelect(){
 }
 
 function openAdd(){
-  if(currentRole === 'accounts' || currentRole === 'vendor'){ showToast('View only access'); return; }
+  if(currentRole === 'vendor'){ showToast('View only access'); return; }
   editId=null; curImgs=[]; curOrderType='normal'; curPieceImgs={};
   document.getElementById('addModalTitle').textContent='New Order';
   clearForm();
@@ -3337,6 +3339,13 @@ function deleteFollowUp(i){
 // JOB CARD PDF (print)
 // ══════════════════════════════════════════════
 function printJobCard(type, id){
+  // Role guards
+  if(type === 'vendor' && currentRole === 'salesman'){
+    showToast('Access denied'); return;
+  }
+  if(type === 'customer' && currentRole === 'vendor'){
+    showToast('Access denied'); return;
+  }
   const oid = id || viewId;
   const o = orders.find(x=>x.id===oid);
   if(!o){ showToast('Open an order first'); return; }
