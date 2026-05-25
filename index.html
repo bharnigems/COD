@@ -1512,79 +1512,53 @@ function initFirebase() {
 
 async function connectFirebase(cfg) {
   if (typeof firebase === 'undefined') {
-    setSyncStatus('error', 'SDK error');
-    document.getElementById('loginErr').textContent = 'Firebase failed to load. Check internet and reload.';
+    var cs = document.getElementById('loginConnStatus');
+    if (cs) cs.textContent = 'Firebase SDK not loaded — reload page';
     return;
   }
   try {
-    // Only initialise once — reuse existing app if already initialised
-    if (!firebase.apps.length) {
-      firebase.initializeApp(cfg);
-    }
-    db   = firebase.firestore();
+    if (!firebase.apps.length) firebase.initializeApp(cfg);
+    db = firebase.firestore();
     auth = firebase.auth();
-    db.enablePersistence().catch(() => {});
     fbReady = true;
-    setSyncStatus('syncing', 'connecting…');
-
-    // Signal login screen that Firebase auth is ready
-    const cs = document.getElementById('loginConnStatus');
-    if (cs) cs.textContent = '✓ Connected — ready to sign in';
-
-    auth.onAuthStateChanged(async user => {
+    var cs = document.getElementById('loginConnStatus');
+    if (cs) cs.textContent = '✓ Connected — sign in';
+    auth.onAuthStateChanged(async function(user) {
       if (user) {
         currentUser = user;
-        let usersList = [];
+        var usersList = [];
         try {
-          const snap = await db.collection('meta').doc('users').get();
+          var snap = await db.collection('meta').doc('users').get();
           usersList = snap.exists ? (snap.data().list || []) : [];
-          const record = usersList.find(u => u.uid === user.uid || u.email === user.email);
+          var record = usersList.find(function(u){ return u.uid === user.uid || u.email === user.email; });
           if (!snap.exists || usersList.length === 0) {
-            currentRole = 'admin';
-            currentVendorName = null;
+            currentRole = 'admin'; currentVendorName = null;
             usersList = [{ uid: user.uid, email: user.email, name: user.displayName || 'Admin', role: 'admin' }];
             await db.collection('meta').doc('users').set({ list: usersList });
           } else {
-            currentRole = record?.role || 'salesman';
-            currentVendorName = record?.vendorName || null;
+            currentRole = record ? record.role : 'salesman';
+            currentVendorName = record ? (record.vendorName || null) : null;
           }
-        } catch(e) {
-          console.warn('Role lookup failed:', e);
-          currentRole = 'admin'; // default to admin so app still opens
-        }
+        } catch(e) { console.warn('Role lookup failed:', e); currentRole = 'admin'; }
         window._cachedUsers = usersList;
-
-        try {
-          document.getElementById('loginScreen').style.display = 'none';
-          document.getElementById('appShell').style.display = 'flex';
-          document.querySelector('.login-btn').textContent = 'Sign In';
-          document.getElementById('loginErr').textContent = '';
-          localStorage.removeItem('bg_orders_v2');
-          Object.keys(localStorage).filter(k=>k.startsWith('bg_imgs_')).forEach(k=>localStorage.removeItem(k));
-          orders = [];
-          applyRoleUI();
-          startListeners();
-          renderDash();
-          if (isAdmin()) seedMasterDataIfNeeded().then(() => {
-            // After seeding, re-fetch vendors/customers in case snapshot missed it
-            db.collection('meta').doc('vendors').get().then(s => {
-              if (s.exists) { standaloneVendors = s.data().list || []; }
-            });
-            db.collection('meta').doc('customers').get().then(s => {
-              if (s.exists) { standaloneCustomers = s.data().list || []; }
-            });
-          });
-          console.error('App launch error:', appErr);
-          // Show app anyway, show error as toast
-          document.getElementById('loginScreen').style.display = 'none';
-          document.getElementById('appShell').style.display = 'flex';
-          setTimeout(() => showToast('App error: ' + appErr.message), 500);
+        document.getElementById('loginScreen').style.display = 'none';
+        document.getElementById('appShell').style.display = 'flex';
+        document.querySelector('.login-btn').textContent = 'Sign In';
+        document.getElementById('loginErr').textContent = '';
+        localStorage.removeItem('bg_orders_v2');
+        orders = [];
+        try { applyRoleUI(); } catch(e) { console.warn(e); }
+        try { startListeners(); } catch(e) { console.warn(e); }
+        try { renderDash(); } catch(e) { console.warn(e); }
+        if (isAdmin()) {
+          try {
+            await seedMasterDataIfNeeded();
+            db.collection('meta').doc('vendors').get().then(function(s){ if(s.exists) standaloneVendors=s.data().list||[]; });
+            db.collection('meta').doc('customers').get().then(function(s){ if(s.exists) standaloneCustomers=s.data().list||[]; });
+          } catch(e) { console.warn('Seed error:', e); }
         }
       } else {
-        currentUser = null;
-        currentRole = null;
-        currentVendorName = null;
-        window._cachedUsers = [];
+        currentUser = null; currentRole = null; currentVendorName = null; window._cachedUsers = [];
         if (unsubOrders)    { try { unsubOrders();    } catch(e){} unsubOrders    = null; }
         if (unsubVendors)   { try { unsubVendors();   } catch(e){} unsubVendors   = null; }
         if (unsubCustomers) { try { unsubCustomers(); } catch(e){} unsubCustomers = null; }
@@ -1595,8 +1569,8 @@ async function connectFirebase(cfg) {
     });
   } catch(e) {
     console.error('Firebase connect error:', e);
-    setSyncStatus('error', 'error');
-    document.getElementById('loginErr').textContent = 'Firebase error: ' + e.message;
+    var cs2 = document.getElementById('loginConnStatus');
+    if (cs2) cs2.textContent = 'Firebase error: ' + e.message;
   }
 }
 
