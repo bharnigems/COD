@@ -1808,8 +1808,17 @@ function showFbConfig() {
 // ── STARTUP ──
 function appStart() {
   orders              = JSON.parse(localStorage.getItem('bg_orders_v2') || '[]');
-  standaloneVendors   = [];
-  standaloneCustomers = [];
+  // Pre-load customers + vendors from localStorage cache immediately
+  // Dropdowns work instantly on first open — onSnapshot refreshes in background
+  try {
+    var _cachedC = localStorage.getItem('bg_customers');
+    var _cachedV = localStorage.getItem('bg_vendors');
+    standaloneCustomers = _cachedC ? JSON.parse(_cachedC) : [];
+    standaloneVendors   = _cachedV ? JSON.parse(_cachedV) : [];
+  } catch(e) {
+    standaloneCustomers = [];
+    standaloneVendors   = [];
+  }
   orders.forEach(restoreImages);
   const hasFbConfig = !!localStorage.getItem('bg_fb_config');
   if (!orders.length && !hasFbConfig) seedDemoData();
@@ -3017,7 +3026,7 @@ function onVendorSelect(){
   // vendor location is stored in standaloneVendors but not surfaced in order form — nothing to autofill here yet
 }
 
-async function openAdd(){
+function openAdd(){
   if(currentRole === 'accounts' || currentRole === 'vendor'){ showToast('View only access'); return; }
   editId=null; curImgs=[]; curOrderType='normal'; curPieceImgs={};
   document.getElementById('addModalTitle').textContent='New Order';
@@ -3043,55 +3052,18 @@ async function openAdd(){
   renderPieces([{styleNo:'',gwt:'',dwt:'',size:'',purity:'',diaType:'',img:''}]);
   renderImgPrev();
   document.getElementById('addModal').classList.add('open');
-  // Show loading placeholder in customer field
-  var cInp = document.getElementById('f_name_search');
-  if (cInp) cInp.placeholder = 'Loading customers…';
-  // Always fetch fresh from Firestore — guarantees data regardless of timing
-  try {
-    if (fbReady) {
-      var fetches = [];
-      fetches.push(
-        db.collection('meta').doc('customers').get().then(function(cs) {
-          if (cs.exists && cs.data().list && cs.data().list.length) {
-            standaloneCustomers = cs.data().list;
-          }
-        })
-      );
-      fetches.push(
-        db.collection('meta').doc('vendors').get().then(function(vs) {
-          if (vs.exists && vs.data().list && vs.data().list.length) {
-            standaloneVendors = vs.data().list;
-          }
-        })
-      );
-      await Promise.all(fetches);
-    }
-  } catch(e) { console.warn('Customer/vendor load:', e.message); }
-  // Restore placeholder and populate
-  if (cInp) cInp.placeholder = 'Search customer…';
+  // Data pre-loaded from localStorage at appStart — instant, no fetch needed
   populateCustomerDropdown();
   populateVendorDropdown();
 }
 
-async function openEdit(id){
+function openEdit(id){
   const o=orders.find(x=>x.id===id);
   if(!o) return;
   editId=id; curImgs=[...(o.images||[])]; curOrderType=o.orderType||'normal';
   curPieceImgs={};
   (o.pieces||[]).forEach((p,i)=>{ if(p.img) curPieceImgs[i]=p.img; });
-  // Always fetch fresh from Firestore
-  try {
-    if (fbReady) {
-      var ef = [];
-      ef.push(db.collection('meta').doc('customers').get().then(function(cs){
-        if(cs.exists && cs.data().list && cs.data().list.length) standaloneCustomers=cs.data().list;
-      }));
-      ef.push(db.collection('meta').doc('vendors').get().then(function(vs){
-        if(vs.exists && vs.data().list && vs.data().list.length) standaloneVendors=vs.data().list;
-      }));
-      await Promise.all(ef);
-    }
-  } catch(e) { console.warn('Customer/vendor load:', e.message); }
+  // Data pre-loaded from localStorage at appStart
   document.getElementById('addModalTitle').textContent='Edit — '+id;
   document.getElementById('orderTypeSection').style.display='none';
   document.getElementById('newDesignSection').style.display='none';
