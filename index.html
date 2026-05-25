@@ -1038,11 +1038,61 @@ body{font-family:'DM Mono',monospace;color:var(--txt);background:var(--bg);heigh
 <div class="toast" id="toast"></div>
 
 <!-- Firebase SDKs inlined — no CDN dependency -->
-<!-- Firebase SDKs v9.23 via CDN -->
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"
-  onerror="document.getElementById('loginConnStatus').textContent='✗ Could not load Firebase — check internet and reload'"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<!-- Firebase SDKs — multi-CDN loader with fallback -->
+<script>
+(function() {
+  var cdns = [
+    'https://www.gstatic.com/firebasejs/9.23.0/',
+    'https://cdn.jsdelivr.net/npm/firebase@9.23.0/compat/',
+    'https://unpkg.com/firebase@9.23.0/compat/'
+  ];
+  var files = ['app', 'auth', 'firestore'];
+  var cdnIdx = 0;
+
+  function setStatus(msg) {
+    var el = document.getElementById('loginConnStatus');
+    if (el) el.textContent = msg;
+  }
+
+  function loadScript(src, onload, onerror) {
+    var s = document.createElement('script');
+    s.src = src;
+    s.onload = onload;
+    s.onerror = onerror;
+    document.head.appendChild(s);
+  }
+
+  function tryLoadAll(cdn, fileIdx, onAllLoaded, onFail) {
+    if (fileIdx >= files.length) { onAllLoaded(); return; }
+    var src = cdn + 'firebase-' + files[fileIdx] + '-compat.js';
+    loadScript(src, function() {
+      tryLoadAll(cdn, fileIdx + 1, onAllLoaded, onFail);
+    }, onFail);
+  }
+
+  function tryNextCDN() {
+    if (cdnIdx >= cdns.length) {
+      setStatus('✗ Firebase failed to load from all CDNs. Check internet and reload.');
+      return;
+    }
+    var cdn = cdns[cdnIdx++];
+    setStatus('⏳ Loading Firebase…');
+    tryLoadAll(cdn, 0, function() {
+      setStatus('✓ Connected — ready to sign in');
+      if (typeof appStart === 'function') appStart();
+    }, function() {
+      tryNextCDN();
+    });
+  }
+
+  // Defer until DOM ready
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', tryNextCDN);
+  } else {
+    tryNextCDN();
+  }
+})();
+</script>
 
 <script>
 // Global error catcher — shows any crash as a visible message
@@ -3642,7 +3692,7 @@ function renderAll(){
 }
 
 // INIT
-appStart();
+// appStart called by Firebase loader
 </script>
 </body>
 </html>
