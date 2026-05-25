@@ -28,7 +28,7 @@
 }
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{height:100%;overflow:hidden;background:var(--bg)}
-body{font-family:'DM Mono',monospace;color:var(--txt);display:flex;flex-direction:column}
+body{font-family:'DM Mono',monospace;color:var(--txt);background:var(--bg);height:100%;overflow:hidden}
 
 /* ── HEADER ── */
 .hdr{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;background:var(--s1);border-bottom:1px solid var(--b);flex-shrink:0;gap:10px}
@@ -41,7 +41,7 @@ body{font-family:'DM Mono',monospace;color:var(--txt);display:flex;flex-directio
 .btn-gold:hover{background:var(--gold-l)}
 
 /* ── BOTTOM NAV ── */
-.bot-nav{display:flex;background:var(--s1);border-top:1px solid var(--b);flex-shrink:0;padding-bottom:var(--safe-bottom)}
+.bot-nav{position:fixed;bottom:0;left:0;right:0;display:flex;background:var(--s1);border-top:1px solid var(--b);z-index:200;padding-bottom:env(safe-area-inset-bottom,0px)}
 .bnav-item{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:10px 4px;cursor:pointer;transition:all .2s;background:none;border:none;font-family:'DM Mono',monospace;border-top:2px solid transparent}
 .bnav-item .ico{font-size:18px;transition:transform .2s}
 .bnav-item .lbl{font-size:7px;letter-spacing:1.5px;text-transform:uppercase;color:var(--dim);transition:color .2s}
@@ -50,12 +50,12 @@ body{font-family:'DM Mono',monospace;color:var(--txt);display:flex;flex-directio
 .bnav-item.active .lbl{color:var(--gold)}
 
 /* ── SCROLL AREA ── */
-.scroll{flex:1;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch}
+.scroll{flex:1;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;padding-bottom:calc(68px + env(safe-area-inset-bottom,0px))}
 ::-webkit-scrollbar{width:3px}
 ::-webkit-scrollbar-thumb{background:var(--b)}
 
 /* ── VIEWS ── */
-.view{display:none;padding:14px 14px 24px}
+.view{display:none;padding:14px 14px 20px}
 .view.active{display:block}
 
 /* ── STATS GRID ── */
@@ -478,7 +478,7 @@ body{font-family:'DM Mono',monospace;color:var(--txt);display:flex;flex-directio
 </div>
 
 <!-- APP SHELL — hidden until authenticated -->
-<div id="appShell" style="display:none">
+<div id="appShell" style="display:none;flex-direction:column;height:100vh;height:100dvh;overflow:hidden">
 
 <!-- HEADER -->
 <div class="hdr">
@@ -1488,7 +1488,7 @@ async function connectFirebase(cfg) {
 
         try {
           document.getElementById('loginScreen').style.display = 'none';
-          document.getElementById('appShell').style.display = 'block';
+          document.getElementById('appShell').style.display = 'flex';
           document.querySelector('.login-btn').textContent = 'Sign In';
           document.getElementById('loginErr').textContent = '';
           localStorage.removeItem('bg_orders_v2');
@@ -1501,7 +1501,7 @@ async function connectFirebase(cfg) {
           console.error('App launch error:', appErr);
           // Show app anyway, show error as toast
           document.getElementById('loginScreen').style.display = 'none';
-          document.getElementById('appShell').style.display = 'block';
+          document.getElementById('appShell').style.display = 'flex';
           setTimeout(() => showToast('App error: ' + appErr.message), 500);
         }
       } else {
@@ -1569,7 +1569,7 @@ function skipFirebase() {
   setSyncStatus('offline', 'local only');
   // In local mode bypass login
   document.getElementById('loginScreen').style.display = 'none';
-  document.getElementById('appShell').style.display = 'block';
+  document.getElementById('appShell').style.display = 'flex';
   currentRole = 'admin';
   applyRoleUI();
   renderDash();
