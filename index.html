@@ -495,7 +495,7 @@ body{font-family:'DM Mono',monospace;color:var(--txt);background:var(--bg);heigh
     <div class="login-brand" style="font-family:'Inkburrow','Cormorant Garamond',serif;font-size:42px;letter-spacing:0;font-weight:normal">Bharni Gems</div>
     <div class="login-brand-sub">Order Management System</div>
     <label class="login-label">Email</label>
-    <input class="login-inp" id="login_email" type="email" placeholder="you@example.com" autocomplete="username">
+    <input class="login-inp" id="login_email" type="text" placeholder="Username or email" autocomplete="username" autocapitalize="none" autocorrect="off">
     <label class="login-label">Password</label>
     <input class="login-inp" id="login_pwd" type="password" placeholder="••••••••" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()">
     <button class="login-btn" onclick="doLogin()">Sign In</button>
@@ -893,9 +893,9 @@ body{font-family:'DM Mono',monospace;color:var(--txt);background:var(--bg);heigh
       <div class="msec">
         <div class="msec-title" id="vendorLoginFormTitle">Create Login</div>
         <div style="font-size:8px;color:var(--dim);line-height:1.6;margin-bottom:12px">
-          This vendor will be able to log in and see <strong style="color:var(--mid)">only their own orders</strong>. No customer details, no other vendors, no financials.
+          Enter a username (e.g. <em>supergems</em>) or full email. This vendor will only see <strong style="color:var(--mid)">their own orders</strong> — no customer details or financials.
         </div>
-        <div class="fg"><label class="flbl">Email *</label><input class="inp" id="vl_email" type="email" placeholder="vendor@example.com"></div>
+        <div class="fg"><label class="flbl">Email *</label><input class="inp" id="vl_email" type="email" placeholder="username or email"></div>
         <div class="fg"><label class="flbl">Password *</label><input class="inp" id="vl_pwd" type="password" placeholder="Min 6 characters"></div>
         <div class="fg"><label class="flbl">Display Name</label><input class="inp" id="vl_name" placeholder="e.g. Surat Diamonds Login"></div>
         <button class="btn-gold" style="width:100%;margin-top:6px" id="vendorLoginSaveBtn" onclick="saveVendorLogin()">Create Vendor Login</button>
@@ -974,7 +974,7 @@ body{font-family:'DM Mono',monospace;color:var(--txt);background:var(--bg);heigh
       <div class="msec">
         <div class="msec-title">Add New User</div>
         <div class="fg"><label class="flbl">Display Name</label><input class="inp" id="nu_name" placeholder="Salesman Name"></div>
-        <div class="fg"><label class="flbl">Email *</label><input class="inp" id="nu_email" type="email" placeholder="name@bharni.com"></div>
+        <div class="fg"><label class="flbl">Username * <span style="color:var(--dim);font-size:7px;letter-spacing:1px">(or full email)</span></label><input class="inp" id="nu_email" type="text" autocomplete="off" placeholder="e.g. harsh or harsh@email.com"></div>
         <div class="fg"><label class="flbl">Password *</label><input class="inp" id="nu_pwd" type="password" placeholder="Min 6 characters"></div>
         <div class="fg"><label class="flbl">Role</label>
           <select class="sel inp" id="nu_role" onchange="document.getElementById('nu_vendor_wrap').style.display=this.value==='vendor'?'block':'none'">
@@ -1250,12 +1250,32 @@ function applyRoleUI() {
 // ══════════════════════════════════════════════
 // LOGIN / LOGOUT
 // ══════════════════════════════════════════════
+
+// ── USERNAME → EMAIL HELPER ──
+// Firebase requires email format. We convert plain usernames to user@bharni.app
+function toAuthEmail(input) {
+  input = (input || '').trim().toLowerCase();
+  if (input.includes('@')) return input; // already a real email — use as-is
+  // Username: strip anything not valid in email local part, append domain
+  var clean = input.replace(/\s+/g, '.').replace(/[^a-z0-9._-]/g, '').replace(/\.{2,}/g, '.');
+  if (!clean) return input; // fallback
+  return clean + '@bharni.app';
+}
+
+// Reverse: get display username from stored email
+function toDisplayUsername(email) {
+  if (!email) return '—';
+  if (email.endsWith('@bharni.app')) return email.replace('@bharni.app', '');
+  return email; // real email — show as-is
+}
+
 async function doLogin() {
-  const email = document.getElementById('login_email').value.trim();
+  const rawInput = document.getElementById('login_email').value.trim();
+  const email = toAuthEmail(rawInput);
   const pwd   = document.getElementById('login_pwd').value;
   const errEl = document.getElementById('loginErr');
   errEl.textContent = '';
-  if (!email || !pwd) { errEl.textContent = 'Email and password required'; return; }
+  if (!rawInput || !pwd) { errEl.textContent = 'Username/email and password required'; return; }
   if (!auth || !fbReady) {
     // Auth not ready yet — wait and retry automatically
     document.querySelector('.login-btn').textContent = 'Connecting…';
@@ -1285,9 +1305,9 @@ async function doLogin() {
 
 function friendlyAuthError(code) {
   const map = {
-    'auth/user-not-found':    'No account with that email.',
+    'auth/user-not-found':    'No account found. Check your username or email.',
     'auth/wrong-password':    'Incorrect password.',
-    'auth/invalid-email':     'Invalid email address.',
+    'auth/invalid-email':     'Invalid username or email address.',
     'auth/too-many-requests': 'Too many attempts. Try again later.',
     'auth/invalid-credential':'Email or password is incorrect.',
   };
@@ -1341,7 +1361,7 @@ async function loadUserList() {
       <div class="user-card">
         <div>
           <div class="user-card-name">${u.name||'Unnamed'}</div>
-          <div class="user-card-email">${u.email}${u.vendorName?' · '+u.vendorName:''}</div>
+          <div class="user-card-email">${u.username||toDisplayUsername(u.email)}${u.vendorName?' · '+u.vendorName:''}</div>
           <div style="font-size:8px;color:${roleColour[u.role]||'var(--mid)'};margin-top:2px;letter-spacing:1px;text-transform:uppercase">${u.role}${isVendorUser?' 🔒':''}</div>
         </div>
         <div style="display:flex;gap:6px;align-items:center">
@@ -1363,11 +1383,12 @@ async function loadUserList() {
 async function createUser() {
   if (!isAdmin()) return;
   const name       = document.getElementById('nu_name').value.trim();
-  const email      = document.getElementById('nu_email').value.trim();
+  const rawUsername = document.getElementById('nu_email').value.trim();
+  const email      = toAuthEmail(rawUsername);
   const pwd        = document.getElementById('nu_pwd').value;
   const role       = document.getElementById('nu_role').value;
   const vendorName = document.getElementById('nu_vendor_name').value.trim();
-  if (!email || !pwd) { showToast('Email and password required'); return; }
+  if (!rawUsername || !pwd) { showToast('Username and password required'); return; }
   if (pwd.length < 6) { showToast('Password must be at least 6 characters'); return; }
   if (role === 'vendor' && !vendorName) { showToast('Vendor name is required for vendor role'); return; }
   if (!fbReady) { showToast('Firebase not connected'); return; }
@@ -1380,7 +1401,7 @@ async function createUser() {
     secondaryApp.delete();
     const snap = await db.collection('meta').doc('users').get();
     const users = snap.exists ? (snap.data().list || []) : [];
-    const entry = { uid: cred.user.uid, email, name, role };
+    const entry = { uid: cred.user.uid, email, username: rawUsername, name, role };
     if (role === 'vendor') entry.vendorName = vendorName;
     users.push(entry);
     await db.collection('meta').doc('users').set({ list: users });
@@ -1388,7 +1409,7 @@ async function createUser() {
     document.getElementById('nu_role').value = 'salesman';
     document.getElementById('nu_vendor_wrap').style.display = 'none';
     loadUserList();
-    showToast('User created: '+email);
+    showToast('User created: '+(rawUsername||email));
   } catch(e) {
     showToast('Error: ' + (e.message||e.code));
   }
@@ -1416,7 +1437,7 @@ async function loadAuditLog() {
           <div style="display:flex;gap:7px;align-items:center">
             <span style="font-size:13px">${isLogin ? '→' : '←'}</span>
             <div>
-              <div style="font-size:11px;color:var(--txt)">${e.email}</div>
+              <div style="font-size:11px;color:var(--txt)">${e.username||toDisplayUsername(e.email)}</div>
               <div style="font-size:8px;color:var(--dim);margin-top:1px">${e.name} · <span style="color:${roleColour[e.role]||'var(--mid)'}">${e.role||'—'}</span></div>
             </div>
           </div>
@@ -1638,6 +1659,7 @@ async function connectFirebase(cfg) {
           var _logEntry = {
             event: 'login',
             email: user.email,
+            username: user.email.replace('@bharni.app',''),
             name: user.displayName||'—',
             role: currentRole,
             ts: new Date().toISOString(),
@@ -1711,8 +1733,14 @@ function startListeners() {
     if (snap.exists) {
       standaloneVendors = snap.data().list || [];
       localStorage.setItem('bg_vendors', JSON.stringify(standaloneVendors));
-      // Refresh vendor dropdown if order form is open
-      if (document.getElementById('addModal').classList.contains('open')) populateVendorDropdown();
+      // Rebuild items cache so next open gets fresh data
+      _srchState.vendor.items = _srchItems('vendor');
+      // If vendor dropdown is open, re-render it
+      var vList = document.getElementById('srch_vendor_list');
+      if (vList && vList.classList.contains('open')) {
+        var vInp = document.getElementById('f_vendor_search');
+        srchRenderList('vendor', vInp ? vInp.value : '');
+      }
     }
   }, err => { console.warn('Vendors listener:', err.message); });
 
@@ -1722,8 +1750,14 @@ function startListeners() {
     if (snap.exists) {
       standaloneCustomers = snap.data().list || [];
       localStorage.setItem('bg_customers', JSON.stringify(standaloneCustomers));
-      // Refresh customer dropdown if order form is open
-      if (document.getElementById('addModal').classList.contains('open')) populateCustomerDropdown();
+      // Rebuild items cache so next open gets fresh data
+      _srchState.customer.items = _srchItems('customer');
+      // If customer dropdown is open, re-render it
+      var cList = document.getElementById('srch_customer_list');
+      if (cList && cList.classList.contains('open')) {
+        var cInp = document.getElementById('f_name_search');
+        srchRenderList('customer', cInp ? cInp.value : '');
+      }
     }
   }, err => { console.warn('Customers listener:', err.message); });
 }
@@ -2803,52 +2837,54 @@ const _srchState = {
 
 function _srchItems(type) {
   if (type === 'customer') {
-    const names = new Set([
-      ...standaloneCustomers.map(c=>c.name),
-      ...orders.map(o=>o.name).filter(Boolean)
+    // Use standaloneCustomers (from Firestore) if loaded, otherwise empty — orders always available
+    var custList = standaloneCustomers.length ? standaloneCustomers : [];
+    var names = new Set([
+      ...custList.map(function(c){ return c.name; }),
+      ...orders.map(function(o){ return o.name; }).filter(Boolean)
     ]);
-    return [...names].sort().map(n=>{
-      const c = standaloneCustomers.find(x=>x.name===n) || orders.find(o=>o.name===n);
-      const cloc = c ? (c.loc||'') : '';
-      const ccontact = c ? (c.contact||'') : '';
-      const sub = [cloc, ccontact].filter(Boolean).join(' · ');
-      return { name:n, sub: sub };
+    return Array.from(names).sort().map(function(n) {
+      var c = custList.find(function(x){ return x.name===n; }) || orders.find(function(o){ return o.name===n; });
+      var sub = c ? [c.loc||'', c.contact||''].filter(Boolean).join(' · ') : '';
+      return { name:n, sub:sub };
     });
   } else {
-    const names = new Set([
-      ...standaloneVendors.map(v=>v.name),
-      ...orders.map(o=>o.vendor).filter(Boolean)
+    var vendList = standaloneVendors.length ? standaloneVendors : [];
+    var names = new Set([
+      ...vendList.map(function(v){ return v.name; }),
+      ...orders.map(function(o){ return o.vendor; }).filter(Boolean)
     ]);
-    return [...names].sort().map(n=>{
-      const v = standaloneVendors.find(x=>x.name===n) || orders.find(o=>o.vendor===n);
-      const vloc = v ? (v.loc||'') : '';
-      const vcontact = v ? (v.contact||'') : '';
-      const sub = [vloc, vcontact].filter(Boolean).join(' · ');
-      return { name:n, sub: sub };
+    return Array.from(names).sort().map(function(n) {
+      var v = vendList.find(function(x){ return x.name===n; }) || orders.find(function(o){ return o.vendor===n; });
+      var sub = v ? [v.loc||'', v.contact||''].filter(Boolean).join(' · ') : '';
+      return { name:n, sub:sub };
     });
   }
 }
 
 function srchRenderList(type, q) {
-  const listEl = document.getElementById('srch_'+type+'_list');
-  const st = _srchState[type];
-  const q2 = (q||'').toLowerCase().trim();
-  const filtered = st.items.filter(it =>
-    !q2 || it.name.toLowerCase().includes(q2) || (it.sub||'').toLowerCase().includes(q2)
-  );
+  var listEl = document.getElementById('srch_'+type+'_list');
+  if (!listEl) return;
+  var st = _srchState[type];
+  var q2 = (q||'').toLowerCase().trim();
+  var filtered = st.items.filter(function(it) {
+    return !q2 || it.name.toLowerCase().indexOf(q2) > -1 || (it.sub||'').toLowerCase().indexOf(q2) > -1;
+  });
   st.hiIdx = -1;
   if (!filtered.length) {
-    listEl.innerHTML = '<div class="srch-empty">No results</div>';
+    listEl.innerHTML = '<div class="srch-empty">'+(st.items.length===0?'Loading data…':'No results')+'</div>';
     return;
   }
-  listEl.innerHTML = filtered.slice(0, 100).map((it, i) =>
-    `<div class="srch-item" data-name="${it.name.replace(/"/g,'&quot;')}" onmousedown="srchSelect('${type}',this)">`
-    + `<div>${it.name}</div>`
-    + (it.sub ? `<div class="srch-sub">${it.sub}</div>` : '')
-    + `</div>`
-  ).join('');
+  var rows = '';
+  filtered.slice(0, 150).forEach(function(it) {
+    var dn = it.name.replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
+    rows += '<div class="srch-item" data-name="' + dn + '" onmousedown="srchSelect(\'' + type + '\',this)" ontouchstart="srchSelect(\'' + type + '\',this)">';
+    rows += '<div>' + it.name + '</div>';
+    if (it.sub) rows += '<div class="srch-sub">' + it.sub + '</div>';
+    rows += '</div>';
+  });
+  listEl.innerHTML = rows;
 }
-
 function srchOpen(type) {
   // Always rebuild items fresh in case Firestore data loaded after last open
   _srchState[type].items = _srchItems(type);
@@ -2864,27 +2900,30 @@ function srchOpen(type) {
 }
 
 function srchFilter(type) {
-  const inp = document.getElementById('f_'+type+'_search');
-  const q = inp.value;
-  // Clear selection if user is typing again
+  var inp = document.getElementById('f_'+type+'_search');
+  var q = inp.value;
   _srchState[type].selected = '';
+  _srchState[type].items = _srchItems(type); // always rebuild — catches late Firestore loads
   document.getElementById('f_'+type).value = '';
   inp.classList.remove('has-val');
-  document.getElementById('f_'+type+'_clear').style.display = q ? 'block' : 'none';
+  var clearBtn = document.getElementById('f_'+type+'_clear');
+  if (clearBtn) clearBtn.style.display = q ? 'block' : 'none';
   srchRenderList(type, q);
-  document.getElementById('srch_'+type+'_list').classList.add('open');
+  var listEl = document.getElementById('srch_'+type+'_list');
+  if (listEl) listEl.classList.add('open');
 }
 
 function srchSelect(type, el) {
-  const name = el.dataset.name;
+  var name = el.dataset.name;
+  if (!name) return;
   _srchState[type].selected = name;
   document.getElementById('f_'+type).value = name;
-  const inp = document.getElementById('f_'+type+'_search');
-  inp.value = name;
-  inp.classList.add('has-val');
-  document.getElementById('f_'+type+'_clear').style.display = 'block';
-  document.getElementById('srch_'+type+'_list').classList.remove('open');
-  // Trigger auto-fill
+  var inp = document.getElementById('f_'+type+'_search');
+  if (inp) { inp.value = name; inp.classList.add('has-val'); }
+  var clearBtn = document.getElementById('f_'+type+'_clear');
+  if (clearBtn) clearBtn.style.display = 'block';
+  var listEl = document.getElementById('srch_'+type+'_list');
+  if (listEl) listEl.classList.remove('open');
   if (type === 'customer') onCustomerSelect();
   else onVendorSelect();
 }
