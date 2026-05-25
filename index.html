@@ -32,7 +32,7 @@ body{font-family:'DM Mono',monospace;color:var(--txt);background:var(--bg);heigh
 
 /* ── HEADER ── */
 .hdr{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;background:var(--s1);border-bottom:1px solid var(--b);flex-shrink:0;gap:10px}
-.hdr-brand h1{font-family:'Inkburrow','Cormorant Garamond',serif;letter-spacing:0;font-size:18px;font-weight:300;letter-spacing:5px;color:var(--gold);text-transform:uppercase}
+.hdr-brand h1{font-family:'Inkburrow','Cormorant Garamond',serif;font-size:22px;font-weight:normal;letter-spacing:0;color:var(--gold);text-transform:none}
 .hdr-brand p{font-size:8px;letter-spacing:2px;color:var(--dim);margin-top:1px}
 .hdr-actions{display:flex;gap:8px;flex-shrink:0}
 .btn-ico{background:none;border:1px solid var(--b);color:var(--mid);width:34px;height:34px;display:flex;align-items:center;justify-content:center;font-size:16px;cursor:pointer;border-radius:var(--r);transition:all .2s}
@@ -249,7 +249,7 @@ body{font-family:'DM Mono',monospace;color:var(--txt);background:var(--bg);heigh
 /* ── LOGIN SCREEN ── */
 .login-screen{position:fixed;inset:0;background:var(--bg);z-index:600;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:28px;overflow:hidden}
 .login-card{width:100%;max-width:360px}
-.login-brand{font-family:'Inkburrow','Cormorant Garamond',serif;font-size:42px;font-weight:normal;letter-spacing:0;line-height:10;letter-spacing:8px;color:var(--gold);text-align:center;margin-bottom:4px}
+.login-brand{font-family:'Inkburrow','Cormorant Garamond',serif;font-size:48px;font-weight:normal;letter-spacing:0;line-height:1.2;color:var(--gold);text-align:center;margin-bottom:4px;text-transform:none}
 .login-brand-sub{font-size:8px;letter-spacing:3px;color:var(--dim);text-align:center;margin-bottom:40px}
 .login-label{font-size:8px;letter-spacing:2px;text-transform:uppercase;color:var(--dim);margin-bottom:5px;display:block}
 .login-inp{background:var(--s1);border:1px solid var(--b);color:var(--txt);padding:13px 14px;font-family:'DM Mono',monospace;font-size:13px;outline:none;border-radius:var(--r);width:100%;margin-bottom:14px;transition:border-color .2s}
@@ -492,7 +492,7 @@ body{font-family:'DM Mono',monospace;color:var(--txt);background:var(--bg);heigh
 <!-- LOGIN SCREEN -->
 <div class="login-screen" id="loginScreen">
   <div class="login-card">
-    <div class="login-brand" style="font-family:'Inkburrow','Cormorant Garamond',serif;font-size:42px;letter-spacing:0;font-weight:normal">Bharni Gems</div>
+    <div class="login-brand">Bharni Gems</div>
     <div class="login-brand-sub">Order Management System</div>
     <label class="login-label">Email</label>
     <input class="login-inp" id="login_email" type="text" placeholder="Username or email" autocomplete="username" autocapitalize="none" autocorrect="off">
@@ -512,7 +512,7 @@ body{font-family:'DM Mono',monospace;color:var(--txt);background:var(--bg);heigh
 <!-- HEADER -->
 <div class="hdr">
   <div class="hdr-brand">
-    <h1 style="font-family:'Inkburrow','Cormorant Garamond',serif;font-size:26px;letter-spacing:0;font-weight:normal;line-height:1">Bharni Gems</h1>
+    <h1 style="font-family:'Inkburrow','Cormorant Garamond',serif;font-size:22px;letter-spacing:0;font-weight:normal;line-height:1;text-transform:none">Bharni Gems</h1>
     <p>Order Management</p>
   </div>
   <div class="hdr-actions">
