@@ -3020,7 +3020,7 @@ function onVendorSelect(){
   // vendor location is stored in standaloneVendors but not surfaced in order form — nothing to autofill here yet
 }
 
-function openAdd(){
+async function openAdd(){
   if(currentRole === 'accounts' || currentRole === 'vendor'){ showToast('View only access'); return; }
   editId=null; curImgs=[]; curOrderType='normal'; curPieceImgs={};
   document.getElementById('addModalTitle').textContent='New Order';
@@ -3029,7 +3029,6 @@ function openAdd(){
   document.getElementById('f_odate').value=t;
   document.getElementById('f_shipdate').value=addDays(t,17);
   document.getElementById('f_ddate').value=addDays(t,19);
-  // Ensure dates are editable on new order
   ['f_ddate','f_shipdate'].forEach(id=>{
     const el=document.getElementById(id);
     el.removeAttribute('readonly');
@@ -3043,20 +3042,42 @@ function openAdd(){
   document.getElementById('invoiceFieldWrap').style.display='none';
   document.getElementById('invoiceInlineWrap').style.display='none';
   document.getElementById('cancelRemarksWrap').style.display='none';
-  populateCustomerDropdown();
-  populateVendorDropdown();
   refreshStatusOptions();
   renderPieces([{styleNo:'',gwt:'',dwt:'',size:'',purity:'',diaType:'',img:''}]);
   renderImgPrev();
   document.getElementById('addModal').classList.add('open');
+  // Fetch customers + vendors fresh from Firestore if not loaded yet
+  try {
+    if (!standaloneCustomers.length && fbReady) {
+      var cs = await db.collection('meta').doc('customers').get();
+      if (cs.exists) standaloneCustomers = cs.data().list || [];
+    }
+    if (!standaloneVendors.length && fbReady) {
+      var vs = await db.collection('meta').doc('vendors').get();
+      if (vs.exists) standaloneVendors = vs.data().list || [];
+    }
+  } catch(e) { console.warn('Customer/vendor load:', e.message); }
+  populateCustomerDropdown();
+  populateVendorDropdown();
 }
 
-function openEdit(id){
+async function openEdit(id){
   const o=orders.find(x=>x.id===id);
   if(!o) return;
   editId=id; curImgs=[...(o.images||[])]; curOrderType=o.orderType||'normal';
   curPieceImgs={};
   (o.pieces||[]).forEach((p,i)=>{ if(p.img) curPieceImgs[i]=p.img; });
+  // Ensure customer/vendor data is loaded
+  try {
+    if (!standaloneCustomers.length && fbReady) {
+      var cs = await db.collection('meta').doc('customers').get();
+      if (cs.exists) standaloneCustomers = cs.data().list || [];
+    }
+    if (!standaloneVendors.length && fbReady) {
+      var vs = await db.collection('meta').doc('vendors').get();
+      if (vs.exists) standaloneVendors = vs.data().list || [];
+    }
+  } catch(e) { console.warn('Customer/vendor load:', e.message); }
   document.getElementById('addModalTitle').textContent='Edit — '+id;
   document.getElementById('orderTypeSection').style.display='none';
   document.getElementById('newDesignSection').style.display='none';
