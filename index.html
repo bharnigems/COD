@@ -1124,6 +1124,7 @@ const DEFAULT_FB_CONFIG = {
 };
 let orders = [];
 // Master data loaded from Firestore after admin auth (not embedded in HTML)
+// Loaded from Firestore after auth — not pre-populated in HTML
 let standaloneVendors   = [];
 let standaloneCustomers = [];
 let editId = null, curImgs = [], viewId = null, selVendor = null;
@@ -1542,7 +1543,15 @@ async function connectFirebase(cfg) {
           applyRoleUI();
           startListeners();
           renderDash();
-          if (isAdmin()) seedMasterDataIfNeeded();
+          if (isAdmin()) seedMasterDataIfNeeded().then(() => {
+            // After seeding, re-fetch vendors/customers in case snapshot missed it
+            db.collection('meta').doc('vendors').get().then(s => {
+              if (s.exists) { standaloneVendors = s.data().list || []; }
+            });
+            db.collection('meta').doc('customers').get().then(s => {
+              if (s.exists) { standaloneCustomers = s.data().list || []; }
+            });
+          });
           console.error('App launch error:', appErr);
           // Show app anyway, show error as toast
           document.getElementById('loginScreen').style.display = 'none';
@@ -1595,6 +1604,8 @@ function startListeners() {
     if (snap.exists) {
       standaloneVendors = snap.data().list || [];
       localStorage.setItem('bg_vendors', JSON.stringify(standaloneVendors));
+      // Refresh vendor dropdown if order form is open
+      if (document.getElementById('addModal').classList.contains('open')) populateVendorDropdown();
     }
   }, err => { console.warn('Vendors listener:', err.message); });
 
@@ -1604,6 +1615,8 @@ function startListeners() {
     if (snap.exists) {
       standaloneCustomers = snap.data().list || [];
       localStorage.setItem('bg_customers', JSON.stringify(standaloneCustomers));
+      // Refresh customer dropdown if order form is open
+      if (document.getElementById('addModal').classList.contains('open')) populateCustomerDropdown();
     }
   }, err => { console.warn('Customers listener:', err.message); });
 }
