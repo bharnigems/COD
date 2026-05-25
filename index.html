@@ -332,7 +332,7 @@ body{font-family:'DM Mono',monospace;color:var(--txt);background:var(--bg);heigh
 .due-row{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px dashed var(--b);cursor:pointer;gap:8px}
 .due-row:last-child{border-bottom:none}
 .due-row-id{font-size:8px;color:var(--dim);letter-spacing:1px;margin-bottom:2px}
-.due-row-name{font-size:13px;color:var(--txt);font-family:'Cormorant Garamond',serif}
+.due-row-name{font-size:13px;color:#e8d5a3;font-family:'Cormorant Garamond',serif;font-weight:600}
 .due-row-status{font-size:8px;color:var(--dim);margin-top:2px}
 .due-badge{font-size:8px;font-weight:700;letter-spacing:1px;padding:3px 8px;border-radius:2px;white-space:nowrap;flex-shrink:0}
 .due-badge.overdue{background:#c4545420;color:var(--cx);border:1px solid #c4545440}
@@ -346,7 +346,7 @@ body{font-family:'DM Mono',monospace;color:var(--txt);background:var(--bg);heigh
 .drill-row:active{opacity:.7}
 .drill-row-left{flex:1;min-width:0}
 .drill-row-id{font-size:8px;color:var(--dim);letter-spacing:1px;margin-bottom:2px}
-.drill-row-name{font-size:13px;font-family:'Cormorant Garamond',serif;color:var(--txt)}
+.drill-row-name{font-size:13px;font-family:'Cormorant Garamond',serif;color:#e8d5a3;font-weight:600}
 .drill-row-meta{font-size:8px;color:var(--dim);margin-top:2px}
 .drill-delta{font-size:11px;font-weight:700;padding:3px 8px;border-radius:2px;white-space:nowrap;flex-shrink:0}
 .drill-delta.ontime{background:#5aac8a18;color:#5aac8a;border:1px solid #5aac8a30}
@@ -3046,17 +3046,32 @@ async function openAdd(){
   renderPieces([{styleNo:'',gwt:'',dwt:'',size:'',purity:'',diaType:'',img:''}]);
   renderImgPrev();
   document.getElementById('addModal').classList.add('open');
-  // Fetch customers + vendors fresh from Firestore if not loaded yet
+  // Show loading placeholder in customer field
+  var cInp = document.getElementById('f_name_search');
+  if (cInp) cInp.placeholder = 'Loading customers…';
+  // Always fetch fresh from Firestore — guarantees data regardless of timing
   try {
-    if (!standaloneCustomers.length && fbReady) {
-      var cs = await db.collection('meta').doc('customers').get();
-      if (cs.exists) standaloneCustomers = cs.data().list || [];
-    }
-    if (!standaloneVendors.length && fbReady) {
-      var vs = await db.collection('meta').doc('vendors').get();
-      if (vs.exists) standaloneVendors = vs.data().list || [];
+    if (fbReady) {
+      var fetches = [];
+      fetches.push(
+        db.collection('meta').doc('customers').get().then(function(cs) {
+          if (cs.exists && cs.data().list && cs.data().list.length) {
+            standaloneCustomers = cs.data().list;
+          }
+        })
+      );
+      fetches.push(
+        db.collection('meta').doc('vendors').get().then(function(vs) {
+          if (vs.exists && vs.data().list && vs.data().list.length) {
+            standaloneVendors = vs.data().list;
+          }
+        })
+      );
+      await Promise.all(fetches);
     }
   } catch(e) { console.warn('Customer/vendor load:', e.message); }
+  // Restore placeholder and populate
+  if (cInp) cInp.placeholder = 'Search customer…';
   populateCustomerDropdown();
   populateVendorDropdown();
 }
@@ -3067,15 +3082,17 @@ async function openEdit(id){
   editId=id; curImgs=[...(o.images||[])]; curOrderType=o.orderType||'normal';
   curPieceImgs={};
   (o.pieces||[]).forEach((p,i)=>{ if(p.img) curPieceImgs[i]=p.img; });
-  // Ensure customer/vendor data is loaded
+  // Always fetch fresh from Firestore
   try {
-    if (!standaloneCustomers.length && fbReady) {
-      var cs = await db.collection('meta').doc('customers').get();
-      if (cs.exists) standaloneCustomers = cs.data().list || [];
-    }
-    if (!standaloneVendors.length && fbReady) {
-      var vs = await db.collection('meta').doc('vendors').get();
-      if (vs.exists) standaloneVendors = vs.data().list || [];
+    if (fbReady) {
+      var ef = [];
+      ef.push(db.collection('meta').doc('customers').get().then(function(cs){
+        if(cs.exists && cs.data().list && cs.data().list.length) standaloneCustomers=cs.data().list;
+      }));
+      ef.push(db.collection('meta').doc('vendors').get().then(function(vs){
+        if(vs.exists && vs.data().list && vs.data().list.length) standaloneVendors=vs.data().list;
+      }));
+      await Promise.all(ef);
     }
   } catch(e) { console.warn('Customer/vendor load:', e.message); }
   document.getElementById('addModalTitle').textContent='Edit — '+id;
