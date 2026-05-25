@@ -2837,16 +2837,13 @@ const _srchState = {
 
 function _srchItems(type) {
   if (type === 'customer') {
-    // Use standaloneCustomers (from Firestore) if loaded, otherwise empty — orders always available
     var custList = standaloneCustomers.length ? standaloneCustomers : [];
     var names = new Set([
       ...custList.map(function(c){ return c.name; }),
       ...orders.map(function(o){ return o.name; }).filter(Boolean)
     ]);
     return Array.from(names).sort().map(function(n) {
-      var c = custList.find(function(x){ return x.name===n; }) || orders.find(function(o){ return o.name===n; });
-      var sub = c ? [c.loc||'', c.contact||''].filter(Boolean).join(' · ') : '';
-      return { name:n, sub:sub };
+      return { name:n, sub:'' };
     });
   } else {
     var vendList = standaloneVendors.length ? standaloneVendors : [];
