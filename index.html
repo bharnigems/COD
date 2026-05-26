@@ -50,7 +50,14 @@ body{font-family:'DM Mono',monospace;color:var(--txt);background:var(--bg);heigh
 .bnav-item.active .lbl{color:var(--gold)}
 
 /* ── SCROLL AREA ── */
-.scroll{flex:1;min-height:0;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch}
+.scroll{flex:1;min-height:0;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;scrollbar-width:thick;scrollbar-color:var(--gold-d) var(--s1)}
+.scroll::-webkit-scrollbar{width:8px}
+.scroll::-webkit-scrollbar-track{background:var(--s1)}
+.scroll::-webkit-scrollbar-thumb{background:var(--gold-d);border-radius:4px}
+.sheet{overflow-y:auto;scrollbar-width:thick;scrollbar-color:var(--gold-d) var(--s1)}
+.sheet::-webkit-scrollbar{width:8px}
+.sheet::-webkit-scrollbar-track{background:var(--s1)}
+.sheet::-webkit-scrollbar-thumb{background:var(--gold-d);border-radius:4px}
 ::-webkit-scrollbar{width:3px}
 ::-webkit-scrollbar-thumb{background:var(--b)}
 
@@ -77,7 +84,7 @@ body{font-family:'DM Mono',monospace;color:var(--txt);background:var(--bg);heigh
 .pipe-col[data-s="CAD Approved"]{border-top-color:var(--ca)}
 .pipe-col[data-s="In Production"]{border-top-color:var(--ip)}
 .pipe-col[data-s="IGI"]{border-top-color:var(--igi)}
-.pipe-col[data-s="Order Received"]{border-top-color:var(--or)}
+.pipe-col[data-s="Piece Received"]{border-top-color:var(--or)}
 .pipe-col[data-s="Order Delivered"]{border-top-color:var(--od)}
 .pipe-col[data-s="Cancelled"]{border-top-color:var(--cx)}
 .pipe-hdr{padding:10px 12px;border-bottom:1px solid var(--b);display:flex;justify-content:space-between;align-items:center}
@@ -87,7 +94,7 @@ body{font-family:'DM Mono',monospace;color:var(--txt);background:var(--bg);heigh
 .pipe-col[data-s="CAD Approved"] .pipe-title{color:var(--ca)}
 .pipe-col[data-s="In Production"] .pipe-title{color:var(--ip)}
 .pipe-col[data-s="IGI"] .pipe-title{color:var(--igi)}
-.pipe-col[data-s="Order Received"] .pipe-title{color:var(--or)}
+.pipe-col[data-s="Piece Received"] .pipe-title{color:var(--or)}
 .pipe-col[data-s="Order Delivered"] .pipe-title{color:var(--od)}
 .pipe-col[data-s="Cancelled"] .pipe-title{color:var(--cx)}
 .pipe-cnt{font-size:9px;color:var(--dim);background:var(--s2);padding:2px 7px;border-radius:20px}
@@ -132,7 +139,7 @@ body{font-family:'DM Mono',monospace;color:var(--txt);background:var(--bg);heigh
 .row-name{font-family:'Cormorant Garamond',serif;font-size:16px}
 .row-id{font-size:8px;color:var(--dim);letter-spacing:1.5px;margin-bottom:3px}
 .row-bottom{display:flex;gap:10px;flex-wrap:wrap;margin-top:8px;padding-top:8px;border-top:1px solid var(--b)}
-.row-meta{font-size:9px;color:var(--dim)}
+.row-meta{font-size:10px;color:var(--txt-soft,#b0a090)}
 .row-meta span{color:var(--mid)}
 .row-val{font-size:12px;color:var(--gold)}
 .row-actions{display:flex;gap:6px;margin-top:8px}
@@ -501,7 +508,7 @@ body{font-family:'DM Mono',monospace;color:var(--txt);background:var(--bg);heigh
     <div class="login-err" id="loginErr"></div>
     <div id="loginConnStatus" style="font-size:8px;color:var(--dim);text-align:center;margin-top:10px;letter-spacing:1px">⏳ Connecting to Firebase…</div>
     <button onclick="location.reload()" style="background:none;border:1px solid var(--b);color:var(--dim);padding:8px 20px;font-family:'DM Mono',monospace;font-size:8px;letter-spacing:2px;cursor:pointer;border-radius:var(--r);margin-top:10px;width:100%">↺ Reload Page</button>
-    <div class="login-ver">Bharni Gems · v48</div>
+    <div class="login-ver">Bharni Gems · v50</div>
   </div>
 </div>
 
@@ -565,7 +572,7 @@ body{font-family:'DM Mono',monospace;color:var(--txt);background:var(--bg);heigh
         <option>CAD Approved</option>
         <option>In Production</option>
         <option>IGI</option>
-        <option>Order Received</option>
+        <option>Piece Received</option>
         <option>Order Delivered</option>
         <option>Cancelled</option>
       </select>
@@ -723,7 +730,8 @@ body{font-family:'DM Mono',monospace;color:var(--txt);background:var(--bg);heigh
           </select>
         </div>
         <div class="fl">
-          <div class="fg half"><label class="flbl">PO Number *</label><input class="inp" id="f_po" placeholder="PO-2025-001"></div>
+          <div class="fg half"><label class="flbl">Our PO Number *</label><input class="inp" id="f_po" placeholder="PO-2025-001"></div>
+          <div class="fg half"><label class="flbl">Customer PO No. *</label><input class="inp" id="f_cust_po" placeholder="Customer PO No."></div>
           <div class="fg half" id="invoiceFieldWrap" style="display:none"><label class="flbl">Invoice Number *</label><input class="inp" id="f_invoice" placeholder="INV-2025-001"></div>
         </div>
       </div>
@@ -765,7 +773,7 @@ body{font-family:'DM Mono',monospace;color:var(--txt);background:var(--bg);heigh
             <option>CAD Approved</option>
             <option>In Production</option>
             <option>IGI</option>
-            <option>Order Received</option>
+            <option>Piece Received</option>
             <option>Order Delivered</option>
             <option>Cancelled</option>
           </select>
@@ -782,15 +790,7 @@ body{font-family:'DM Mono',monospace;color:var(--txt);background:var(--bg);heigh
         </div>
       </div>
 
-      <div class="msec">
-        <div class="msec-title">Product Images</div>
-        <div class="img-upload-area">
-          <input type="file" accept="image/*" multiple onchange="handleImgs(event)">
-          <div style="font-size:22px;margin-bottom:5px">◈</div>
-          <div style="font-size:9px;color:var(--dim);letter-spacing:1px">Tap to upload images</div>
-        </div>
-        <div class="img-previews" id="imgPreviews"></div>
-      </div>
+<!-- General photo section removed — use piece-wise photos -->
 
       <div class="msec">
         <div class="msec-title">Notes</div>
@@ -1104,15 +1104,15 @@ window.onerror = function(msg, src, line, col, err) {
 // ══════════════════════════════════════════════
 // FIREBASE + DATA LAYER
 // ══════════════════════════════════════════════
-const STATUS_LIST = ['Order Placed','CAD Approval Pending','CAD Approved','In Production','IGI','Order Received','Order Delivered','Cancelled'];
+const STATUS_LIST = ['Order Placed','CAD Approval Pending','CAD Approved','In Production','IGI','Piece Received','Order Delivered','Cancelled'];
 const STATUS_KEY = {
   'Order Placed':'op','CAD Approval Pending':'cap','CAD Approved':'ca',
-  'In Production':'ip','IGI':'igi','Order Received':'or',
+  'In Production':'ip','IGI':'igi','Piece Received':'or',
   'Order Delivered':'od','Cancelled':'cx'
 };
 const STATUS_COLOR = {
   'Order Placed':'var(--op)','CAD Approval Pending':'var(--cap)','CAD Approved':'var(--ca)',
-  'In Production':'var(--ip)','IGI':'var(--igi)','Order Received':'var(--or)',
+  'In Production':'var(--ip)','IGI':'var(--igi)','Piece Received':'var(--or)',
   'Order Delivered':'var(--od)','Cancelled':'var(--cx)'
 };
 
@@ -1598,6 +1598,25 @@ async function connectFirebase(cfg) {
     auth.onAuthStateChanged(async function(user) {
       if (user) {
         currentUser = user;
+
+        // ── INSTANT LOGIN: use cached role to show app immediately ──
+        var cachedRole = localStorage.getItem('bg_role_' + user.uid);
+        var cachedVendorName = localStorage.getItem('bg_vname_' + user.uid) || null;
+        if (cachedRole) {
+          currentRole = cachedRole;
+          currentVendorName = cachedVendorName;
+          document.getElementById('loginScreen').style.display = 'none';
+          document.getElementById('appShell').style.display = 'flex';
+          document.querySelector('.login-btn').textContent = 'Sign In';
+          document.getElementById('loginErr').textContent = '';
+          localStorage.removeItem('bg_orders_v2');
+          orders = [];
+          try { applyRoleUI(); } catch(e) { console.warn(e); }
+          try { startListeners(); } catch(e) { console.warn(e); }
+          try { renderDash(); } catch(e) { console.warn(e); }
+        }
+
+        // ── BACKGROUND: fetch role from Firestore, update cache ──
         var usersList = [];
         try {
           var snap = await db.collection('meta').doc('users').get();
@@ -1611,42 +1630,58 @@ async function connectFirebase(cfg) {
             currentRole = record ? record.role : 'salesman';
             currentVendorName = record ? (record.vendorName || null) : null;
           }
-        } catch(e) { console.warn('Role lookup failed:', e); currentRole = 'admin'; }
+          // Update cache
+          localStorage.setItem('bg_role_' + user.uid, currentRole);
+          localStorage.setItem('bg_vname_' + user.uid, currentVendorName || '');
+        } catch(e) { console.warn('Role lookup failed:', e); if (!currentRole) currentRole = 'admin'; }
         window._cachedUsers = usersList;
 
-        // ── AUDIT LOG: record login ──
-        try {
-          var _ip = '—';
-          try { var _r = await fetch('https://api.ipify.org?format=json'); var _d = await _r.json(); _ip = _d.ip||'—'; } catch(e){}
-          var _logEntry = {
-            event: 'login',
-            email: user.email,
-            username: user.email.replace('@bharni.app',''),
-            name: user.displayName||'—',
-            role: currentRole,
-            ts: new Date().toISOString(),
-            device: navigator.userAgent.substring(0,120),
-            ip: _ip
-          };
-          var _logRef = db.collection('meta').doc('auditLog');
-          var _logSnap = await _logRef.get();
-          var _logData = _logSnap.exists ? (_logSnap.data().entries||[]) : [];
-          _logData.unshift(_logEntry); // newest first
-          if(_logData.length > 500) _logData = _logData.slice(0,500); // keep last 500
-          await _logRef.set({entries: _logData});
-        } catch(e){ console.warn('Audit log error:', e.message); }
+        // If not already shown (first login, no cache), show app now
+        if (!cachedRole) {
+          document.getElementById('loginScreen').style.display = 'none';
+          document.getElementById('appShell').style.display = 'flex';
+          document.querySelector('.login-btn').textContent = 'Sign In';
+          document.getElementById('loginErr').textContent = '';
+          localStorage.removeItem('bg_orders_v2');
+          orders = [];
+          try { applyRoleUI(); } catch(e) { console.warn(e); }
+          try { startListeners(); } catch(e) { console.warn(e); }
+          try { renderDash(); } catch(e) { console.warn(e); }
+        } else {
+          // Role may have changed — re-apply UI silently
+          try { applyRoleUI(); } catch(e) {}
+        }
 
-        document.getElementById('loginScreen').style.display = 'none';
-        document.getElementById('appShell').style.display = 'flex';
-        document.querySelector('.login-btn').textContent = 'Sign In';
-        document.getElementById('loginErr').textContent = '';
-        localStorage.removeItem('bg_orders_v2');
-        orders = [];
-        try { applyRoleUI(); } catch(e) { console.warn(e); }
-        try { startListeners(); } catch(e) { console.warn(e); }
-        try { renderDash(); } catch(e) { console.warn(e); }
+        // ── AUDIT LOG: fire and forget, don't block login ──
+        setTimeout(async function() {
+          try {
+            var _ip = '—';
+            try { var _r = await fetch('https://api.ipify.org?format=json'); var _d = await _r.json(); _ip = _d.ip||'—'; } catch(e){}
+            var _logEntry = {
+              event: 'login',
+              email: user.email,
+              username: user.email.replace('@bharni.app',''),
+              name: user.displayName||'—',
+              role: currentRole,
+              ts: new Date().toISOString(),
+              device: navigator.userAgent.substring(0,120),
+              ip: _ip
+            };
+            var _logRef = db.collection('meta').doc('auditLog');
+            var _logSnap = await _logRef.get();
+            var _logData = _logSnap.exists ? (_logSnap.data().entries||[]) : [];
+            _logData.unshift(_logEntry);
+            if(_logData.length > 500) _logData = _logData.slice(0,500);
+            await _logRef.set({entries: _logData});
+          } catch(e){ console.warn('Audit log error:', e.message); }
+        }, 2000); // run 2s after login, non-blocking
 
       } else {
+        // Clear cached role on logout
+        if (currentUser) {
+          localStorage.removeItem('bg_role_' + currentUser.uid);
+          localStorage.removeItem('bg_vname_' + currentUser.uid);
+        }
         currentUser = null; currentRole = null; currentVendorName = null; window._cachedUsers = [];
         if (unsubOrders)    { try { unsubOrders();    } catch(e){} unsubOrders    = null; }
         if (unsubVendors)   { try { unsubVendors();   } catch(e){} unsubVendors   = null; }
@@ -2046,37 +2081,34 @@ function clearFilter(){statFilter=null;custFilter=null;renderOrders();}
 // ══════════════════════════════════════════════
 function renderCustomers() {
   const search=(document.getElementById('custSearch').value||'').toLowerCase();
+  const ACTIVE = ['Order Placed','CAD Approval Pending','CAD Approved','In Production','IGI','Piece Received'];
   const map={};
   orders.forEach(o=>{
+    if(!ACTIVE.includes(o.status)) return; // skip Delivered & Cancelled
     if(!map[o.name]) map[o.name]={name:o.name,contact:o.contact,loc:o.loc,orders:[],pcs:0,gwt:0,dwt:0};
     map[o.name].orders.push(o);
     map[o.name].pcs+=totalPcs(o);
     map[o.name].gwt+=orderGrossWt(o);
     map[o.name].dwt+=orderDiamondWt(o);
   });
-  // merge in standalone customers
-  standaloneCustomers.forEach(c=>{
-    if(!map[c.name]) map[c.name]={name:c.name,contact:c.contact,loc:c.loc,orders:[],pcs:0,gwt:0,dwt:0};
-  });
   let list=Object.values(map).filter(c=>c.name.toLowerCase().includes(search)||(c.loc||'').toLowerCase().includes(search));
   list.sort((a,b)=>b.orders.length-a.orders.length);
   const el=document.getElementById('custList');
-  if(!list.length){el.innerHTML=`<div class="empty"><div class="empty-ico">◇</div><p>No customers</p></div>`;return;}
+  if(!list.length){el.innerHTML=`<div class="empty"><div class="empty-ico">◇</div><p>No active orders</p></div>`;return;}
   el.innerHTML=list.map(c=>{
-    const last=c.orders.length?c.orders.sort((a,b)=>new Date(b.odate)-new Date(a.odate))[0]:null;
+    const last=c.orders.sort((a,b)=>new Date(b.odate)-new Date(a.odate))[0];
     return `<div class="row-card">
       <div class="row-name">${c.name}</div>
       <div style="font-size:9px;color:var(--dim);margin-bottom:6px">📍 ${c.loc||'—'} · ${c.contact||'—'}</div>
       <div class="row-bottom">
-        <div class="row-meta">Orders: <span>${c.orders.length}</span></div>
+        <div class="row-meta">Open Orders: <span style="color:var(--gold)">${c.orders.length}</span></div>
         <div class="row-meta">Pieces: <span>${c.pcs}</span></div>
         <div class="row-meta">GW: <span>${c.gwt.toFixed(2)}g</span></div>
         <div class="row-meta">DW: <span style="color:var(--gold)">${c.dwt.toFixed(2)}ct</span></div>
         ${last?`<div class="row-meta">Last: <span>${formatDate(last.odate)}</span></div>`:''}
       </div>
       <div class="row-actions">
-        ${c.orders.length?`<button class="btn-xs" onclick="filterByCust('${c.name}')">View Orders →</button>`:''}
-        <button class="btn-xs danger" onclick="removeStandaloneCustomer('${c.name}')">Remove</button>
+        <button class="btn-xs" onclick="filterByCust('${c.name}')">View Orders →</button>
       </div>
     </div>`;
   }).join('');
@@ -2097,18 +2129,16 @@ function filterByCust(name){
 // VENDORS
 // ══════════════════════════════════════════════
 function renderVendors() {
+  const ACTIVE = ['Order Placed','CAD Approval Pending','CAD Approved','In Production','IGI','Piece Received'];
   const map={};
   orders.forEach(o=>{
+    if(!ACTIVE.includes(o.status)) return; // skip Delivered & Cancelled
     const k=o.vendor||'Unassigned';
     if(!map[k]) map[k]={name:k,orders:[],pcs:0,gwt:0,dwt:0};
     map[k].orders.push(o);
     map[k].pcs+=totalPcs(o);
     map[k].gwt+=orderGrossWt(o);
     map[k].dwt+=orderDiamondWt(o);
-  });
-  // merge in standalone vendors
-  standaloneVendors.forEach(v=>{
-    if(!map[v.name]) map[v.name]={name:v.name,orders:[],pcs:0,gwt:0,dwt:0};
   });
   const vendors=Object.values(map);
   document.getElementById('vcardGrid').innerHTML=vendors.map(v=>{
@@ -2117,7 +2147,7 @@ function renderVendors() {
     return `
     <div class="vcard ${selVendor===v.name?'active':''}" onclick="selectVendor('${v.name}')">
       <div class="vcard-name">${v.name}</div>
-      <div class="vcard-sub">${v.orders.length} orders</div>
+      <div class="vcard-sub" style="color:var(--gold)">${v.orders.length} open orders</div>
       <div class="vcard-stats">
         <div class="vs"><div class="vs-v">${v.pcs}</div><div class="vs-l">Pieces</div></div>
         <div class="vs"><div class="vs-v">${v.gwt.toFixed(1)}g</div><div class="vs-l">Gross Wt</div></div>
@@ -2371,7 +2401,7 @@ function renderKarigar() {
   }
 
   const delivered = visible.filter(o=>o.status==='Order Delivered'&&o.origDdate);
-  const received  = visible.filter(o=>['Order Received','Order Delivered'].includes(o.status)&&o.origShipdate);
+  const received  = visible.filter(o=>['Piece Received','Order Delivered'].includes(o.status)&&o.origShipdate);
 
   // Annotate each order with its delta
   const custOrders = delivered.map(o=>{
@@ -2380,7 +2410,7 @@ function renderKarigar() {
     return {o, diff, delivDate};
   });
   const vendOrders = received.map(o=>{
-    const recvDate = getStatusDate(o,'Order Received')||o.shipdate;
+    const recvDate = getStatusDate(o,'Piece Received')||o.shipdate;
     const diff = recvDate ? daysDiff(recvDate, o.origShipdate) : null;
     return {o, diff, recvDate};
   });
@@ -3045,6 +3075,7 @@ function openEdit(id){
   const isDelivered = o.status==='Order Delivered';
   const isCancelled = o.status==='Cancelled';
   document.getElementById('invoiceFieldWrap').style.display = isDelivered?'flex':'none';
+  document.getElementById('f_cust_po').value=o.custPo||'';
   if(isDelivered) document.getElementById('f_invoice').value=o.invoice||'';
   document.getElementById('invoiceInlineWrap').style.display = isDelivered?'block':'none';
   if(isDelivered) document.getElementById('f_invoice_inline').value=o.invoice||'';
@@ -3211,7 +3242,8 @@ function saveOrder(){
   const name = (nameEl.tagName==='SELECT'?nameEl.value:nameEl.value).trim();
   if(!name){showToast('Customer name required');return;}
   const po=document.getElementById('f_po').value.trim();
-  if(!po){showToast('PO number is required');document.getElementById('f_po').focus();return;}
+  if(!po){showToast('Our PO number is required');document.getElementById('f_po').focus();return;}
+  if(!custPo){showToast('Customer PO number is required');document.getElementById('f_cust_po').focus();return;}
   const vendorEl = document.getElementById('f_vendor');
   const vendor = (vendorEl.tagName==='SELECT'?vendorEl.value:vendorEl.value).trim();
   const contact = document.getElementById('f_contact').value.trim();
@@ -3463,7 +3495,7 @@ function printJobCard(type, id){
       + '<title>Job Card · ' + o.id + '</title>'
       + '<style>' + css + '</style></head><body>'
       + '<div class="hdr">'
-      +   '<div class="brand">Bharni Gems</div>'
+      +   '<div class="brand" style="font-family:Inkburrow,\'Cormorant Garamond\',serif;font-weight:normal;letter-spacing:0">Bharni Gems</div>'
       +   '<div>'
       +     '<div class="card-lbl">Job Card</div>'
       +     '<div class="oid">' + o.id + '</div>'
@@ -3495,7 +3527,7 @@ function printJobCard(type, id){
       + '<title>Vendor Job Card · ' + o.id + '</title>'
       + '<style>' + css + '</style></head><body>'
       + '<div class="hdr">'
-      +   '<div class="brand">Bharni Gems</div>'
+      +   '<div class="brand" style="font-family:Inkburrow,\'Cormorant Garamond\',serif;font-weight:normal;letter-spacing:0">Bharni Gems</div>'
       +   '<div>'
       +     '<div class="card-lbl">Vendor Job Card</div>'
       +     '<div class="oid">' + o.id + '</div>'
