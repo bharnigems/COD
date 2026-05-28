@@ -514,7 +514,7 @@ body{font-family:'DM Mono',monospace;color:var(--txt);background:var(--bg);heigh
     <div class="login-err" id="loginErr"></div>
     <div id="loginConnStatus" style="font-size:8px;color:var(--dim);text-align:center;margin-top:10px;letter-spacing:1px">⏳ Connecting to Firebase…</div>
     <button onclick="location.reload()" style="background:none;border:1px solid var(--b);color:var(--dim);padding:8px 20px;font-family:'DM Mono',monospace;font-size:8px;letter-spacing:2px;cursor:pointer;border-radius:var(--r);margin-top:10px;width:100%">↺ Reload Page</button>
-    <div class="login-ver">Bharni Gems · v54</div>
+    <div class="login-ver">Bharni Gems · v55</div>
   </div>
 </div>
 
@@ -1814,9 +1814,7 @@ function appStart() {
     standaloneVendors = _cachedV ? JSON.parse(_cachedV) : [];
     var _cachedC = localStorage.getItem('bg_customers');
     standaloneCustomers = _cachedC ? JSON.parse(_cachedC) : [];
-    // Pre-populate selects from cache so they work instantly on return visits
-    if (standaloneVendors.length) populateSelectFromData('f_vendor', standaloneVendors.map(function(v){return v.name;}), '— Select Vendor —');
-    if (standaloneCustomers.length) populateSelectFromData('f_name', standaloneCustomers.map(function(c){return c.name;}), '— Select Customer —');
+    // Data loaded into memory — selects populated when form opens
   } catch(e) {
     standaloneCustomers = [];
     standaloneVendors   = [];
@@ -2985,10 +2983,13 @@ document.addEventListener('scroll', function() {
 }, true);
 
 function populateCustomerDropdown(selectedName) {
-  var inp = document.getElementById('f_name');
-  if (!inp) return;
-  inp.value = selectedName || '';
-  if (selectedName) onCustomerSelect();
+  var names = standaloneCustomers.map(function(c){ return c.name; }).sort();
+  populateSelectFromData('f_name', names, '— Select Customer —');
+  if (selectedName) {
+    var sel = document.getElementById('f_name');
+    if (sel) sel.value = selectedName;
+    onCustomerSelect();
+  }
 }
 
 function populateVendorDropdown(selectedName) {
@@ -2996,10 +2997,13 @@ function populateVendorDropdown(selectedName) {
   var hideVendor = currentRole === 'salesman' || currentRole === 'vendor' || currentRole === 'accounts';
   if (vendorFg) vendorFg.style.display = hideVendor ? 'none' : '';
   if (hideVendor) return;
-  var inp = document.getElementById('f_vendor');
-  if (!inp) return;
-  inp.value = selectedName || '';
-  if (selectedName) onVendorSelect();
+  var names = standaloneVendors.map(function(v){ return v.name; }).sort();
+  populateSelectFromData('f_vendor', names, '— Select Vendor —');
+  if (selectedName) {
+    var sel = document.getElementById('f_vendor');
+    if (sel) sel.value = selectedName;
+    onVendorSelect();
+  }
 }
 
 
@@ -3016,7 +3020,7 @@ function onVendorSelect(){
   // vendor location is stored in standaloneVendors but not surfaced in order form — nothing to autofill here yet
 }
 
-function openAdd(){
+async function openAdd(){
   if(currentRole === 'vendor'){ showToast('View only access'); return; }
   editId=null; curImgs=[]; curOrderType='normal'; curPieceImgs={};
   document.getElementById('addModalTitle').textContent='New Order';
@@ -3043,11 +3047,28 @@ function openAdd(){
   renderImgPrev();
   document.getElementById('addModal').classList.add('open');
   // Data pre-loaded from localStorage at appStart — instant, no fetch needed
+  // Fetch from Firestore if not in memory, then populate selects
+  try {
+    if (!standaloneCustomers.length && fbReady) {
+      var _cs = await db.collection('meta').doc('customers').get();
+      if (_cs.exists && _cs.data().list) {
+        standaloneCustomers = _cs.data().list;
+        localStorage.setItem('bg_customers', JSON.stringify(standaloneCustomers));
+      }
+    }
+    if (!standaloneVendors.length && fbReady) {
+      var _vs = await db.collection('meta').doc('vendors').get();
+      if (_vs.exists && _vs.data().list) {
+        standaloneVendors = _vs.data().list;
+        localStorage.setItem('bg_vendors', JSON.stringify(standaloneVendors));
+      }
+    }
+  } catch(e) { console.warn('Fetch customers/vendors:', e.message); }
   populateCustomerDropdown();
   populateVendorDropdown();
 }
 
-function openEdit(id){
+async function openEdit(id){
   const o=orders.find(x=>x.id===id);
   if(!o) return;
   editId=id; curImgs=[...(o.images||[])]; curOrderType=o.orderType||'normal';
