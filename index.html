@@ -509,7 +509,7 @@ body{font-family:'DM Mono',monospace;color:var(--txt);background:var(--bg);heigh
     <div class="login-err" id="loginErr"></div>
     <div id="loginConnStatus" style="font-size:8px;color:var(--dim);text-align:center;margin-top:10px;letter-spacing:1px">⏳ Connecting to Firebase…</div>
     <button onclick="location.reload()" style="background:none;border:1px solid var(--b);color:var(--dim);padding:8px 20px;font-family:'DM Mono',monospace;font-size:8px;letter-spacing:2px;cursor:pointer;border-radius:var(--r);margin-top:10px;width:100%">↺ Reload Page</button>
-    <div class="login-ver">Bharni Gems · v56</div>
+    <div class="login-ver">Bharni Gems · v57</div>
   </div>
 </div>
 
@@ -3265,7 +3265,9 @@ function saveOrder(){
   if(!name){showToast('Customer name required');return;}
   const po=document.getElementById('f_po').value.trim();
   if(!po){showToast('Our PO number is required');document.getElementById('f_po').focus();return;}
-  if(!custPo){showToast('Customer PO number is required');document.getElementById('f_cust_po').focus();return;}
+  const custPoEl=document.getElementById('f_cust_po');
+  const custPo=custPoEl?(custPoEl.value||'').trim():'';
+  if(!custPo){showToast('Customer PO number is required');if(custPoEl)custPoEl.focus();return;}
   const vendorEl = document.getElementById('f_vendor');
   const vendor = (vendorEl.tagName==='SELECT'?vendorEl.value:vendorEl.value).trim();
   const contact = document.getElementById('f_contact').value.trim();
