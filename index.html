@@ -509,7 +509,7 @@ body{font-family:'DM Mono',monospace;color:var(--txt);background:var(--bg);heigh
     <div class="login-err" id="loginErr"></div>
     <div id="loginConnStatus" style="font-size:8px;color:var(--dim);text-align:center;margin-top:10px;letter-spacing:1px">⏳ Connecting to Firebase…</div>
     <button onclick="location.reload()" style="background:none;border:1px solid var(--b);color:var(--dim);padding:8px 20px;font-family:'DM Mono',monospace;font-size:8px;letter-spacing:2px;cursor:pointer;border-radius:var(--r);margin-top:10px;width:100%">↺ Reload Page</button>
-    <div class="login-ver">Bharni Gems · v58</div>
+    <div class="login-ver">Bharni Gems · v59</div>
   </div>
 </div>
 
@@ -3038,7 +3038,7 @@ async function openAdd(){
   document.getElementById('invoiceInlineWrap').style.display='none';
   document.getElementById('cancelRemarksWrap').style.display='none';
   refreshStatusOptions();
-  renderPieces([{styleNo:'',gwt:'',dwt:'',size:'',purity:'',diaType:'',img:''}]);
+  renderPieces([{styleNo:'',qty:1,gwt:'',dwt:'',size:'',purity:'',diaType:'',img:''}]);
   renderImgPrev();
   document.getElementById('addModal').classList.add('open');
   // Data pre-loaded from localStorage at appStart — instant, no fetch needed
@@ -3152,6 +3152,7 @@ function renderPieces(pieces){
       </div>
       <div class="piece-row-4">
         <div class="fg"><label class="flbl">Style No.</label><input class="inp" placeholder="BG-NP-001" value="${p.styleNo||''}" data-f="styleNo" data-i="${i}"></div>
+        <div class="fg"><label class="flbl">Qty</label><input class="inp" type="number" step="1" placeholder="1" value="${p.qty||1}" data-f="qty" data-i="${i}" min="1" style="width:100%"></div>
         <div class="fg"><label class="flbl">Gross Wt (g)</label><input class="inp" type="number" step="0.01" placeholder="2.50" value="${p.gwt||''}" data-f="gwt" data-i="${i}" min="0"></div>
         <div class="fg"><label class="flbl">Dia Wt (ct)</label><input class="inp" type="number" step="0.01" placeholder="0.18" value="${p.dwt||''}" data-f="dwt" data-i="${i}" min="0"></div>
         <div class="fg"><label class="flbl">Size</label><input class="inp" placeholder="12 / L / 6.5" value="${p.size||''}" data-f="size" data-i="${i}"></div>
@@ -3197,6 +3198,7 @@ function getPieces(){
   const els = document.querySelectorAll('[data-f="styleNo"]');
   return Array.from(els).map((_,i) => ({
     styleNo: document.querySelector(`[data-f="styleNo"][data-i="${i}"]`).value,
+    qty:     Number(document.querySelector(`[data-f="qty"][data-i="${i}"]`)?.value)||1,
     gwt:     Number(document.querySelector(`[data-f="gwt"][data-i="${i}"]`).value)||0,
     dwt:     Number(document.querySelector(`[data-f="dwt"][data-i="${i}"]`).value)||0,
     size:    document.querySelector(`[data-f="size"][data-i="${i}"]`).value,
@@ -3208,7 +3210,7 @@ function getPieces(){
 
 function addPiece(){
   const cur = getPieces();
-  renderPieces([...cur, {styleNo:'',gwt:'',dwt:'',size:'',purity:'',diaType:'',img:''}]);
+  renderPieces([...cur, {styleNo:'',qty:1,gwt:'',dwt:'',size:'',purity:'',diaType:'',img:''}]);
 }
 
 function rmPiece(i){
