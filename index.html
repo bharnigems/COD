@@ -509,7 +509,7 @@ body{font-family:'DM Mono',monospace;color:var(--txt);background:var(--bg);heigh
     <div class="login-err" id="loginErr"></div>
     <div id="loginConnStatus" style="font-size:8px;color:var(--dim);text-align:center;margin-top:10px;letter-spacing:1px">⏳ Connecting to Firebase…</div>
     <button onclick="location.reload()" style="background:none;border:1px solid var(--b);color:var(--dim);padding:8px 20px;font-family:'DM Mono',monospace;font-size:8px;letter-spacing:2px;cursor:pointer;border-radius:var(--r);margin-top:10px;width:100%">↺ Reload Page</button>
-    <div class="login-ver">Bharni Gems · v57</div>
+    <div class="login-ver">Bharni Gems · v58</div>
   </div>
 </div>
 
@@ -2989,7 +2989,7 @@ function populateCustomerDropdown(selectedName) {
 
 function populateVendorDropdown(selectedName) {
   var vendorFg = document.getElementById('vendorFieldGroup');
-  var hideVendor = currentRole === 'salesman' || currentRole === 'vendor' || currentRole === 'accounts';
+  var hideVendor = currentRole === 'salesman' || currentRole === 'vendor';
   if (vendorFg) vendorFg.style.display = hideVendor ? 'none' : '';
   if (hideVendor) return;
   var names = standaloneVendors.map(function(v){ return v.name; }).sort();
