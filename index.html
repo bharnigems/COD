@@ -193,8 +193,8 @@ body{font-family:'DM Mono',monospace;color:var(--txt);background:var(--bg);heigh
 .overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:200;backdrop-filter:blur(6px)}
 .overlay.open{display:flex;align-items:flex-end;justify-content:center}
 @media(min-width:600px){.overlay.open{align-items:center}}
-.sheet{background:var(--s1);width:100%;max-width:600px;max-height:92vh;overflow-y:auto;border-radius:16px 16px 0 0;position:relative}
-@media(min-width:600px){.sheet{border-radius:var(--r);max-height:90vh}}
+.sheet{background:var(--s1);width:100%;max-width:780px;max-height:92vh;overflow-y:auto;border-radius:16px 16px 0 0;position:relative}
+@media(min-width:600px){.sheet{border-radius:var(--r);max-height:90vh;max-width:780px}}
 .sheet-handle{width:36px;height:3px;background:var(--b);border-radius:2px;margin:10px auto 0}
 .sheet-hdr{padding:16px 18px 14px;border-bottom:1px solid var(--b);display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;background:var(--s1);z-index:1}
 .sheet-title{font-family:'Cormorant Garamond',serif;font-size:18px;font-weight:300;color:var(--gold);letter-spacing:1px}
@@ -509,7 +509,7 @@ body{font-family:'DM Mono',monospace;color:var(--txt);background:var(--bg);heigh
     <div class="login-err" id="loginErr"></div>
     <div id="loginConnStatus" style="font-size:8px;color:var(--dim);text-align:center;margin-top:10px;letter-spacing:1px">⏳ Connecting to Firebase…</div>
     <button onclick="location.reload()" style="background:none;border:1px solid var(--b);color:var(--dim);padding:8px 20px;font-family:'DM Mono',monospace;font-size:8px;letter-spacing:2px;cursor:pointer;border-radius:var(--r);margin-top:10px;width:100%">↺ Reload Page</button>
-    <div class="login-ver">Bharni Gems · v59</div>
+    <div class="login-ver">Bharni Gems · v60</div>
   </div>
 </div>
 
@@ -3269,7 +3269,8 @@ function saveOrder(){
   if(!po){showToast('Our PO number is required');document.getElementById('f_po').focus();return;}
   const custPoEl=document.getElementById('f_cust_po');
   const custPo=custPoEl?(custPoEl.value||'').trim():'';
-  if(!custPo){showToast('Customer PO number is required');if(custPoEl)custPoEl.focus();return;}
+  // Only require custPo on NEW orders — not when editing existing ones
+  if(!custPo && !editId){showToast('Customer PO number is required');if(custPoEl)custPoEl.focus();return;}
   const vendorEl = document.getElementById('f_vendor');
   const vendor = (vendorEl.tagName==='SELECT'?vendorEl.value:vendorEl.value).trim();
   const contact = document.getElementById('f_contact').value.trim();
@@ -3802,8 +3803,8 @@ document.getElementById('f_odate').addEventListener('change', function(){
   document.getElementById('f_ddate').value    = addDays(v, delDays);
 });
 
-// Close overlays on backdrop tap
-['addModal','detailModal','addVendorModal','addCustomerModal','fuModal','userManagerModal','drillModal','vendorLoginModal'].forEach(id=>{
+// Close overlays on backdrop tap — addModal excluded (accidental close prevention)
+['detailModal','addVendorModal','addCustomerModal','fuModal','userManagerModal','drillModal','vendorLoginModal'].forEach(id=>{
   document.getElementById(id).addEventListener('click',function(e){if(e.target===this)closeModal(id);});
 });
 
