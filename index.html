@@ -509,7 +509,7 @@ body{font-family:'DM Mono',monospace;color:var(--txt);background:var(--bg);heigh
     <div class="login-err" id="loginErr"></div>
     <div id="loginConnStatus" style="font-size:8px;color:var(--dim);text-align:center;margin-top:10px;letter-spacing:1px">⏳ Connecting to Firebase…</div>
     <button onclick="location.reload()" style="background:none;border:1px solid var(--b);color:var(--dim);padding:8px 20px;font-family:'DM Mono',monospace;font-size:8px;letter-spacing:2px;cursor:pointer;border-radius:var(--r);margin-top:10px;width:100%">↺ Reload Page</button>
-    <div class="login-ver">Bharni Gems · v60</div>
+    <div class="login-ver">Bharni Gems · v62</div>
   </div>
 </div>
 
@@ -3114,13 +3114,14 @@ async function openEdit(id){
   // Map old piece structure to new fields gracefully
   const pieces = (o.pieces&&o.pieces.length) ? o.pieces.map(p=>({
     styleNo: p.styleNo||p.item||'',
+    qty: p.qty||1,
     gwt: p.gwt||0,
     dwt: p.dwt||0,
-    size: p.size||(p.qty?String(p.qty):''),
+    size: p.size||'',
     purity: p.purity||'',
     diaType: p.diaType||'',
     img: p.img||''
-  })) : [{styleNo:'',gwt:'',dwt:'',size:'',purity:'',diaType:'',img:''}];
+  })) : [{styleNo:'',qty:1,gwt:'',dwt:'',size:'',purity:'',diaType:'',img:''}];
   renderPieces(pieces);
   renderImgPrev();
   document.getElementById('addModal').classList.add('open');
@@ -3269,8 +3270,11 @@ function saveOrder(){
   if(!po){showToast('Our PO number is required');document.getElementById('f_po').focus();return;}
   const custPoEl=document.getElementById('f_cust_po');
   const custPo=custPoEl?(custPoEl.value||'').trim():'';
-  // Only require custPo on NEW orders — not when editing existing ones
-  if(!custPo && !editId){showToast('Customer PO number is required');if(custPoEl)custPoEl.focus();return;}
+  // custPo required only for brand new orders
+  const isNewOrder = !editId;
+  if(isNewOrder && !custPo){showToast('Customer PO number is required');if(custPoEl)custPoEl.focus();return;}
+  const existingCustPo = editId ? ((orders.find(function(x){return x.id===editId;})||{}).custPo||'') : '';
+  const finalCustPo = custPo || existingCustPo;
   const vendorEl = document.getElementById('f_vendor');
   const vendor = (vendorEl.tagName==='SELECT'?vendorEl.value:vendorEl.value).trim();
   const contact = document.getElementById('f_contact').value.trim();
@@ -3306,7 +3310,7 @@ function saveOrder(){
     id:editId||gid(),
     name, contact, loc, vendor,
     category:document.getElementById('f_category').value,
-    po,
+    po, custPo: finalCustPo,
     invoice: invoice||(existingOrder?.invoice||''),
     cancelRemarks: cancelRemarks||(existingOrder?.cancelRemarks||''),
     orderType, newDesign,
