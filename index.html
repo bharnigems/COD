@@ -493,6 +493,7 @@ body{font-family:'DM Mono',monospace;color:var(--txt);background:var(--bg);heigh
   line-height: 1;
 }
 </style>
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
 <body>
 
@@ -509,7 +510,7 @@ body{font-family:'DM Mono',monospace;color:var(--txt);background:var(--bg);heigh
     <div class="login-err" id="loginErr"></div>
     <div id="loginConnStatus" style="font-size:8px;color:var(--dim);text-align:center;margin-top:10px;letter-spacing:1px">⏳ Connecting to Firebase…</div>
     <button onclick="location.reload()" style="background:none;border:1px solid var(--b);color:var(--dim);padding:8px 20px;font-family:'DM Mono',monospace;font-size:8px;letter-spacing:2px;cursor:pointer;border-radius:var(--r);margin-top:10px;width:100%">↺ Reload Page</button>
-    <div class="login-ver">Bharni Gems · v62</div>
+    <div class="login-ver">Bharni Gems · v64</div>
   </div>
 </div>
 
@@ -533,6 +534,7 @@ body{font-family:'DM Mono',monospace;color:var(--txt);background:var(--bg);heigh
       <div class="export-item" onclick="exportExcel();closeExportMenu()" id="exportExcelItem"><span class="ei">📊</span>Excel (All Sheets)</div>
       <div style="border-top:1px solid var(--b);margin:4px 0"></div>
       <div class="export-item" onclick="closeExportMenu();printJobCard('vendor')" id="exportVendorCard"><span class="ei">🏭</span>Job Card — Vendor</div>
+      <div class="export-item" onclick="closeExportMenu();emailJobCard()" id="exportEmailVendor"><span class="ei">✉</span>Email Job Card to Vendor</div>
       <div class="export-item" onclick="closeExportMenu();printJobCard('customer')" id="exportCustomerCard"><span class="ei">👤</span>Job Card — Customer</div>
       <div style="border-top:1px solid var(--b);margin:4px 0"></div>
       <div class="export-item" onclick="closeExportMenu();showFbConfig()"><span class="ei">🔥</span>Firebase Settings</div>
@@ -838,6 +840,7 @@ body{font-family:'DM Mono',monospace;color:var(--txt);background:var(--bg);heigh
     <div class="sheet-body">
       <div class="fg"><label class="flbl">Vendor Name *</label><input class="inp" id="fv_name" placeholder="Surat Diamonds"></div>
       <div class="fg"><label class="flbl">Contact Person</label><input class="inp" id="fv_contact" placeholder="Name / number"></div>
+      <div class="fg"><label class="flbl">Email</label><input class="inp" id="fv_email" type="email" placeholder="vendor@email.com"></div>
       <div class="fg"><label class="flbl">City / Location</label><input class="inp" id="fv_loc" placeholder="Surat, Gujarat"></div>
       <div class="fg"><label class="flbl">Speciality</label><input class="inp" id="fv_spec" placeholder="Nosepins, LGD, etc."></div>
       <div class="fg"><label class="flbl">Notes</label><textarea class="inp" id="fv_notes" rows="2" placeholder="Any remarks…" style="resize:vertical"></textarea></div>
@@ -1132,6 +1135,7 @@ let orders = [];
 let standaloneVendors   = [];
 let standaloneCustomers = [];
 let editId = null, curImgs = [], viewId = null, selVendor = null;
+let _gmailToken = null, _gmailExpiry = 0;
 let statFilter = null, custFilter = null;
 let reminderDays = parseInt(localStorage.getItem('bg_rem_days') || '3');
 
@@ -1701,6 +1705,273 @@ async function connectFirebase(cfg) {
 
 
 // ── POPULATE SELECT FROM DATA ──
+
+// ══════════════════════════════════════════════
+// GMAIL — SEND VENDOR JOB CARD AS PDF
+// ══════════════════════════════════════════════
+const _GMAIL_CLIENT_ID = '145665506754-0svv81pjcf1105q7fsk7vm348cpfme13.apps.googleusercontent.com';
+
+function _getGmailToken() {
+  return new Promise(function(resolve, reject) {
+    if (_gmailToken && Date.now() < _gmailExpiry) { resolve(_gmailToken); return; }
+    var client = google.accounts.oauth2.initTokenClient({
+      client_id: _GMAIL_CLIENT_ID,
+      scope: 'https://www.googleapis.com/auth/gmail.send',
+      callback: function(resp) {
+        if (resp.error) { reject(resp.error); return; }
+        _gmailToken = resp.access_token;
+        _gmailExpiry = Date.now() + (resp.expires_in - 60) * 1000;
+        resolve(_gmailToken);
+      }
+    });
+    client.requestAccessToken();
+  });
+}
+
+// Build Gmail multipart MIME with PDF attachment
+function _buildMultipartRaw(to, subject, bodyHtml, pdfBase64, filename) {
+  var boundary = 'bharni_' + Date.now();
+  var mime = [
+    'To: ' + to,
+    'Subject: ' + subject,
+    'MIME-Version: 1.0',
+    'Content-Type: multipart/mixed; boundary="' + boundary + '"',
+    '',
+    '--' + boundary,
+    'Content-Type: text/html; charset=UTF-8',
+    'Content-Transfer-Encoding: quoted-printable',
+    '',
+    bodyHtml,
+    '',
+    '--' + boundary,
+    'Content-Type: application/pdf; name="' + filename + '"',
+    'Content-Transfer-Encoding: base64',
+    'Content-Disposition: attachment; filename="' + filename + '"',
+    '',
+    pdfBase64,
+    '',
+    '--' + boundary + '--'
+  ].join('\r\n');
+  return btoa(unescape(encodeURIComponent(mime)))
+    .replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+}
+
+// Generate job card HTML (same as print version)
+function _jobCardHtml(o) {
+  var pcs = totalPcs(o);
+  var gwt = orderGrossWt(o).toFixed(2);
+  var dwt = orderDiamondWt(o).toFixed(2);
+  var rows = (o.pieces||[]).map(function(p,i) {
+    return '<tr style="border-bottom:1px solid #e8e0d0">'
+      + '<td style="padding:8px 10px;color:#1a1410;font-weight:600">'+(i+1)+'</td>'
+      + '<td style="padding:8px 10px">'+(p.styleNo||'&mdash;')+'</td>'
+      + '<td style="padding:8px 10px;text-align:center">'+(p.qty||1)+'</td>'
+      + '<td style="padding:8px 10px;text-align:right">'+(p.gwt||0)+'g</td>'
+      + '<td style="padding:8px 10px;text-align:right">'+(p.dwt||0)+'ct</td>'
+      + '<td style="padding:8px 10px">'+(p.size||'&mdash;')+'</td>'
+      + '<td style="padding:8px 10px">'+(p.purity||'&mdash;')+'</td>'
+      + '<td style="padding:8px 10px">'+(p.diaType||'&mdash;')+'</td>'
+      + '</tr>';
+  }).join('');
+
+  return '<!DOCTYPE html><html><head><meta charset="UTF-8">'
+    + '<style>@page{margin:12mm}body{font-family:Georgia,serif;color:#1a1410;margin:0;padding:0;font-size:10px}'
+    + '.hdr{background:#1e3a5c;padding:14px 20px;display:flex;justify-content:space-between;align-items:center}'
+    + '.brand{font-size:24px;color:#f5d98a;font-weight:300}'
+    + '.lbl{font-size:7px;letter-spacing:2px;text-transform:uppercase;color:#9e8e7e;margin-bottom:3px}'
+    + 'table{width:100%;border-collapse:collapse;font-size:10px}'
+    + 'th{padding:7px 8px;font-size:7px;letter-spacing:1px;text-transform:uppercase;background:#f5f0e8;border-bottom:2px solid #b8960c;color:#8b6a00;text-align:left}'
+    + 'td{padding:7px 8px;border-bottom:0.5px solid #e8e0d0;color:#3a2e24}'
+    + '.sec{padding:14px 20px;border-bottom:1px solid #e8e0d0}'
+    + '.grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px}'
+    + '.val{font-size:12px;color:#1a1410;font-weight:600;margin-top:2px}'
+    + '.dispatch{color:#c84800;font-weight:700}'
+    + '.summary{padding:10px 20px;background:#f5f0e8;font-size:10px;color:#6b5e4e}'
+    + '.footer{padding:10px 20px;border-top:1px solid #e8e0d0;text-align:center;font-size:7px;letter-spacing:2px;text-transform:uppercase;color:#9e8e7e}'
+    + '</style></head><body>'
+    + '<div class="hdr"><div class="brand">Bharni Gems</div>'
+    + '<div style="text-align:right"><div style="font-size:8px;letter-spacing:2px;text-transform:uppercase;color:#b8d4f0">Vendor Job Card</div>'
+    + '<div style="font-size:14px;font-weight:700;color:#fff;margin-top:2px">'+o.id+'</div></div></div>'
+    + '<div class="sec"><div class="grid">'
+    + '<div><div class="lbl">Customer</div><div class="val">'+o.name+'</div></div>'
+    + '<div><div class="lbl">Vendor / Karigar</div><div class="val">'+(o.vendor||'&mdash;')+'</div></div>'
+    + '<div><div class="lbl">Our PO No.</div><div class="val" style="font-size:11px">'+(o.po||'&mdash;')+'</div></div>'
+    + '<div><div class="lbl">Category</div><div class="val" style="font-size:11px">'+(o.category||'&mdash;')+'</div></div>'
+    + '<div><div class="lbl">Order Date</div><div class="val" style="font-size:11px">'+(o.odate||'&mdash;')+'</div></div>'
+    + '<div><div class="lbl">Dispatch By</div><div class="val dispatch">'+(o.shipdate||'&mdash;')+'</div></div>'
+    + '</div></div>'
+    + '<div class="sec"><div class="lbl" style="margin-bottom:8px">Piece Details</div>'
+    + '<table><thead><tr><th>#</th><th>Style No.</th><th>Qty</th><th>Gross Wt</th><th>Dia Wt</th><th>Size</th><th>Purity</th><th>Dia Type</th></tr></thead>'
+    + '<tbody>'+rows+'</tbody></table></div>'
+    + '<div class="summary">Total Pieces: <strong style="color:#1a1410">'+pcs+'</strong>&nbsp;&nbsp;'
+    + 'Gross Wt: <strong style="color:#1a1410">'+gwt+'g</strong>&nbsp;&nbsp;'
+    + 'Diamond Wt: <strong style="color:#b8960c">'+dwt+'ct</strong></div>'
+    + (o.notes ? '<div class="sec" style="font-size:10px"><strong>Notes:</strong> '+o.notes+'</div>' : '')
+    + '<div class="footer">Bharni Gems &nbsp;&middot;&nbsp; You&#39;ll never know us. You&#39;ll always wear us.</div>'
+    + '</body></html>';
+}
+
+// Convert HTML to PDF using hidden iframe + print to PDF blob
+async function _htmlToPdfBase64(htmlContent) {
+  return new Promise(function(resolve, reject) {
+    // Create hidden iframe
+    var iframe = document.createElement('iframe');
+    iframe.style.cssText = 'position:fixed;width:210mm;height:297mm;top:-9999px;left:-9999px;border:none';
+    document.body.appendChild(iframe);
+
+    iframe.onload = function() {
+      try {
+        // Use print-to-PDF via blob URL trick
+        var iwin = iframe.contentWindow;
+        iwin.focus();
+
+        // Trigger print and capture
+        // Since direct PDF generation requires server, we use html2canvas approach
+        // Actually simplest: use the Blob URL approach with data URI
+        document.body.removeChild(iframe);
+        resolve(null); // Signal to use HTML email with PDF-style formatting instead
+      } catch(e) {
+        document.body.removeChild(iframe);
+        reject(e);
+      }
+    };
+
+    var blob = new Blob([htmlContent], {type:'text/html'});
+    iframe.src = URL.createObjectURL(blob);
+  });
+}
+
+async function emailJobCard(oid) {
+  var id = oid || viewId;
+  var o = orders.find(function(x){ return x.id===id; });
+  if (!o) { showToast('Open an order first'); return; }
+
+  var v = standaloneVendors.find(function(x){ return x.name===o.vendor; });
+  var toEmail = v ? (v.email||'') : '';
+
+  if (!toEmail) {
+    toEmail = prompt('No email on file for this vendor.\nEnter vendor email:');
+    if (!toEmail || !toEmail.includes('@')) { showToast('Invalid email'); return; }
+    if (v) {
+      v.email = toEmail;
+      db.collection('meta').doc('vendors').set({list: standaloneVendors}).catch(function(){});
+    }
+  }
+
+  showToast('Connecting to Gmail…');
+  var token;
+  try { token = await _getGmailToken(); }
+  catch(e) { showToast('Gmail sign-in cancelled'); return; }
+
+  showToast('Preparing job card…');
+
+  var jobHtml = _jobCardHtml(o);
+  var subject = 'Job Card — ' + o.id + ' | ' + o.name + ' | Bharni Gems';
+  var filename = 'JobCard_' + o.id + '_' + o.name.replace(/\s+/g,'_') + '.pdf';
+
+  // Use print-triggered PDF: open in new window, send link in email body
+  // For true PDF attachment: load jsPDF dynamically
+  showToast('Loading PDF library…');
+
+  try {
+    // Dynamically load html2canvas and jsPDF
+    await _loadScript('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js');
+    await _loadScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js');
+
+    var pdfB64 = await _generatePdfBase64(jobHtml, o);
+    await _sendGmailWithPdf(token, toEmail, subject, o, pdfB64, filename);
+
+  } catch(e) {
+    console.warn('PDF generation failed, sending HTML email instead:', e);
+    await _sendGmailHtml(token, toEmail, subject, jobHtml);
+  }
+}
+
+function _loadScript(src) {
+  return new Promise(function(resolve, reject) {
+    if (document.querySelector('script[src="'+src+'"]')) { resolve(); return; }
+    var s = document.createElement('script');
+    s.src = src; s.onload = resolve; s.onerror = reject;
+    document.head.appendChild(s);
+  });
+}
+
+async function _generatePdfBase64(htmlContent, o) {
+  // Render into hidden div, capture with html2canvas, export as jsPDF
+  var container = document.createElement('div');
+  container.style.cssText = 'position:fixed;left:-9999px;top:0;width:794px;background:white;font-family:Georgia,serif';
+  container.innerHTML = htmlContent;
+  document.body.appendChild(container);
+
+  var canvas = await html2canvas(container, {
+    scale: 2, useCORS: true, logging: false,
+    width: 794, windowWidth: 794
+  });
+  document.body.removeChild(container);
+
+  var imgData = canvas.toDataURL('image/jpeg', 0.92);
+  var pdf = new window.jspdf.jsPDF({ orientation:'portrait', unit:'mm', format:'a4' });
+  var pdfW = pdf.internal.pageSize.getWidth();
+  var pdfH = (canvas.height * pdfW) / canvas.width;
+  pdf.addImage(imgData, 'JPEG', 0, 0, pdfW, pdfH);
+
+  // Get base64 without the data:application/pdf;base64, prefix
+  var pdfBase64 = pdf.output('datauristring').split(',')[1];
+  return pdfBase64;
+}
+
+async function _sendGmailWithPdf(token, toEmail, subject, o, pdfBase64, filename) {
+  var bodyHtml = '<p style="font-family:Georgia,serif;color:#1a1410">Dear ' + (o.vendor||'Vendor') + ',</p>'
+    + '<p style="font-family:Georgia,serif;color:#1a1410">Please find attached the job card for order <strong>' + o.id + '</strong>.</p>'
+    + '<table style="font-family:Georgia,serif;font-size:12px;color:#1a1410;margin:12px 0;border-collapse:collapse">'
+    + '<tr><td style="padding:4px 12px 4px 0;color:#9e8e7e">Customer</td><td style="padding:4px 0"><strong>' + o.name + '</strong></td></tr>'
+    + '<tr><td style="padding:4px 12px 4px 0;color:#9e8e7e">PO No.</td><td>' + (o.po||'&mdash;') + '</td></tr>'
+    + '<tr><td style="padding:4px 12px 4px 0;color:#9e8e7e">Category</td><td>' + (o.category||'&mdash;') + '</td></tr>'
+    + '<tr><td style="padding:4px 12px 4px 0;color:#9e8e7e">Dispatch By</td><td style="color:#c84800;font-weight:700">' + (o.shipdate||'&mdash;') + '</td></tr>'
+    + '</table>'
+    + '<p style="font-family:Georgia,serif;color:#6b5e4e;font-size:11px">Bharni Gems</p>';
+
+  var raw = _buildMultipartRaw(toEmail, subject, bodyHtml, pdfBase64, filename);
+
+  showToast('Sending PDF…');
+  var res = await fetch('https://gmail.googleapis.com/gmail/v1/users/me/messages/send', {
+    method: 'POST',
+    headers: {'Authorization':'Bearer '+token, 'Content-Type':'application/json'},
+    body: JSON.stringify({raw: raw})
+  });
+
+  if (res.ok) {
+    showToast('\u2713 PDF job card sent to ' + toEmail);
+    // Mark mail as sent on the order
+    if (o) {
+      o.mailSentAt = new Date().toISOString();
+      try { await db.collection('orders').doc(o.id).update({ mailSentAt: o.mailSentAt }); } catch(e) {}
+    }
+  } else {
+    var err = await res.json();
+    showToast('Failed: ' + (err.error && err.error.message || res.status));
+  }
+}
+
+async function _sendGmailHtml(token, toEmail, subject, htmlBody) {
+  var boundary = 'bharni_' + Date.now();
+  var raw = btoa(unescape(encodeURIComponent(
+    'To: ' + toEmail + '\r\nSubject: ' + subject + '\r\nMIME-Version: 1.0\r\nContent-Type: text/html; charset=UTF-8\r\n\r\n' + htmlBody
+  ))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+
+  var res = await fetch('https://gmail.googleapis.com/gmail/v1/users/me/messages/send', {
+    method: 'POST',
+    headers: {'Authorization':'Bearer '+token, 'Content-Type':'application/json'},
+    body: JSON.stringify({raw: raw})
+  });
+  if (res.ok) {
+    showToast('\u2713 Job card sent to ' + toEmail);
+  } else {
+    var err = await res.json();
+    showToast('Failed: ' + (err.error && err.error.message || res.status));
+  }
+}
+
 function populateSelectFromData(selectId, names, placeholder) {
   var sel = document.getElementById(selectId);
   if (!sel) return;
@@ -2147,6 +2418,7 @@ function renderVendors() {
     <div class="vcard ${selVendor===v.name?'active':''}" onclick="selectVendor('${v.name}')">
       <div class="vcard-name">${v.name}</div>
       <div class="vcard-sub" style="color:var(--gold)">${v.orders.length} open orders</div>
+      ${v.email?`<div style="font-size:8px;color:var(--mid);margin-top:2px">✉ ${v.email}</div>`:''}
       <div class="vcard-stats">
         <div class="vs"><div class="vs-v">${v.pcs}</div><div class="vs-l">Pieces</div></div>
         <div class="vs"><div class="vs-v">${v.gwt.toFixed(1)}g</div><div class="vs-l">Gross Wt</div></div>
@@ -3401,6 +3673,67 @@ function deleteFollowUp(i){
 // ══════════════════════════════════════════════
 // JOB CARD PDF (print)
 // ══════════════════════════════════════════════
+// ── MAIL SENT PROMPT ──
+function openMailSentPrompt(oid) {
+  var o = orders.find(function(x){ return x.id===oid; });
+  if (!o) return;
+
+  // Build modal HTML
+  var existing = o.mailSentAt || o.mailSentManual || '';
+  var modal = document.createElement('div');
+  modal.id = 'mailSentModal';
+  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px';
+  modal.innerHTML = `
+    <div style="background:var(--s1);border:1px solid var(--b);border-radius:12px;padding:24px;max-width:360px;width:100%">
+      <div style="font-size:14px;color:var(--gold);font-family:'Cormorant Garamond',serif;margin-bottom:4px">Customer Job Card</div>
+      <div style="font-size:10px;color:var(--mid);margin-bottom:16px;line-height:1.6">
+        Job card is locked until the vendor mail has been sent.<br>
+        Send the mail automatically or enter the date/time it was sent manually.
+      </div>
+
+      <div style="margin-bottom:14px">
+        <button class="btn-gold" style="width:100%;margin-bottom:8px" onclick="emailJobCardThenPrint('${oid}')">
+          ✉ Send Mail Now &amp; Download Job Card
+        </button>
+        <div style="font-size:8px;letter-spacing:1.5px;text-transform:uppercase;color:var(--dim);text-align:center;margin:10px 0">— or enter manually —</div>
+        <label style="font-size:9px;letter-spacing:1px;text-transform:uppercase;color:var(--mid);display:block;margin-bottom:6px">Mail Sent Date &amp; Time</label>
+        <input type="datetime-local" id="mailSentInput" class="inp" style="width:100%" value="${existing ? new Date(existing).toISOString().slice(0,16) : new Date().toISOString().slice(0,16)}">
+        <button class="btn-gold" style="width:100%;margin-top:8px" onclick="saveMailSentDate('${oid}')">
+          Save &amp; Download Job Card
+        </button>
+      </div>
+
+      <button class="btn-xs" style="width:100%;margin-top:4px" onclick="document.getElementById('mailSentModal').remove()">Cancel</button>
+    </div>
+  `;
+  document.body.appendChild(modal);
+}
+
+async function emailJobCardThenPrint(oid) {
+  document.getElementById('mailSentModal') && document.getElementById('mailSentModal').remove();
+  await emailJobCard(oid);
+  // After sending, check if mail was marked as sent
+  var o = orders.find(function(x){ return x.id===oid; });
+  if (o && o.mailSentAt) {
+    printJobCard('customer', oid);
+  }
+}
+
+async function saveMailSentDate(oid) {
+  var input = document.getElementById('mailSentInput');
+  if (!input || !input.value) { showToast('Please enter a date and time'); return; }
+  var o = orders.find(function(x){ return x.id===oid; });
+  if (!o) return;
+  o.mailSentManual = new Date(input.value).toISOString();
+  // Save to Firestore
+  try {
+    await db.collection('orders').doc(oid).update({ mailSentManual: o.mailSentManual });
+  } catch(e) { console.warn('mailSentManual save:', e); }
+  document.getElementById('mailSentModal') && document.getElementById('mailSentModal').remove();
+  showToast('Mail date saved');
+  printJobCard('customer', oid);
+}
+
 function printJobCard(type, id){
   // Role guards
   if(type === 'vendor' && currentRole === 'salesman'){
@@ -3412,6 +3745,15 @@ function printJobCard(type, id){
   const oid = id || viewId;
   const o = orders.find(x=>x.id===oid);
   if(!o){ showToast('Open an order first'); return; }
+
+  // Customer job card: only available after mail is sent OR manual date entered
+  if (type === 'customer') {
+    const mailSent = o.mailSentAt || o.mailSentManual;
+    if (!mailSent) {
+      openMailSentPrompt(oid);
+      return;
+    }
+  }
 
   const isVendor = (type === 'vendor');
   const pcs = totalPcs(o);
@@ -3743,6 +4085,7 @@ function saveVendor(){
   standaloneVendors.push({
     name,
     contact:document.getElementById('fv_contact').value.trim(),
+    email:document.getElementById('fv_email').value.trim(),
     loc:document.getElementById('fv_loc').value.trim(),
     spec:document.getElementById('fv_spec').value.trim(),
     notes:document.getElementById('fv_notes').value.trim()
