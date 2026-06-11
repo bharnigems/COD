@@ -537,7 +537,7 @@ body{font-family:'DM Mono',monospace;color:var(--txt);background:var(--bg);heigh
       <div class="export-item" onclick="exportExcel();closeExportMenu()" id="exportExcelItem"><span class="ei">📊</span>Excel (All Sheets)</div>
       <div style="border-top:1px solid var(--b);margin:4px 0"></div>
       <div class="export-item" onclick="closeExportMenu();printJobCard('vendor')" id="exportVendorCard"><span class="ei">🏭</span>Job Card — Vendor</div>
-      <div class="export-item" onclick="closeExportMenu();emailJobCard()" id="exportEmailVendor"><span class="ei">✉</span>Email Job Card to Vendor</div>
+      <div class="export-item" onclick="closeExportMenu();emailJobCard()" id="exportEmailVendor" style="display:none"><span class="ei">✉</span>Email Job Card to Vendor</div>
       <div class="export-item" onclick="closeExportMenu();printJobCard('customer')" id="exportCustomerCard"><span class="ei">👤</span>Job Card — Customer</div>
       <div style="border-top:1px solid var(--b);margin:4px 0"></div>
       <div class="export-item" onclick="closeExportMenu();showFbConfig()"><span class="ei">🔥</span>Firebase Settings</div>
@@ -1617,11 +1617,11 @@ async function connectFirebase(cfg) {
           document.getElementById('appShell').style.display = 'flex';
           document.querySelector('.login-btn').textContent = 'Sign In';
           document.getElementById('loginErr').textContent = '';
-          localStorage.removeItem('bg_orders_v2');
-          orders = [];
+          // Seamless start: render cached orders instantly, Firestore snapshot replaces them silently
+          try { orders = JSON.parse(localStorage.getItem('bg_orders_v2') || '[]').map(restoreImages); } catch(e) { orders = []; }
           try { applyRoleUI(); } catch(e) { console.warn(e); }
           try { startListeners(); } catch(e) { console.warn(e); }
-          try { renderDash(); } catch(e) { console.warn(e); }
+          try { renderAll(); } catch(e) { console.warn(e); }
         }
 
         // ── BACKGROUND: fetch role from Firestore, update cache ──
@@ -1650,11 +1650,11 @@ async function connectFirebase(cfg) {
           document.getElementById('appShell').style.display = 'flex';
           document.querySelector('.login-btn').textContent = 'Sign In';
           document.getElementById('loginErr').textContent = '';
-          localStorage.removeItem('bg_orders_v2');
-          orders = [];
+          // Seamless start: render cached orders instantly, Firestore snapshot replaces them silently
+          try { orders = JSON.parse(localStorage.getItem('bg_orders_v2') || '[]').map(restoreImages); } catch(e) { orders = []; }
           try { applyRoleUI(); } catch(e) { console.warn(e); }
           try { startListeners(); } catch(e) { console.warn(e); }
-          try { renderDash(); } catch(e) { console.warn(e); }
+          try { renderAll(); } catch(e) { console.warn(e); }
         } else {
           // Role may have changed — re-apply UI silently
           try { applyRoleUI(); } catch(e) {}
@@ -3708,10 +3708,7 @@ function openMailSentPrompt(oid) {
       </div>
 
       <div style="margin-bottom:14px">
-        <button class="btn-gold" style="width:100%;margin-bottom:8px" onclick="emailJobCardThenPrint('${oid}')">
-          ✉ Send Mail Now &amp; Download Job Card
-        </button>
-        <div style="font-size:8px;letter-spacing:1.5px;text-transform:uppercase;color:var(--dim);text-align:center;margin:10px 0">— or enter manually —</div>
+        <!-- auto-mail temporarily disabled -->
         <label style="font-size:9px;letter-spacing:1px;text-transform:uppercase;color:var(--mid);display:block;margin-bottom:6px">Mail Sent Date &amp; Time</label>
         <input type="datetime-local" id="mailSentInput" class="inp" style="width:100%" value="${existing ? new Date(existing).toISOString().slice(0,16) : new Date().toISOString().slice(0,16)}">
         <button class="btn-gold" style="width:100%;margin-top:8px" onclick="saveMailSentDate('${oid}')">
@@ -3910,6 +3907,245 @@ td:last-child{border-right:none}
   setTimeout(function(){URL.revokeObjectURL(url);},20000);
 }
 
+// ══════════════════════════════════════════════
+function exportExcel(){
+  if(!isAdmin()){ showToast('Admin only'); return; }
+  if(typeof XLSX === 'undefined'){ showToast('Excel library not loaded'); return; }
+
+  const wb = XLSX.utils.book_new();
+
+  // ── Helper: flatten order to row ──
+  function orderRow(o){
+    return {
+      'Order ID':        o.id,
+      'PO Number':       o.po||'',
+      'Customer':        o.name,
+      'Location':        o.loc||'',
+      'Contact':         o.contact||'',
+      'Vendor':          o.vendor||'',
+      'Category':        o.category||'',
+      'Order Type':      o.orderType==='urgent'?'Urgent':'Normal',
+      'New Design':      o.newDesign==='yes'?'Yes':'No',
+      'Status':          o.status,
+      'Order Date':      o.odate||'',
+      'Dispatch Date':   o.shipdate||'',
+      'Delivery Date':   o.ddate||'',
+      'Invoice No':      o.invoice||'',
+      'Pieces':          totalPcs(o),
+      'Gross Wt (g)':    +orderGrossWt(o).toFixed(3),
+      'Diamond Wt (ct)': +orderDiamondWt(o).toFixed(3),
+      'Style Numbers':   o.pieces.map(p=>p.styleNo||p.item||'').filter(Boolean).join(', '),
+      'Sizes':           o.pieces.map(p=>p.size||p.qty||'').filter(Boolean).join(', '),
+      'Purities':        o.pieces.map(p=>p.purity||'').filter(Boolean).join(', '),
+      'Diamond Types':   o.pieces.map(p=>p.diaType||'').filter(Boolean).join(', '),
+      'Cancel Remarks':  o.cancelRemarks||'',
+      'Notes':           o.notes||''
+    };
+  }
+
+  // ── Sheet 1: All Orders ──
+  const allRows = orders.map(orderRow);
+  const wsAll = XLSX.utils.json_to_sheet(allRows);
+  setColWidths(wsAll, allRows);
+  XLSX.utils.book_append_sheet(wb, wsAll, 'All Orders');
+
+  // ── Sheet 2: Vendor-wise ──
+  const vendorMap = {};
+  orders.forEach(o=>{ const k=o.vendor||'Unassigned'; if(!vendorMap[k]) vendorMap[k]=[]; vendorMap[k].push(o); });
+  const vendorRows = [];
+  Object.entries(vendorMap).sort((a,b)=>a[0].localeCompare(b[0])).forEach(([vendor,vOrders])=>{
+    vendorRows.push({'Vendor':vendor,'—':'───────────────────────────────────────────────────'});
+    vOrders.forEach(o=>vendorRows.push(orderRow(o)));
+    const gwt=vOrders.reduce((a,o)=>a+orderGrossWt(o),0);
+    const dwt=vOrders.reduce((a,o)=>a+orderDiamondWt(o),0);
+    const pcs=vOrders.reduce((a,o)=>a+totalPcs(o),0);
+    vendorRows.push({'Order ID':'SUBTOTAL','Customer':`${vOrders.length} orders`,'Pieces':pcs,'Gross Wt (g)':+gwt.toFixed(3),'Diamond Wt (ct)':+dwt.toFixed(3)});
+    vendorRows.push({});
+  });
+  const wsVendor = XLSX.utils.json_to_sheet(vendorRows);
+  XLSX.utils.book_append_sheet(wb, wsVendor, 'Vendor-wise');
+
+  // ── Sheet 3: Customer-wise ──
+  const custMap = {};
+  orders.forEach(o=>{ if(!custMap[o.name]) custMap[o.name]=[]; custMap[o.name].push(o); });
+  const custRows = [];
+  Object.entries(custMap).sort((a,b)=>a[0].localeCompare(b[0])).forEach(([cust,cOrders])=>{
+    custRows.push({'Order ID':cust,'—':'───────────────────────────────────────────────────'});
+    cOrders.forEach(o=>custRows.push(orderRow(o)));
+    const gwt=cOrders.reduce((a,o)=>a+orderGrossWt(o),0);
+    const dwt=cOrders.reduce((a,o)=>a+orderDiamondWt(o),0);
+    const pcs=cOrders.reduce((a,o)=>a+totalPcs(o),0);
+    custRows.push({'Order ID':'SUBTOTAL','Customer':`${cOrders.length} orders`,'Pieces':pcs,'Gross Wt (g)':+gwt.toFixed(3),'Diamond Wt (ct)':+dwt.toFixed(3)});
+    custRows.push({});
+  });
+  const wsCust = XLSX.utils.json_to_sheet(custRows);
+  XLSX.utils.book_append_sheet(wb, wsCust, 'Customer-wise');
+
+  // ── Sheet 4: Summary ──
+  const delivered = orders.filter(o=>o.status==='Order Delivered');
+  const active    = orders.filter(o=>!['Order Delivered','Cancelled'].includes(o.status));
+  const cancelled = orders.filter(o=>o.status==='Cancelled');
+  const summaryRows = [
+    {'Metric':'OVERALL SUMMARY','Value':''},
+    {'Metric':'Total Orders',          'Value': orders.length},
+    {'Metric':'Active Orders',         'Value': active.length},
+    {'Metric':'Delivered Orders',      'Value': delivered.length},
+    {'Metric':'Cancelled Orders',      'Value': cancelled.length},
+    {'Metric':'','Value':''},
+    {'Metric':'Total Pieces (all)',    'Value': orders.reduce((a,o)=>a+totalPcs(o),0)},
+    {'Metric':'Total Gross Wt (g)',    'Value': +totalGrossWt(orders).toFixed(3)},
+    {'Metric':'Total Diamond Wt (ct)','Value': +totalDiamondWt(orders).toFixed(3)},
+    {'Metric':'Active Gross Wt (g)',   'Value': +totalGrossWt(active).toFixed(3)},
+    {'Metric':'Active Diamond Wt (ct)','Value':+totalDiamondWt(active).toFixed(3)},
+    {'Metric':'','Value':''},
+    {'Metric':'VENDOR BREAKDOWN','Value':''},
+  ];
+  Object.entries(vendorMap).sort((a,b)=>a[0].localeCompare(b[0])).forEach(([v,vo])=>{
+    summaryRows.push({'Metric':v,'Value':`${vo.length} orders · ${vo.reduce((a,o)=>a+totalPcs(o),0)} pcs · ${vo.reduce((a,o)=>a+orderGrossWt(o),0).toFixed(2)}g · ${vo.reduce((a,o)=>a+orderDiamondWt(o),0).toFixed(2)}ct`});
+  });
+  summaryRows.push({'Metric':'','Value':''});
+  summaryRows.push({'Metric':'STATUS BREAKDOWN','Value':''});
+  STATUS_LIST.forEach(s=>{
+    const cnt = orders.filter(o=>o.status===s).length;
+    if(cnt) summaryRows.push({'Metric':s,'Value':cnt});
+  });
+  const wsSummary = XLSX.utils.json_to_sheet(summaryRows);
+  wsSummary['!cols']=[{wch:35},{wch:60}];
+  XLSX.utils.book_append_sheet(wb, wsSummary, 'Summary');
+
+  const fname = 'BharniGems_'+today().replace(/-/g,'')+'.xlsx';
+  XLSX.writeFile(wb, fname);
+  showToast('Excel exported: '+fname);
+}
+
+function setColWidths(ws, rows){
+  if(!rows.length) return;
+  const keys = Object.keys(rows[0]);
+  ws['!cols'] = keys.map(k=>({ wch: Math.max(k.length, ...rows.map(r=>String(r[k]||'').length).slice(0,50))+2 }));
+}
+
+// ══════════════════════════════════════════════
+// UTILS
+// ══════════════════════════════════════════════
+
+function toggleExportMenu(){
+  const m=document.getElementById('exportMenu');
+  m.style.display=m.style.display==='none'?'block':'none';
+}
+function closeExportMenu(){ document.getElementById('exportMenu').style.display='none'; }
+// Close export menu on outside click
+document.addEventListener('click',function(e){
+  const menu=document.getElementById('exportMenu');
+  const btn=document.getElementById('exportBtn');
+  if(menu.style.display!=='none'&&!menu.contains(e.target)&&e.target!==btn) closeExportMenu();
+});
+function lbx(src){document.getElementById('lbxImg').src=src;document.getElementById('lbx').classList.add('open');}
+function exportData(){
+  if(!isAdmin()){ showToast('Admin only'); return; }
+  const b=new Blob([JSON.stringify(orders,null,2)],{type:'application/json'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='bharni-gems-orders.json';a.click();
+  showToast('Exported successfully');
+}
+
+// ══════════════════════════════════════════════
+// VENDOR & CUSTOMER MANAGEMENT
+// ══════════════════════════════════════════════
+function openAddVendor(){
+  ['fv_name','fv_contact','fv_loc','fv_spec','fv_notes'].forEach(i=>document.getElementById(i).value='');
+  document.getElementById('addVendorModal').classList.add('open');
+}
+function saveVendor(){
+  const name=document.getElementById('fv_name').value.trim();
+  if(!name){showToast('Vendor name required');return;}
+  if(standaloneVendors.find(v=>v.name===name)){showToast('Vendor already exists');return;}
+  standaloneVendors.push({
+    name,
+    contact:document.getElementById('fv_contact').value.trim(),
+    email:document.getElementById('fv_email').value.trim(),
+    loc:document.getElementById('fv_loc').value.trim(),
+    spec:document.getElementById('fv_spec').value.trim(),
+    notes:document.getElementById('fv_notes').value.trim()
+  });
+  saveVendors();
+  closeModal('addVendorModal');
+  renderVendors();
+  // Refresh vendor dropdown in order form if open
+  if(document.getElementById('addModal').classList.contains('open')) populateVendorDropdown(name);
+  showToast('Vendor added: '+name);
+}
+function removeStandaloneVendor(name){
+  const inUse=orders.some(o=>o.vendor===name);
+  if(inUse){showToast('Vendor has orders — cannot remove');return;}
+  if(confirm('Remove vendor "'+name+'"?')){
+    standaloneVendors=standaloneVendors.filter(v=>v.name!==name);
+    saveVendors();
+    selVendor=null;
+    renderVendors();
+    showToast('Vendor removed');
+  }
+}
+
+function openAddCustomer(){
+  ['fc_name','fc_contact','fc_loc','fc_notes'].forEach(i=>document.getElementById(i).value='');
+  document.getElementById('addCustomerModal').classList.add('open');
+}
+function saveCustomer(){
+  const name=document.getElementById('fc_name').value.trim();
+  if(!name){showToast('Customer name required');return;}
+  if(standaloneCustomers.find(c=>c.name===name)){showToast('Customer already exists');return;}
+  standaloneCustomers.push({
+    name,
+    contact:document.getElementById('fc_contact').value.trim(),
+    loc:document.getElementById('fc_loc').value.trim(),
+    notes:document.getElementById('fc_notes').value.trim()
+  });
+  saveCustomers();
+  closeModal('addCustomerModal');
+  renderCustomers();
+  // Refresh customer dropdown in order form if open
+  if(document.getElementById('addModal').classList.contains('open')) populateCustomerDropdown(name);
+  showToast('Customer added: '+name);
+}
+function removeStandaloneCustomer(name){
+  const inOrders=orders.some(o=>o.name===name);
+  if(inOrders) return; // customers derived from orders can't be removed this way
+  standaloneCustomers=standaloneCustomers.filter(c=>c.name!==name);
+  saveCustomers();
+  renderCustomers();
+  showToast('Customer removed');
+}
+
+// Auto-populate dispatch/delivery dates when order date changes (new orders only)
+document.getElementById('f_odate').addEventListener('change', function(){
+  if(editId) return; // don't auto-fill when editing
+  const v = this.value;
+  if(!v) return;
+  const dispDays = curOrderType==='urgent'?10:17;
+  const delDays  = curOrderType==='urgent'?12:19;
+  document.getElementById('f_shipdate').value = addDays(v, dispDays);
+  document.getElementById('f_ddate').value    = addDays(v, delDays);
+});
+
+// Close overlays on backdrop tap — addModal excluded (accidental close prevention)
+['detailModal','addVendorModal','addCustomerModal','fuModal','userManagerModal','drillModal','vendorLoginModal'].forEach(id=>{
+  document.getElementById(id).addEventListener('click',function(e){if(e.target===this)closeModal(id);});
+});
+
+function renderAll(){
+  const av=document.querySelector('.view.active');
+  if(!av) return;
+  const v=av.id.replace('view-','');
+  if(v==='dash') renderDash();
+  if(v==='orders') renderOrders();
+  if(v==='customers') renderCustomers();
+  if(v==='vendors') renderVendors();
+  if(v==='karigar') renderKarigar();
+}
+
+// INIT
+appStart();
+
+
 // ── MODAL HELPERS ──
 function closeModal(id){
   var el = document.getElementById(id);
@@ -3920,10 +4156,7 @@ function openModal(id){
   if(el) el.classList.add('open');
 }
 
-// ── CALL STARTUP ──
-document.addEventListener('DOMContentLoaded', function() {
-  appStart();
-});
+// startup is called inline above (// INIT appStart())
 
 </script>
 </body>
