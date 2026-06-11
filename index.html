@@ -3910,6 +3910,16 @@ td:last-child{border-right:none}
   setTimeout(function(){URL.revokeObjectURL(url);},20000);
 }
 
+// ── MODAL HELPERS ──
+function closeModal(id){
+  var el = document.getElementById(id);
+  if(el) el.classList.remove('open');
+}
+function openModal(id){
+  var el = document.getElementById(id);
+  if(el) el.classList.add('open');
+}
+
 // ── CALL STARTUP ──
 document.addEventListener('DOMContentLoaded', function() {
   appStart();
