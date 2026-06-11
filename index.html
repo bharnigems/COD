@@ -513,7 +513,7 @@ body{font-family:'DM Mono',monospace;color:var(--txt);background:var(--bg);heigh
     <div class="login-err" id="loginErr"></div>
     <div id="loginConnStatus" style="font-size:8px;color:var(--dim);text-align:center;margin-top:10px;letter-spacing:1px">⏳ Connecting to Firebase…</div>
     <button onclick="location.reload()" style="background:none;border:1px solid var(--b);color:var(--dim);padding:8px 20px;font-family:'DM Mono',monospace;font-size:8px;letter-spacing:2px;cursor:pointer;border-radius:var(--r);margin-top:10px;width:100%">↺ Reload Page</button>
-    <div class="login-ver">Bharni Gems · v68</div>
+    <div class="login-ver">Bharni Gems · v69</div>
   </div>
 </div>
 
@@ -3910,4 +3910,11 @@ td:last-child{border-right:none}
   setTimeout(function(){URL.revokeObjectURL(url);},20000);
 }
 
+// ── CALL STARTUP ──
+document.addEventListener('DOMContentLoaded', function() {
+  appStart();
+});
 
+</script>
+</body>
+</html>
