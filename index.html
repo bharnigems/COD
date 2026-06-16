@@ -134,7 +134,7 @@ body{font-family:'DM Mono',monospace;color:var(--txt);background:var(--bg);heigh
 .sel{background:var(--s1);border:1px solid var(--b);color:var(--txt);padding:9px 11px;font-family:'DM Mono',monospace;font-size:10px;outline:none;border-radius:var(--r);cursor:pointer;-webkit-appearance:none}
 .sel option{background:var(--s2)}
 .card-list{display:flex;flex-direction:column;gap:8px}
-.row-card{background:var(--s1);border:1px solid var(--b);padding:13px;cursor:pointer;transition:all .2s;border-radius:var(--r)}
+.row-card{background:var(--s1);border:1px solid var(--b);padding:13px;cursor:pointer;transition:all .2s;border-radius:var(--r);position:relative}
 .row-card:active{border-color:var(--gold-d)}
 .row-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px}
 .row-name{font-family:'Cormorant Garamond',serif;font-size:18px}
@@ -527,7 +527,7 @@ body{font-family:'DM Mono',monospace;color:var(--txt);background:var(--bg);heigh
     <p>Order Management</p>
   </div>
   <div class="hdr-actions">
-    <div style="display:flex;align-items:center;gap:5px;padding:0 6px" id="syncStatus" onclick="showFbConfig()" title="Firebase sync status" style="cursor:pointer">
+    <div style="display:flex;align-items:center;gap:5px;padding:0 6px" id="syncStatus" onclick="if(isAdmin())showFbConfig()" title="Firebase sync status" style="cursor:pointer">
       <div class="sync-dot offline" id="syncDot"></div>
       <span class="sync-label" id="syncLabel">offline</span>
     </div>
@@ -540,7 +540,7 @@ body{font-family:'DM Mono',monospace;color:var(--txt);background:var(--bg);heigh
       <div class="export-item" onclick="closeExportMenu();emailJobCard()" id="exportEmailVendor" style="display:none"><span class="ei">✉</span>Email Job Card to Vendor</div>
       <div class="export-item" onclick="closeExportMenu();printJobCard('customer')" id="exportCustomerCard"><span class="ei">👤</span>Job Card — Customer</div>
       <div style="border-top:1px solid var(--b);margin:4px 0"></div>
-      <div class="export-item" onclick="closeExportMenu();showFbConfig()"><span class="ei">🔥</span>Firebase Settings</div>
+      <div class="export-item" id="exportFbSettings" onclick="closeExportMenu();showFbConfig()"><span class="ei">🔥</span>Firebase Settings</div>
       <div class="export-item" onclick="closeExportMenu();uploadAllToFirestore()"><span class="ei">☁</span>Push all data to Cloud</div>
     </div>
     <!-- User menu -->
@@ -570,8 +570,9 @@ body{font-family:'DM Mono',monospace;color:var(--txt);background:var(--bg);heigh
   <div class="view" id="view-orders">
     <div id="ordersFilterTag"></div>
     <div class="tbl-controls">
-      <input class="inp" type="text" placeholder="Search orders, customers…" id="orderSearch" oninput="renderOrders()">
-      <select class="sel" id="orderStatusF" onchange="renderOrders()" style="width:100%">
+      <input class="inp" type="text" placeholder="Search orders, PO, style, notes…" id="orderSearch" oninput="renderOrders()">
+      <div style="display:flex;gap:6px;align-items:center">
+        <select class="sel" id="orderStatusF" onchange="renderOrders()" style="flex:1;min-width:0">
         <option value="">All Statuses</option>
         <option>Order Placed</option>
         <option>CAD Approval Pending</option>
@@ -581,7 +582,9 @@ body{font-family:'DM Mono',monospace;color:var(--txt);background:var(--bg);heigh
         <option>Piece Received</option>
         <option>Order Delivered</option>
         <option>Cancelled</option>
-      </select>
+        </select>
+        <button class="btn-xs" id="sortToggleBtn" onclick="toggleOrderSort()" title="Sort orders" style="white-space:nowrap;flex-shrink:0">↕ Date</button>
+      </div>
     </div>
     <div class="card-list" id="ordersList"></div>
   </div>
@@ -1122,6 +1125,11 @@ const STATUS_COLOR = {
   'In Production':'var(--ip)','IGI':'var(--igi)','Piece Received':'var(--or)',
   'Order Delivered':'var(--od)','Cancelled':'var(--cx)'
 };
+const PIECE_STATUS_LIST = ['Due','In Production','IGI','Piece Received','Cancelled'];
+const PIECE_STATUS_COLOR = {
+  'Due':'var(--cap)','In Production':'var(--ip)','IGI':'var(--igi)',
+  'Piece Received':'var(--or)','Cancelled':'var(--cx)'
+};
 
 // ── HARDCODED DEFAULT CONFIG (Bharni Gems Firebase project) ──
 const DEFAULT_FB_CONFIG = {
@@ -1205,6 +1213,8 @@ function applyRoleUI() {
 
   // Excel + JSON: admin only
   if(r !== 'admin'){ hide('exportJsonItem'); hide('exportExcelItem'); }
+  // Firebase Settings: admin only
+  if(r !== 'admin') hide('exportFbSettings');
   // Manage Users: admin only
   if(r !== 'admin') hide('menuManageUsers');
 
@@ -2311,7 +2321,8 @@ function renderOrders() {
   let list = orders.filter(o => {
     // Vendor role: only see their own orders
     if(currentRole === 'vendor' && currentVendorName && o.vendor !== currentVendorName) return false;
-    const txt = (o.name+o.id+(o.vendor||'')+(o.loc||'')).toLowerCase();
+    const pieceStyles = (o.pieces||[]).map(p=>p.styleNo||'').join(' ');
+    const txt = (o.name+o.id+(o.vendor||'')+(o.loc||'')+(o.po||'')+(o.notes||'')+pieceStyles).toLowerCase();
     const sm = !sf || o.status===sf;
     const tm = !search || txt.includes(search);
     let fm=true;
@@ -2322,13 +2333,18 @@ function renderOrders() {
     return sm&&tm&&fm;
   });
 
+  // Sort
+  if(orderSortMode==='ddate') list.sort((a,b)=>{ const da=a.ddate||'9999',db=b.ddate||'9999'; return da<db?-1:da>db?1:0; });
+  else if(orderSortMode==='overdue') list.sort((a,b)=>{ const da=a.ddate||'9999',db=b.ddate||'9999'; return da<db?-1:da>db?1:0; });
+
   const el = document.getElementById('ordersList');
   if(!list.length){ el.innerHTML=`<div class="empty"><div class="empty-ico">◇</div><p>No orders found</p></div>`; return; }
   el.innerHTML = list.map(o=>{
     const pcs=totalPcs(o),gwt=orderGrossWt(o),dwt=orderDiamondWt(o);
     const du=daysUntil(o.ddate);
-    return `<div class="row-card" onclick="viewOrder('${o.id}')">
-      <div class="row-id">${o.id}${o.po?` · PO: ${o.po}`:''} · ${o.category||''}</div>
+    return `<div class="row-card" id="ocard-${o.id}" onclick="viewOrder('${o.id}')">
+      ${(isAdmin()||isAccounts())?`<div style="position:absolute;top:8px;right:8px;z-index:10" onclick="event.stopPropagation()"><input type="checkbox" ${bulkSelected.has(o.id)?'checked':''} onchange="toggleBulkSelect('${o.id}',this.checked)" style="width:14px;height:14px;cursor:pointer;accent-color:var(--gold)"></div>`:''}
+      <div class="row-id" style="${isAdmin()||isAccounts()?'padding-right:22px':''}">${o.id}${o.po?` · PO: ${o.po}`:''} · ${o.category||''}</div>
       <div class="row-top">
         <div class="row-name">${guardCustomer(o.name)}${o.orderType==='urgent'?'<span class="urgent-tag">⚡ URGENT</span>':''}</div>
         <div>${sbadge(o.status)}</div>
@@ -2340,6 +2356,15 @@ function renderOrders() {
         <div class="row-meta">DW: <span style="color:var(--gold)">${dwt.toFixed(2)}ct</span></div>
         ${o.ddate?`<div class="row-meta">Del: <span style="color:${du!==null&&du<0?'var(--cx)':du<=3?'var(--ip)':'var(--mid)'}">${formatDate(o.ddate)}${du!==null?` (${du<0?'overdue':du===0?'today':du+'d'})`:''}  </span></div>`:''}
       </div>
+      ${(()=>{
+        const pcs=o.pieces||[];
+        if(pcs.length<=1) return '';
+        const rcv=pcs.filter(p=>p.pieceStatus==='Piece Received').length;
+        const canc=pcs.filter(p=>p.pieceStatus==='Cancelled').length;
+        const active=pcs.length-canc;
+        if(!rcv) return '';
+        return `<div style="font-size:9px;color:var(--or);margin-top:4px;letter-spacing:.5px">${rcv===active?`All ${active} pieces received`:`${rcv} of ${active} pieces received`}</div>`;
+      })()}
       <div class="row-actions" onclick="event.stopPropagation()">
         ${(currentRole==='admin'||currentRole==='salesman')?`
         <button class="btn-xs" onclick="openEdit('${o.id}')">Edit</button>
@@ -2351,7 +2376,70 @@ function renderOrders() {
   }).join('');
 }
 
+function showConfirm(title, msg, onOk, okLabel='Delete'){
+  document.getElementById('confirmTitle').textContent = title;
+  document.getElementById('confirmMsg').textContent = msg;
+  const btn = document.getElementById('confirmOkBtn');
+  btn.textContent = okLabel;
+  btn.onclick = ()=>{ closeModal('confirmModal'); onOk(); };
+  document.getElementById('confirmModal').classList.add('open');
+}
+
 function clearFilter(){statFilter=null;custFilter=null;renderOrders();}
+
+let bulkSelected = new Set();
+
+function toggleBulkSelect(id, checked){
+  if(checked) bulkSelected.add(id);
+  else bulkSelected.delete(id);
+  updateBulkBar();
+}
+
+function updateBulkBar(){
+  const bar = document.getElementById('bulkBar');
+  const cnt = document.getElementById('bulkCount');
+  if(bulkSelected.size>0){
+    bar.style.display='flex';
+    cnt.textContent = bulkSelected.size+' selected';
+  } else {
+    bar.style.display='none';
+  }
+}
+
+function clearBulkSelection(){
+  bulkSelected.clear();
+  updateBulkBar();
+  renderOrders();
+}
+
+function applyBulkStatus(){
+  if(!isAdmin()&&!isAccounts()){showToast('Not permitted');return;}
+  const s = document.getElementById('bulkStatusSel').value;
+  if(!s){showToast('Select a status first');return;}
+  if(!bulkSelected.size){showToast('No orders selected');return;}
+  const ids = Array.from(bulkSelected);
+  showConfirm('Bulk Update', `Set ${ids.length} order(s) to "${s}"?`, ()=>{
+    ids.forEach(id=>{
+      const o = orders.find(x=>x.id===id);
+      if(!o) return;
+      pushActivity(o, s);
+      o.status = s;
+      save(o);
+    });
+    bulkSelected.clear();
+    updateBulkBar();
+    renderAll();
+    showToast(ids.length+' orders → '+s);
+  }, 'Apply');
+}
+
+function toggleOrderSort(){
+  if(orderSortMode==='default') orderSortMode='ddate';
+  else orderSortMode='default';
+  const btn=document.getElementById('sortToggleBtn');
+  if(btn) btn.textContent = orderSortMode==='ddate'?'↕ Nearest':'↕ Date';
+  renderOrders();
+}
 
 // ══════════════════════════════════════════════
 // CUSTOMERS
@@ -2621,7 +2709,7 @@ function renderKarigar() {
 
   // ── HORIZON BUCKETS ──
   const active = visible.filter(o=>!['Order Delivered','Cancelled'].includes(o.status)&&o.ddate);
-  const buckets = { overdue:[], today:[], d1:[], d2:[], d4:[], d7:[] };
+  const buckets = { overdue:[], today:[], d1:[], d2:[], d4:[], d7:[] }; // each entry: {o,d}
   active.forEach(o=>{
     const d = daysDiff(o.ddate, now);
     if(d<0)       buckets.overdue.push({o,d});
@@ -2631,6 +2719,10 @@ function renderKarigar() {
     else if(d<=4)  buckets.d4.push({o,d});
     else if(d<=7)  buckets.d7.push({o,d});
   });
+
+  // Sort within each bucket: overdue by most overdue first, others by soonest first
+  buckets.overdue.sort((a,b)=>a.d-b.d); // most negative first
+  ['today','d1','d2','d4','d7'].forEach(k=>buckets[k].sort((a,b)=>a.d-b.d));
 
   document.getElementById('fuHorizonGrid').innerHTML = [
     {key:'overdue', lbl:'Overdue',      cls:'overdue', items:buckets.overdue},
@@ -2661,6 +2753,7 @@ function renderKarigar() {
           <div class="due-row-id">${o.id} · ${o.category||''}</div>
           <div class="due-row-name">${guardCustomer(o.name)}</div>
           <div class="due-row-status">${o.status}${(currentRole!=='salesman'&&currentRole!=='vendor')?' · '+guardVendor(o.vendor):''}</div>
+          ${(!o.followUps||!o.followUps.length)?'<div style="font-size:8px;color:var(--cx);letter-spacing:1px;margin-top:2px">NO FOLLOW-UP YET</div>':''}
         </div>
         <div class="due-badge ${b.badgeCls}">${d<0?Math.abs(d)+'d overdue':d===0?'Today':'In '+d+'d'}</div>
       </div>`).join('');
@@ -2913,11 +3006,14 @@ function viewOrder(id){
       <div class="df"><div class="dl">PO Number</div><div class="dv" style="color:var(--gold)">${o.po||'—'}</div></div>
       <div class="df"><div class="dl">Invoice</div><div class="dv" style="color:${o.invoice?'var(--or)':'var(--dim)'}">${o.invoice||'—'}</div></div>
     </div>
-    <div class="msec-title" style="margin-bottom:10px">Pieces</div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+      <div class="msec-title" style="margin:0">Pieces</div>
+      <div style="font-size:9px;color:var(--dim);letter-spacing:1px">${pieceSummaryBadge(o)}</div>
+    </div>
     <table class="ptable">
-      <thead><tr><th style="width:50px">Photo</th><th>Style No.</th><th>Gross Wt</th><th>Dia Wt</th><th>Size</th><th>Purity</th><th>Dia</th></tr></thead>
+      <thead><tr><th style="width:50px">Photo</th><th>Style No.</th><th>Gross Wt</th><th>Dia Wt</th><th>Size</th><th>Purity</th><th>Dia</th><th style="min-width:130px">Piece Status</th></tr></thead>
       <tbody>
-        ${o.pieces.map(p=>`<tr>
+        ${o.pieces.map((p,i)=>`<tr>
           <td class="td-img">${p.img?`<img class="piece-det-img" src="${p.img}" onclick="lbx('${p.img}')">`:`<div class="piece-det-ph">◈</div>`}</td>
           <td>${p.styleNo||p.item||'—'}</td>
           <td style="color:var(--mid)">${p.gwt||'—'}g</td>
@@ -2925,8 +3021,16 @@ function viewOrder(id){
           <td>${p.size||'—'}</td>
           <td>${p.purity||'—'}</td>
           <td>${p.diaType||'—'}</td>
+          <td>
+            <div style="display:flex;gap:4px;align-items:center">
+              <select class="sel inp" style="font-size:9px;padding:3px 5px;flex:1;min-width:0" id="pcs_${o.id}_${i}">
+                ${PIECE_STATUS_LIST.map(s=>`<option ${(p.pieceStatus||'Due')===s?'selected':''} value="${s}" style="color:${PIECE_STATUS_COLOR[s]}">${s}</option>`).join('')}
+              </select>
+              <button class="btn-xs" style="padding:3px 7px;font-size:9px;line-height:1" onclick="savePieceStatus('${o.id}',${i})">✓</button>
+            </div>
+          </td>
         </tr>`).join('')}
-        <tr><td></td><td colspan="2" style="color:var(--dim);font-size:9px;letter-spacing:1.5px;text-transform:uppercase">Total · ${pcs} pcs</td><td style="color:var(--gold)">${gwt.toFixed(2)}g</td><td style="color:var(--gold)">${dwt.toFixed(2)}ct</td><td colspan="2"></td></tr>
+        <tr><td></td><td colspan="2" style="color:var(--dim);font-size:9px;letter-spacing:1.5px;text-transform:uppercase">Total · ${pcs} pcs</td><td style="color:var(--gold)">${gwt.toFixed(2)}g</td><td style="color:var(--gold)">${dwt.toFixed(2)}ct</td><td colspan="3"></td></tr>
       </tbody>
     </table>
     <div class="dg" style="margin-top:14px">
@@ -2948,7 +3052,7 @@ function viewOrder(id){
           <div class="actlog-dot" style="background:${STATUS_COLOR[e.status]||'var(--gold-d)'}"></div>
           <div class="actlog-body">
             <div class="actlog-status">${sbadge(e.status)}</div>
-            <div class="actlog-time">${e.ts}</div>
+            <div class="actlog-time" title="${e.ts}">${relTime(e.ts)||e.ts}</div>
           </div>
         </div>`).join(''):`<div style="font-size:9px;color:var(--dim);padding:8px 0">No activity logged yet</div>`}
     </div>
@@ -2970,7 +3074,35 @@ function viewOrder(id){
       `<div class="fulog-empty">No follow-ups yet</div>`
     }
 
-    <!-- EXPORT ACTIONS -->
+    
+
+<!-- ── BULK ACTION BAR ── -->
+<div id="bulkBar" style="display:none;position:fixed;bottom:70px;left:50%;transform:translateX(-50%);background:var(--bg2);border:1px solid var(--gold-d);border-radius:8px;padding:8px 14px;gap:10px;align-items:center;z-index:900;box-shadow:0 4px 20px rgba(0,0,0,.5)">
+  <span id="bulkCount" style="font-size:10px;color:var(--dim);letter-spacing:1px">0 selected</span>
+  <select class="sel inp" id="bulkStatusSel" style="font-size:10px;padding:4px 6px">
+    <option value="">— Set Status —</option>
+    <option>Order Placed</option><option>CAD Approval Pending</option><option>CAD Approved</option>
+    <option>In Production</option><option>IGI</option><option>Piece Received</option>
+    <option>Order Delivered</option><option>Cancelled</option>
+  </select>
+  <button class="btn-gold" style="font-size:10px;padding:5px 10px" onclick="applyBulkStatus()">Apply</button>
+  <button class="btn-xs" onclick="clearBulkSelection()">Clear</button>
+</div>
+<!-- ── CONFIRM MODAL ── -->
+<div class="modal" id="confirmModal">
+  <div class="modal-box" style="max-width:320px">
+    <div class="modal-hdr">
+      <div class="modal-title" id="confirmTitle">Confirm</div>
+      <button class="modal-close" onclick="closeModal('confirmModal')">×</button>
+    </div>
+    <div style="padding:16px 18px;font-size:12px;color:var(--mid);line-height:1.7" id="confirmMsg"></div>
+    <div style="padding:0 18px 18px;display:flex;gap:8px;justify-content:flex-end">
+      <button class="btn-xs" onclick="closeModal('confirmModal')" id="confirmCancelBtn">Cancel</button>
+      <button class="btn-xs danger" id="confirmOkBtn">Delete</button>
+    </div>
+  </div>
+</div>
+<!-- EXPORT ACTIONS -->
     <div style="margin-top:20px;padding-top:14px;border-top:1px solid var(--b);display:flex;gap:8px;flex-wrap:wrap">
       <button class="btn-xs" onclick="printJobCard('vendor','${o.id}')">🏭 Vendor Job Card</button>
       <button class="btn-xs" onclick="printJobCard('customer','${o.id}')">👤 Customer Job Card</button>
@@ -3002,6 +3134,55 @@ function statusOptions(o){
   }).map(s=>`<option ${o.status===s?'selected':''}>${s}</option>`).join('');
 }
 
+// ── Piece-level status: summary badge ──
+function pieceSummaryBadge(o) {
+  const pieces = o.pieces || [];
+  if (pieces.length <= 1) return '';
+  const received = pieces.filter(p => p.pieceStatus === 'Piece Received').length;
+  const cancelled = pieces.filter(p => p.pieceStatus === 'Cancelled').length;
+  const active = pieces.length - cancelled;
+  if (received === 0) return '';
+  if (received === active) return `<span style="color:var(--or)">All ${active} received</span>`;
+  return `<span style="color:var(--or)">${received}</span><span style="color:var(--dim)"> of ${active} received</span>`;
+}
+
+// ── Piece-level status: save one piece's status ──
+function savePieceStatus(orderId, pieceIndex) {
+  const o = orders.find(x => x.id === orderId);
+  if (!o) return;
+  const sel = document.getElementById('pcs_' + orderId + '_' + pieceIndex);
+  if (!sel) return;
+  const newStatus = sel.value;
+  o.pieces[pieceIndex].pieceStatus = newStatus;
+
+  // Auto-derive order-level status from pieces
+  const pieces = o.pieces;
+  const all = pieces.length;
+  const received = pieces.filter(p => p.pieceStatus === 'Piece Received').length;
+  const cancelled = pieces.filter(p => p.pieceStatus === 'Cancelled').length;
+  const active = all - cancelled;
+
+  if (active > 0 && received === active) {
+    // All active pieces received — push to Piece Received
+    if (o.status !== 'Order Delivered') {
+      pushActivity(o, 'Piece Received');
+      o.status = 'Piece Received';
+    }
+  } else if (received > 0 && received < active) {
+    // Partial receipt — set order to Partial Receipt if not already delivered
+    if (o.status !== 'Order Delivered' && o.status !== 'Piece Received') {
+      pushActivity(o, 'Piece Received');
+      o.status = 'Piece Received';
+    }
+  }
+
+  save(o);
+  renderAll();
+  // Re-render the detail modal to refresh badge + dropdowns
+  viewOrder(orderId);
+  showToast('Piece ' + (pieceIndex + 1) + ' → ' + newStatus);
+}
+
 // ── Quick status change handler in detail modal ──
 function onQuickStatusChange(id){
   const s=document.getElementById('quickStatus').value;
@@ -3009,6 +3190,21 @@ function onQuickStatusChange(id){
   const cw=document.getElementById('quickCancelWrap');
   iw.style.display=s==='Order Delivered'?'flex':'none';
   cw.style.display=s==='Cancelled'?'flex':'none';
+}
+
+function relTime(tsStr){
+  if(!tsStr) return '';
+  try {
+    // Try parsing the locale-formatted ts string
+    const d = new Date(tsStr);
+    if(isNaN(d)) return tsStr;
+    const diff = Math.floor((Date.now()-d)/1000);
+    if(diff<60) return 'just now';
+    if(diff<3600) return Math.floor(diff/60)+'m ago';
+    if(diff<86400) return Math.floor(diff/3600)+'h ago';
+    if(diff<604800) return Math.floor(diff/86400)+'d ago';
+    return tsStr;
+  } catch(e){ return tsStr; }
 }
 
 function tsNow(){
@@ -3044,26 +3240,29 @@ function quickStatusSave(id){
 function delCurrent(){
   if(!isAdmin()){ showToast('Admin only'); return; }
   if(!viewId) return;
-  if(confirm('Delete this order?')){
+  showConfirm('Delete Order', 'Delete order '+viewId+'? This cannot be undone.', ()=>{
+    if(!isAdmin()){showToast('Admin only');return;}
     orders=orders.filter(o=>o.id!==viewId);
     deleteOrderFromFirestore(viewId);
     renderAll();closeModal('detailModal');showToast('Order deleted');
-  }
+  });
 }
 function editCurrent(){closeModal('detailModal');openEdit(viewId);}
 function confirmDel(id){
   if(!isAdmin()){ showToast('Admin only'); return; }
-  if(confirm('Delete order '+id+'?')){
+  showConfirm('Delete Order', 'Delete order '+id+'? This cannot be undone.', ()=>{
+    if(!isAdmin()){showToast('Admin only');return;}
     orders=orders.filter(o=>o.id!==id);
     deleteOrderFromFirestore(id);
     renderAll();showToast('Deleted');
-  }
+  });
 }
 
 // ══════════════════════════════════════════════
 // ADD / EDIT
 // ══════════════════════════════════════════════
 let curOrderType = 'normal'; // module-level so setOrderType can update it
+let orderSortMode = 'default'; // 'default' | 'ddate' | 'overdue'
 
 function setOrderType(type){
   curOrderType = type;
@@ -3392,17 +3591,18 @@ async function openEdit(id){
   }).map(s=>`<option ${o.status===s?'selected':''}>${s}</option>`).join('');
   // Map old piece structure to new fields gracefully
   const pieces = (o.pieces&&o.pieces.length) ? o.pieces.map(p=>({
-    styleNo:  p.styleNo||p.item||'',
-    category: p.category||o.category||'',
-    qty:      p.qty||1,
-    size:     p.size||'',
-    gwt:      p.gwt||0,
-    dwt:      p.dwt||0,
-    purity:   p.purity||'',
-    diaType:  p.diaType||'',
-    remarks:  p.remarks||'',
-    img:      p.img||''
-  })) : [{styleNo:'',category:'',qty:1,size:'',gwt:'',dwt:'',purity:'',diaType:'',remarks:'',img:''}];
+    styleNo:     p.styleNo||p.item||'',
+    category:    p.category||o.category||'',
+    qty:         p.qty||1,
+    size:        p.size||'',
+    gwt:         p.gwt||0,
+    dwt:         p.dwt||0,
+    purity:      p.purity||'',
+    diaType:     p.diaType||'',
+    remarks:     p.remarks||'',
+    img:         p.img||'',
+    pieceStatus: p.pieceStatus||'Due'
+  })) : [{styleNo:'',category:'',qty:1,size:'',gwt:'',dwt:'',purity:'',diaType:'',remarks:'',img:'',pieceStatus:'Due'}];
   renderPieces(pieces);
   renderImgPrev();
   document.getElementById('addModal').classList.add('open');
@@ -3477,6 +3677,7 @@ function renderPieces(pieces){
              <span class="piece-img-upload-lbl">Tap to upload piece image</span>`
         }
       </div>
+      <input type="hidden" data-f="pieceStatus" data-i="${i}" value="${p.pieceStatus||'Due'}">
     </div>`;
   }).join('');
 }
@@ -3484,22 +3685,23 @@ function renderPieces(pieces){
 function getPieces(){
   const els = document.querySelectorAll('[data-f="styleNo"]');
   return Array.from(els).map((_,i) => ({
-    styleNo:  document.querySelector(`[data-f="styleNo"][data-i="${i}"]`).value,
-    category: (document.querySelector(`[data-f="category"][data-i="${i}"]`)?.value||''),
-    qty:      Number(document.querySelector(`[data-f="qty"][data-i="${i}"]`)?.value)||1,
-    size:     document.querySelector(`[data-f="size"][data-i="${i}"]`).value,
-    gwt:      Number(document.querySelector(`[data-f="gwt"][data-i="${i}"]`).value)||0,
-    dwt:      Number(document.querySelector(`[data-f="dwt"][data-i="${i}"]`).value)||0,
-    purity:   document.querySelector(`[data-f="purity"][data-i="${i}"]`).value,
-    diaType:  document.querySelector(`[data-f="diaType"][data-i="${i}"]`).value,
-    remarks:  (document.querySelector(`[data-f="remarks"][data-i="${i}"]`)?.value||''),
-    img:      curPieceImgs[i] || ''
+    styleNo:     document.querySelector(`[data-f="styleNo"][data-i="${i}"]`).value,
+    category:    (document.querySelector(`[data-f="category"][data-i="${i}"]`)?.value||''),
+    qty:         Number(document.querySelector(`[data-f="qty"][data-i="${i}"]`)?.value)||1,
+    size:        document.querySelector(`[data-f="size"][data-i="${i}"]`).value,
+    gwt:         Number(document.querySelector(`[data-f="gwt"][data-i="${i}"]`).value)||0,
+    dwt:         Number(document.querySelector(`[data-f="dwt"][data-i="${i}"]`).value)||0,
+    purity:      document.querySelector(`[data-f="purity"][data-i="${i}"]`).value,
+    diaType:     document.querySelector(`[data-f="diaType"][data-i="${i}"]`).value,
+    remarks:     (document.querySelector(`[data-f="remarks"][data-i="${i}"]`)?.value||''),
+    img:         curPieceImgs[i] || '',
+    pieceStatus: (document.querySelector(`[data-f="pieceStatus"][data-i="${i}"]`)?.value || 'Due')
   }));
 }
 
 function addPiece(){
   const cur = getPieces();
-  renderPieces([...cur, {styleNo:'',category:'',qty:1,size:'',gwt:'',dwt:'',purity:'',diaType:'',remarks:'',img:''}]);
+  renderPieces([...cur, {styleNo:'',category:'',qty:1,size:'',gwt:'',dwt:'',purity:'',diaType:'',remarks:'',img:'',pieceStatus:'Due'}]);
 }
 
 function rmPiece(i){
@@ -4076,13 +4278,15 @@ function saveVendor(){
 function removeStandaloneVendor(name){
   const inUse=orders.some(o=>o.vendor===name);
   if(inUse){showToast('Vendor has orders — cannot remove');return;}
-  if(confirm('Remove vendor "'+name+'"?')){
+  if(!isAdmin()){showToast('Admin only');return;}
+  showConfirm('Remove Vendor', 'Remove vendor "'+name+'"? This cannot be undone.', ()=>{
+    if(!isAdmin()){showToast('Admin only');return;}
     standaloneVendors=standaloneVendors.filter(v=>v.name!==name);
     saveVendors();
     selVendor=null;
     renderVendors();
     showToast('Vendor removed');
-  }
+  });
 }
 
 function openAddCustomer(){
